@@ -1,0 +1,127 @@
+double a=(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        double b=(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        double c=(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        double d=(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1)
+        
+        
+        
+        (-x3*y1*f4+x3*y1*f2+y1*f3*x4-x4*y1*f2-x1*y2*f4+x3*y2*f4-x3*f1*y2+y2*x1*f3+f1*y2*x4-f3*y2*x4+x4*y3*f2-x1*y3*f2-x4*y3*f1+x1*y4*f2-x3*y4*f2+x3*y4*f1-x2*f1*y4+f3*x2*y4+x2*f1*y3-y3*x2*f4+x1*y3*f4-x1*f3*y4+y1*x2*f4-y1*x2*f3)
+        (-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1)
+        
+        
+        
+f5 -
+ 
+((f5 - f8) (-x1 y + x2 y - x3 y + x4 y + x y1 - 2 x2 y1 + x3 y1 - x y2 + 2 x1 y2 - x4 y2 + x y3 - x1 y3 - x y4 + x2 y4 + \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4)))))
+/(2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) + 
+
+((f5 - f6) (x1 y - x2 y + x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 y3 + x y4 - 2 x1 y4 + x2 y4 + \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4)))))
+/(2 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4))) -
+
+((f5 - f6 + f7 - f8) (-x1 y + x2 y - x3 y + x4 y + x y1 - 2 x2 y1 + x3 y1 - x y2 + 2 x1 y2 - x4 y2 + x y3 - x1 y3 - x y4 + x2 y4 + \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4)))) (x1 y - x2 y + x3 y - x4 y -x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 y3 + x y4 - 2 x1 y4 + x2 y4 + \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4)))))
+/(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))
+
+        
+        
+        
+f5 -
+
+((f5 - f8) / (2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))) *
+( - 2 x2 y1 + 2 x1 y2 - x4 y2 + x3 y1 - x1 y3 + x2 y4 + x * (y1 - y2 + y3 - y4) + y * (-x1 + x2 - x3 + x4)
++ \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4)))) +  
+
+((f5 - f6) / (2 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)))) * 
+( - x3 y1 + 2 x4 y1 - x4 y2 + x1 y3 - 2 x1 y4 + x2 y4 + x * (-y1 + y2 - y3 + y4) + y * (x1- x2 + x3 - x4)
++ \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + x1 (y - y4) + x (-y1 + y4))))
+-
+
+((f5 - f6 + f7 - f8) /(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) *
+(2 x2 x3 y1^2 - 4 x2 x4 y1^2 + 2 x3 x4 y1^2 - 2 x1 x3 y1 y2 + 4 x1 x4 y1 y2 + 2 x2 x4 y1 y2 - 2 x3 x4 y1 y2 - 2 x4^2 y1 y2 - 2 x1 x4 y2^2 + 2 x4^2 y2^2 - 2 x1 x2 y1 y3 - 2 x1 x4 y1 y3 + 4 x2 x4 y1 y3 + 2 x1^2 y2 y3 - 2 x1 x4 y2 y3 + 4 x1 x2 y1 y4 - 2 x2^2 y1 y4 - 2 x1 x3 y1 y4 - 2 x2 x3 y1 y4 + 2 x2 x4 y1 y4 - 4 x1^2 y2 y4 + 2 x1 x2 y2 y4 + 4 x1 x3 y2 y4 + 2 x1 x4 y2 y4 - 4 x2 x4 y2 y4 + 2 x1^2 y3 y4 - 2 x1 x2 y3 y4 - 2 x1 x2 y4^2 + 2 x2^2 y4^2
++ x * 
+(2 x2 y1^2 - 4 x3 y1^2 + 2 x4 y1^2 - 2 x1 y1 y2 - 2 x2 y1 y2 + 4 x3 y1 y2 + 2 x1 y2^2 - 
+ 2 x4 y2^2 + 4 x1 y1 y3 - 2 x2 y1 y3 - 2 x4 y1 y3 - 2 x1 y2 y3 + 2 x4 y2 y3 - 2 x1 y1 y4 + 4 x3 y1 y4 - 2 x4 y1 y4 + 2 x2 y2 y4 - 4 x3 y2 y4 + 2 x4 y2 y4 - 2 x1 y3 y4 + 2 x2 y3 y4 + 2 x1 y4^2 - 2 x2 y4^2) + 
++ y * 
+(-2 x1 x2 y1 + 2 x2^2 y1 + 4 x1 x3 y1 - 2 x2 x3 y1 - 2 x1 x4 y1 - 2 x3 x4 y1 + 2 x4^2 y1 + 2 x1^2 y2 - 2 x1 x2 y2 - 2 x1 x3 y2 + 2 x2 x4 y2 + 2 x3 x4 y2 - 2 x4^2 y2 - 4 x1^2 y3 + 
+ 4 x1 x2 y3 + 4 x1 x4 y3 - 4 x2 x4 y3 + 2 x1^2 y4 - 2 x2^2 y4 - 2 x1 x3 y4 + 
+ 2 x2 x3 y4 - 2 x1 x4 y4 + 2 x2 x4 y4))
+      - 
+ 2 x2 y1 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))) + 
+ 2 x4 y1 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))) + 
+ 2 x1 y2 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))) - 
+ 2 x4 y2 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))) - 
+ 2 x1 y4 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))) + 
+ 2 x2 y4 \[Sqrt]((x3 y - x4 y - x y1 - x3 y1 + 2 x4 y1 + x y2 - 
+       x4 y2 - x y3 + x1 (y + y3 - 2 y4) + x y4 + x2 (-y + y4))^2 + 
+     4 (x3 (y1 - y2) + 
+        x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) (x4 (-y + y1) + 
+        x1 (y - y4) + x (-y1 + y4))))
+
+
+
+
+
+a = f5 -
+((f1 - f4) / (2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))) *
+(- 2 x2 y1 + 2 x1 y2 - x4 y2 + x3 y1 - x1 y3 + x2 y4)
++
+((f1 - f2) / (2 (-(x1 - x2) (y3 - y4) + x3 (y1 - y2) + x4 (-y1 + y2))) *
+(- x3 y1 + 2 x4 y1 - x4 y2 + x1 y3 - 2 x1 y4 + x2 y4)
+-
+((f1 - f2 + f3 - f4) /(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) *
+(2 x2 x3 y1^2 - 4 x2 x4 y1^2 + 2 x3 x4 y1^2 - 2 x1 x3 y1 y2 + 4 x1 x4 y1 y2 + 2 x2 x4 y1 y2 - 2 x3 x4 y1 y2 - 2 x4^2 y1 y2 - 2 x1 x4 y2^2 + 2 x4^2 y2^2 - 2 x1 x2 y1 y3 - 2 x1 x4 y1 y3 + 4 x2 x4 y1 y3 + 2 x1^2 y2 y3 - 2 x1 x4 y2 y3 + 4 x1 x2 y1 y4 - 2 x2^2 y1 y4 - 2 x1 x3 y1 y4 - 2 x2 x3 y1 y4 + 2 x2 x4 y1 y4 - 4 x1^2 y2 y4 + 2 x1 x2 y2 y4 + 4 x1 x3 y2 y4 + 2 x1 x4 y2 y4 - 4 x2 x4 y2 y4 + 2 x1^2 y3 y4 - 2 x1 x2 y3 y4 - 2 x1 x2 y4^2 + 2 x2^2 y4^2)
+
+b = 
+((f5 - f8) / (2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))) *
+(y1 - y2 + y3 - y4)
++
+((f5 - f6) / (2 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4))) *
+(-y1 + y2 - y3 + y4)
+-
+((f5 - f6 + f7 - f8) /(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) *
+(2 x2 y1^2 - 4 x3 y1^2 + 2 x4 y1^2 - 2 x1 y1 y2 - 2 x2 y1 y2 + 4 x3 y1 y2 + 2 x1 y2^2 - 
+ 2 x4 y2^2 + 4 x1 y1 y3 - 2 x2 y1 y3 - 2 x4 y1 y3 - 2 x1 y2 y3 + 2 x4 y2 y3 - 2 x1 y1 y4 + 4 x3 y1 y4 - 2 x4 y1 y4 + 2 x2 y2 y4 - 4 x3 y2 y4 + 2 x4 y2 y4 - 2 x1 y3 y4 + 2 x2 y3 y4 + 2 x1 y4^2 - 2 x2 y4^2)
+
+c = 
+((f5 - f8) / (2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))) *
+(-x1 + x2 - x3 + x4)
++
+((f5 - f6) / (2 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4))) *
+(x1- x2 + x3 - x4)
+-
+((f5 - f6 + f7 - f8) /(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) *
+(-2 x1 x2 y1 + 2 x2^2 y1 + 4 x1 x3 y1 - 2 x2 x3 y1 - 2 x1 x4 y1 - 2 x3 x4 y1 + 2 x4^2 y1 + 2 x1^2 y2 - 2 x1 x2 y2 - 2 x1 x3 y2 + 2 x2 x4 y2 + 2 x3 x4 y2 - 2 x4^2 y2 - 4 x1^2 y3 + 
+ 4 x1 x2 y3 + 4 x1 x4 y3 - 4 x2 x4 y3 + 2 x1^2 y4 - 2 x2^2 y4 - 2 x1 x3 y4 + 
+ 2 x2 x3 y4 - 2 x1 x4 y4 + 2 x2 x4 y4)
+
+d = 
+((f5 - f8) / (2 ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4)))) *
+()
++
+((f5 - f6) / (2 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4))) *
+()
+-
+((f5 - f6 + f7 - f8) /(4 (x3 (y1 - y2) + x4 (-y1 + y2) - (x1 - x2) (y3 - y4)) ((x1 - x4) (y2 - y3) + x3 (y1 - y4) + x2 (-y1 + y4))) *
+()
+
+
+

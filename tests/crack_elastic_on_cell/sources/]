@@ -1,0 +1,1271 @@
+#include <stdlib.h>
+//#include <projects/deal/tests/elastic_problem_plane_deformation_on_cell/elastic_problem_plane_deformation_on_cell.h>
+#include <projects/deal/tests/elastic_problem_2d_on_cell_v2/elastic_problem_2d_on_cell.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/grid/grid_out.h>
+
+//void foo_1 (
+//        const dealii::Triangulation<dim> &triangulation)
+//{
+//    const uint8_t dim = 2;
+//
+//    ElasticProblemSup<dim>::TypeCoef coef;
+//
+//    for (size_t i = 0; i < dim; ++i)
+//        for (size_t j = 0; j < dim; ++j)
+//            for (size_t k = 0; k < dim; ++k)
+//                for (size_t l = 0; l < dim; ++l)
+//                    coef[i][j][k][l] .resize (2);
+//
+//    double yung;
+//    double puasson;
+//
+//    double lambda;
+//    double mu    ;
+//
+//    yung = 2.0;
+//    puasson = 0.25;
+//
+//    lambda = 1.0;//(puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+//    mu     = 1.0;//yung / (2 * (1 + puasson));
+//
+//    coef[0][0][0][0][0] = 1.0;//lambda + 2 * mu;
+//    coef[1][1][1][1][0] = 1.0;//lambda + 2 * mu;
+//
+//    coef[0][0][1][1][0] = lambda;
+//    coef[1][1][0][0][0] = lambda;
+//
+//    coef[0][1][0][1][0] = mu;
+//    coef[1][0][1][0][0] = mu;
+//    coef[0][1][1][0][0] = mu;
+//    coef[1][0][0][1][0] = mu;
+//
+//    yung = 2.0;
+//    puasson = 0.25;
+//
+//    lambda = 1.0;//(puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+//    mu     = 1.0;//yung / (2 * (1 + puasson));
+//
+//    coef[0][0][0][0][1] = 2.0;//(lambda + 2 * mu) * 2;
+//    coef[1][1][1][1][1] = 1.0;//lambda + 2 * mu;
+//
+//    coef[0][0][1][1][1] = lambda;
+//    coef[1][1][0][0][1] = lambda;
+//
+//    coef[0][1][0][1][1] = mu;
+//    coef[1][0][1][0][1] = mu;
+//    coef[0][1][1][0][1] = mu;
+//    coef[1][0][0][1][1] = mu;
+//    
+//    ElasticProblemPlaneDeformationOnCell<dim> problem (
+//            triangulation, coef);
+//
+//    REPORT problem .solved ();
+//    
+//    for (size_t i = 0; i < dim; ++i)
+//        for (size_t j = 0; j < dim; ++j)
+//            for (size_t k = 0; k < dim; ++k)
+//                for (size_t l = 0; l < dim; ++l)
+//                    printf("coef[%ld][%ld][%ld][%ld]=%f\n", i,j,k,l,
+//                            coef[i][j][k][l][0]);
+//
+//    printf("\n");
+//
+//    for (size_t i = 0; i < dim; ++i)
+//        for (size_t j = 0; j < dim; ++j)
+//            for (size_t k = 0; k < dim; ++k)
+//                for (size_t l = 0; l < dim; ++l)
+//                    printf("mean[%ld][%ld][%ld][%ld]=%f\n", i,j,k,l,
+//                            problem.mean_coefficient[i][j][k][l]);
+//
+//    printf("\n");
+//
+//    for (size_t i = 0; i < dim; ++i)
+//        for (size_t j = 0; j < dim; ++j)
+//            for (size_t k = 0; k < dim; ++k)
+//                for (size_t l = 0; l < dim; ++l)
+//                    printf("meta[%ld][%ld][%ld][%ld]=%f\n", i,j,k,l,
+//                            problem.meta_coefficient[i][j][k][l]);
+//
+//    problem .print_result ("output-");
+//
+//};
+
+//typename ElasticProblemSup<3>::TypeCoef foo (
+//        typename ElasticProblemSup<3>::TypeCoef a)
+//{
+//    typename ElasticProblemSup<3>::TypeCoef res;
+//
+//    double A = 
+//        1 - 
+//        (unphys[x][y] * unphys[y][x] + unphys[z][x] * unphys[x][z] + unphys[y][z] * unphys[z][y]) -
+//        (unphys[x][y] * unphys[y][z] * unphys[z][x] + unphys[x][z] * unphys[z][y] * unphys[y][x]);
+//
+//    for (uint8_t i = 0; i < 3; ++i)
+//    {
+//        int no_1 = (i + 1) % 3;
+//        int no_2 = (i + 2) % 3;
+//
+//        for (uint8_t j = 0; j < 3; ++j)
+//        {
+//            if (i == j)
+//                res.c[i][j] = (1 - unphys[no_1][no_2] * unphys[no_2][no_1]);
+//            else
+//            {
+//                int k = (j == no_1) ? no_2 : no_1;
+//                res.c[i][j] = (unphys[j][i] + unphys[j][k] * unphys[k][i]);
+//            };
+//
+//            res.c[i][j] *= (unphys[i][i] / A);
+//        };
+//    };
+//        
+//    return res;
+//};
+
+typename ElasticProblemSup<3>::TypeCoef unphysical_to_physicaly (
+        typename ElasticProblemSup<3>::TypeCoef unphys)
+{
+    typename ElasticProblemSup<3>::TypeCoef res;
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+                    res[i][j][k][l] .resize (1);
+
+    double A = 
+        unphys[x][x][x][x][0] * unphys[y][y][y][y][0] * unphys[z][z][z][z][0] - 
+        unphys[y][y][z][z][0] * unphys[z][z][y][y][0] * unphys[x][x][x][x][0] +
+        unphys[x][x][y][y][0] * unphys[y][y][z][z][0] * unphys[z][z][x][x][0] - 
+        unphys[y][y][x][x][0] * unphys[x][x][y][y][0] * unphys[z][z][z][z][0] - 
+        unphys[y][y][y][y][0] * unphys[x][x][z][z][0] * unphys[z][z][x][x][0] +
+        unphys[y][y][x][x][0] * unphys[x][x][z][z][0] * unphys[z][z][y][y][0]; 
+
+    for (uint8_t i = 0; i < 3; ++i)
+    {
+        int no_1 = (i + 1) % 3;
+        int no_2 = (i + 2) % 3;
+
+        for (uint8_t j = 0; j < 3; ++j)
+        {
+            int k = (j == no_1) ? no_2 : no_1;
+
+            if (i == j)
+                res[i][i][j][j][0] = A;
+            else
+                res[i][i][j][j][0] = 
+                    (unphys[i][i][j][j][0] * unphys[k][k][k][k][0] -
+                     unphys[i][i][k][k][0] * unphys[j][j][k][k][0]);
+
+            res[i][i][j][j][0] /= 
+                (unphys[no_1][no_1][no_1][no_1][0] * 
+                 unphys[no_2][no_2][no_2][no_2][0] - 
+                 unphys[no_1][no_1][no_2][no_2][0] * 
+                 unphys[no_2][no_2][no_1][no_1][0]);
+        };
+    };
+        
+    return res;
+
+};
+
+typename ElasticProblemSup<3>::TypeCoef anal (
+        const typename ElasticProblemSup<3>::TypeCoef E,
+        const double x1, const double x2, const double x3, const double x4)
+{
+    typename ElasticProblemSup<3>::TypeCoef meta;
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+                    meta[i][j][k][l] .resize (1);
+
+    const double l1 = (x2 - x1) + (x4 - x3);
+    const double l2 = (x3 - x2);
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+//                    if (i == j)
+                    {
+                        const double a = 
+                            ((E[i][j][x][x][0] / E[x][x][x][x][0]) * l1 +
+                             (E[i][j][x][x][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+                        const double b = 
+                            (E[x][x][x][x][0] * E[x][x][x][x][1] * (l1 + l2)) /
+                            (E[x][x][x][x][0] * l2 + E[x][x][x][x][1] * l1);
+                        const double c = 
+                            ((E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
+                             (E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+                        const double d =
+                            ((E[i][j][k][l][0] - E[i][j][x][x][0] * 
+                              E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
+                             (E[i][j][k][l][1] - E[i][j][x][x][1] * 
+                              E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+
+                        meta[i][j][k][l][0] = a * b * c + d;
+                    }
+//                    else
+//                    {
+////                        const double delta1 = 
+////                            E[x][y][x][y][0] * E[x][z][x][z][0] - 
+////                            E[x][y][x][z][0] * E[x][z][x][y][0];
+////                        const double delta2 = 
+////                            E[x][y][x][y][1] * E[x][z][x][z][1] - 
+////                            E[x][y][x][z][1] * E[x][z][x][y][1];
+////                        const double a = 
+////                            (E[x][y][x][y][0] / delta1) * l1 +
+////                            (E[x][y][x][y][1] / delta2) * l2;
+////                        const double b = 
+////                            (E[x][z][x][z][0] / delta1) * l1 +
+////                            (E[x][z][x][z][1] / delta2) * l2;
+////                        const double c = 
+////                            (E[x][y][x][z][0] / delta1) * l1 +
+////                            (E[x][z][x][y][1] / delta2) * l2;
+//                        const double a = 
+//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1) /
+//                            (E[x][y][x][y][0] * E[x][y][x][y][1]);
+//                        const double delta = a * a;
+//
+////                        meta[i][j][k][l][0] = 
+////                            (1 / E[x][y][x][y][0] * l1 +
+////                             1 / E[x][y][x][y][1] * l2) / delta;
+//
+//                        meta[i][j][i][l][0] = 
+//                            (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
+//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
+//                    };
+    for (size_t i = 1; i < 3; ++i)
+        {
+            meta[x][i][x][i][0] = 
+                (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
+                (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
+            meta[x][i][i][x][0] = meta[x][i][x][i][0];
+            meta[i][x][x][i][0] = meta[x][i][x][i][0];
+            meta[i][x][i][x][0] = meta[x][i][x][i][0];
+        };
+
+    return meta;
+};
+
+void set_coef (
+        typename ElasticProblemSup<3>::TypeCoef &coef,
+        const uint8_t id,
+        const double yung, const double puasson)
+{
+    const double lambda = 
+        (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+    const double mu     = 
+        yung / (2 * (1 + puasson));
+
+    coef[x][x][x][x][id] = lambda + 2 * mu;
+    coef[y][y][y][y][id] = lambda + 2 * mu;
+    coef[z][z][z][z][id] = lambda + 2 * mu;
+
+    coef[x][x][y][y][id] = lambda;
+    coef[y][y][x][x][id] = lambda;
+
+    coef[x][y][x][y][id] = mu;
+    coef[y][x][y][x][id] = mu;
+    coef[x][y][y][x][id] = mu;
+    coef[y][x][x][y][id] = mu;
+
+    coef[x][x][z][z][id] = lambda;
+    coef[z][z][x][x][id] = lambda;
+
+    coef[x][z][x][z][id] = mu;
+    coef[z][x][z][x][id] = mu;
+    coef[x][z][z][x][id] = mu;
+    coef[z][x][x][z][id] = mu;
+
+    coef[z][z][y][y][id] = lambda;
+    coef[y][y][z][z][id] = lambda;
+
+    coef[z][y][z][y][id] = mu;
+    coef[y][z][y][z][id] = mu;
+    coef[z][y][y][z][id] = mu;
+    coef[y][z][z][y][id] = mu;
+};
+
+template <uint8_t dim>
+void foo_2 (
+        const dealii::Triangulation<dim> &triangulation)
+{
+    const uint8_t x = 0;
+    const uint8_t y = 1;
+    const uint8_t z = 2;
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef coef;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                    coef[i][j][k][l] .resize (2);
+
+//    double yung;
+//    double puasson;
+//
+//    double lambda;
+//    double mu    ;
+//
+//    yung = 1.0;
+//    puasson = 0.25;
+//
+//    lambda = (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+//    mu     = yung / (2 * (1 + puasson));
+//
+//    coef[x][x][x][x][0] = lambda + 2 * mu;
+//    coef[y][y][y][y][0] = lambda + 2 * mu;
+//    coef[z][z][z][z][0] = lambda + 2 * mu;
+//
+//    coef[x][x][y][y][0] = lambda;
+//    coef[y][y][x][x][0] = lambda;
+//
+//    coef[x][y][x][y][0] = mu;
+//    coef[y][x][y][x][0] = mu;
+//    coef[x][y][y][x][0] = mu;
+//    coef[y][x][x][y][0] = mu;
+//
+//    coef[x][x][z][z][0] = lambda;
+//    coef[z][z][x][x][0] = lambda;
+//
+//    coef[x][z][x][z][0] = mu;
+//    coef[z][x][z][x][0] = mu;
+//    coef[x][z][z][x][0] = mu;
+//    coef[z][x][x][z][0] = mu;
+//
+//    coef[z][z][y][y][0] = lambda;
+//    coef[y][y][z][z][0] = lambda;
+//
+//    coef[z][y][z][y][0] = mu;
+//    coef[y][z][y][z][0] = mu;
+//    coef[z][y][y][z][0] = mu;
+//    coef[y][z][z][y][0] = mu;
+//
+//    yung = 2.0;
+//    puasson = 0.25;
+//
+//    lambda = (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+//    mu     = yung / (2 * (1 + puasson));
+//
+//    coef[x][x][x][x][1] = (lambda + 2 * mu);// * 2;
+//    coef[y][y][y][y][1] = lambda + 2 * mu;
+//    coef[z][z][z][z][1] = lambda + 2 * mu;
+//
+//    coef[x][x][y][y][1] = lambda;
+//    coef[y][y][x][x][1] = lambda;
+//
+//    coef[x][y][x][y][1] = mu;
+//    coef[y][x][y][x][1] = mu;
+//    coef[x][y][y][x][1] = mu;
+//    coef[y][x][x][y][1] = mu;
+//
+//    coef[x][x][z][z][1] = lambda;
+//    coef[z][z][x][x][1] = lambda;
+//
+//    coef[x][z][x][z][1] = mu;
+//    coef[z][x][z][x][1] = mu;
+//    coef[x][z][z][x][1] = mu;
+//    coef[z][x][x][z][1] = mu;
+//
+//    coef[z][z][y][y][1] = lambda;
+//    coef[y][y][z][z][1] = lambda;
+//
+//    coef[z][y][z][y][1] = mu;
+//    coef[y][z][y][z][1] = mu;
+//    coef[z][y][y][z][1] = mu;
+//    coef[y][z][z][y][1] = mu;
+
+    set_coef (coef, 0, 1.0, 0.25);
+    set_coef (coef, 1, 2.0, 0.25);
+    
+    ElasticProblem2DOnCellV2<dim> problem (triangulation, coef);
+
+    REPORT problem .solved ();
+
+    uint8_t width_2d_matrix = (dim + 1) * (dim + 1);
+
+    printf("one///////////////////////////////////////////////////////////////////////////\n\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (coef[im][in][jm][jn][0] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", coef[im][in][jm][jn][0]);
+            else
+                printf("%f   ", coef[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("two///////////////////////////////////////////////////////////////////////////\n\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (coef[im][in][jm][jn][1] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", coef[im][in][jm][jn][1]);
+            else
+                printf("%f   ", coef[im][in][jm][jn][1]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("mean///////////////////////////////////////////////////////////////////////////\n\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (problem.mean_coefficient[im][in][jm][jn] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", problem.mean_coefficient[im][in][jm][jn]);
+            else
+                printf("%f   ", problem.mean_coefficient[im][in][jm][jn]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("meta///////////////////////////////////////////////////////////////////////////\n\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (problem.meta_coefficient[im][in][jm][jn] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", problem.meta_coefficient[im][in][jm][jn]);
+            else
+                printf("%f   ", problem.meta_coefficient[im][in][jm][jn]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("anal meta//////////////////////////////////////////////////////////////////////\n\n");
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef anal_meta;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                    anal_meta[i][j][k][l] .resize (1);
+
+    anal_meta = anal (coef, 0.0, 1.0, 3.0, 4.0);
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (anal_meta[im][in][jm][jn][0] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", anal_meta[im][in][jm][jn][0]);
+            else
+                printf("%f   ", anal_meta[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("meta dif anal meta//////////////////////////////////////////////////////////////////////\n\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            const double a = std::abs(problem.meta_coefficient[im][in][jm][jn] -
+                anal_meta[im][in][jm][jn][0]);
+
+            if (a > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", a);
+            else
+                printf("%f   ", a);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("phys///////////////////////////////////////////////////////////////////////////\n\n");
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef newcoef;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                {
+                    newcoef[i][j][k][l] .resize (1);
+
+                    newcoef[i][j][k][l][0] = problem.meta_coefficient[i][j][k][l];
+                };
+
+    newcoef = unphysical_to_physicaly(newcoef);
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (newcoef[im][in][jm][jn][0] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", newcoef[im][in][jm][jn][0]);
+            else
+                printf("%f   ", newcoef[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    double A = 
+        1 - 
+        (problem.meta_coefficient[x][x][y][y] * problem.meta_coefficient[y][y][x][x] + 
+         problem.meta_coefficient[z][z][x][x] * problem.meta_coefficient[x][x][z][z] + 
+         problem.meta_coefficient[y][y][z][z] * problem.meta_coefficient[z][z][y][y]) -
+        (problem.meta_coefficient[x][x][y][y] * problem.meta_coefficient[y][y][z][z] * 
+         problem.meta_coefficient[z][z][x][x] + problem.meta_coefficient[x][x][z][z] * 
+         problem.meta_coefficient[z][z][y][y] * problem.meta_coefficient[y][y][x][x]);
+
+    double B = problem.meta_coefficient[x][x][x][x] / 
+        ((1 - problem.meta_coefficient[y][y][z][z] *
+              problem.meta_coefficient[z][z][y][y]) /
+         (A));
+
+    printf("%f %f \n", B, A);
+
+//    problem .print_result ("output-");
+//
+///////////////////   // /
+
+};
+
+template <uint8_t dim>
+void foo_3 (
+        const dealii::Triangulation<dim> &triangulation)
+{
+    const uint8_t x = 0;
+    const uint8_t y = 1;
+    const uint8_t z = 2;
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef coef;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                    coef[i][j][k][l] .resize (2);
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef anal_meta;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                    anal_meta[i][j][k][l] .resize (1);
+
+    double y1 = 0.0;
+    double y2 = 0.0;
+    double p1 = 0.1;
+    double p2 = 0.1;
+
+    std::vector<double> errors;
+
+    for (size_t i = 1; i < 10; ++i)
+    {
+        y1 = i;
+        for (size_t j = 2; j < 10; ++j)
+        {
+            y2 = j;
+            p1 = 0.1;
+            for (size_t k = 1; k < 10; ++k)
+            {
+                p1 += 0.025;
+                p2 = 0.1;
+                for (size_t l = 1; l < 10; ++l)
+                {
+                    p2 += 0.025;
+
+                    set_coef (coef, 0, y1, p1);
+                    set_coef (coef, 1, y2, p2);
+
+                    ElasticProblem2DOnCellV2<dim> problem (triangulation, coef);
+
+                    REPORT problem .solved ();
+
+                    anal_meta = anal (coef, 0.0, 1.0, 3.0, 4.0);
+
+                    double max_err = 0.0;
+
+                    for (size_t m = 0; m < dim+1; ++m)
+                        for (size_t n = 0; n < dim+1; ++n)
+                            for (size_t o = 0; o < dim+1; ++o)
+                                for (size_t p = 0; p < dim+1; ++p)
+                                {
+                                    double err = 
+                                        std::abs(
+                                                problem.meta_coefficient[m][n][o][p] -
+                                                anal_meta[m][n][o][p][0]);
+                                    if (err > max_err)
+                                        max_err = err;
+                                };
+//                    printf("y1=%f, y2=%f, p1=%f, p2=%f, err=%f\n", 
+//                            y1, y2, p1, p2, max_err);
+                    errors .push_back (max_err);
+//    printf("meta///////////////////////////////////////////////////////////////////////////\n\n");
+//
+//    uint8_t width_2d_matrix = (dim + 1) * :(dim + 1);
+//    for (size_t m = 0; m < width_2d_matrix; ++m)
+//    {
+//        uint8_t im = m / (dim + 1);
+//        uint8_t in = m % (dim + 1);
+//
+//        for (size_t n = 0; n < width_2d_matrix; ++n)
+//        {
+//            uint8_t jm = n / (dim + 1);
+//            uint8_t jn = n % (dim + 1);
+//
+//            if (problem.meta_coefficient[im][in][jm][jn] > 0.0000001)
+//                printf("\x1B[31m%f\x1B[0m   ", problem.meta_coefficient[im][in][jm][jn]);
+//            else
+//                printf("%f   ", problem.meta_coefficient[im][in][jm][jn]);
+//        };
+//        for (size_t i = 0; i < 2; ++i)
+//            printf("\n");
+//    };
+                };
+            };
+        };
+    };
+
+    for (size_t i = 0; i < errors.size(); ++i)
+        if (errors[i] > 0.000001)
+            printf("%f\n", errors[i]);
+};
+
+template <uint8_t dim>
+void set_band (dealii::Triangulation<dim> &triangulation, 
+        const double lower, const double top, size_t n_refine)
+{
+    const double x0 = 0.0;
+    const double x1 = lower;
+    const double x3 = top;
+    const double x4 = 128.0;
+
+    std::vector<dealii::Point< 2 > > v (8);
+
+    v[0][0] = x0; v[0][1] = x0;
+    v[1][0] = x1; v[1][1] = x0;
+    v[2][0] = x3; v[2][1] = x0;
+    v[3][0] = x4; v[3][1] = x0;
+    v[4][0] = x0; v[4][1] = x4;
+    v[5][0] = x1; v[5][1] = x4;
+    v[6][0] = x3; v[6][1] = x4;
+    v[7][0] = x4; v[7][1] = x4;
+
+    std::vector< dealii::CellData< 2 > > c (3, dealii::CellData<2>());
+
+    c[0].vertices[0] = 0;
+    c[0].vertices[1] = 1;
+    c[0].vertices[2] = 4;
+    c[0].vertices[3] = 5;
+    c[0].material_id = 0;
+
+    c[1].vertices[0] = 1;
+    c[1].vertices[1] = 2;
+    c[1].vertices[2] = 5;
+    c[1].vertices[3] = 6;
+    c[1].material_id = 1;
+
+    c[2].vertices[0] = 2;
+    c[2].vertices[1] = 3;
+    c[2].vertices[2] = 6;
+    c[2].vertices[3] = 7;
+    c[2].material_id = 0;
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+
+    triangulation .refine_global (n_refine);
+};
+
+template <uint8_t dim>
+void set_quadrate (dealii::Triangulation<dim> &triangulation, 
+        const double lower, const double top, size_t n_refine)
+{
+    const double x0 = 0.0;
+    const double x1 = lower;
+    const double x2 = top;
+    const double x3 = 128.0;
+
+//    std::vector< dealii::Point< 2 > > v (8);
+//
+//    v[0][0] = x0; v[0][1] = x0;
+//    v[1][0] = x4; v[1][1] = x0;
+//    v[2][0] = x1; v[2][1] = x1;
+//    v[3][0] = x3; v[3][1] = x1;
+//    v[4][0] = x0; v[4][1] = x4;
+//    v[5][0] = x1; v[5][1] = x3;
+//    v[6][0] = x3; v[6][1] = x3;
+//    v[7][0] = x4; v[7][1] = x4;
+//
+//    std::vector< dealii::CellData< 2 > > c (5, dealii::CellData<2>());
+//
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 2;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+//
+//    c[1].vertices[0] = 0;
+//    c[1].vertices[1] = 2;
+//    c[1].vertices[2] = 4;
+//    c[1].vertices[3] = 5;
+//    c[1].material_id = 0;
+//    
+//    c[2].vertices[0] = 2;
+//    c[2].vertices[1] = 3;
+//    c[2].vertices[2] = 5;
+//    c[2].vertices[3] = 6;
+//    c[2].material_id = 1;
+//
+//    c[3].vertices[0] = 4;
+//    c[3].vertices[1] = 5;
+//    c[3].vertices[2] = 7;
+//    c[3].vertices[3] = 6;
+//    c[3].material_id = 0;
+//    
+//    c[4].vertices[0] = 1;
+//    c[4].vertices[1] = 7;
+//    c[4].vertices[2] = 3;
+//    c[4].vertices[3] = 6;
+//    c[4].material_id = 0;
+
+    std::vector< dealii::Point< 2 > > v (16);
+
+    v[0]  = dealii::Point<dim>(x0, x0);
+    v[1]  = dealii::Point<dim>(x1, x0);
+    v[2]  = dealii::Point<dim>(x2, x0);
+    v[3]  = dealii::Point<dim>(x3, x0);
+    v[4]  = dealii::Point<dim>(x0, x1);
+    v[5]  = dealii::Point<dim>(x1, x1);
+    v[6]  = dealii::Point<dim>(x2, x1);
+    v[7]  = dealii::Point<dim>(x3, x1);
+    v[8]  = dealii::Point<dim>(x0, x2);
+    v[9]  = dealii::Point<dim>(x1, x2);
+    v[10] = dealii::Point<dim>(x2, x2);
+    v[11] = dealii::Point<dim>(x3, x2);
+    v[12] = dealii::Point<dim>(x0, x3);
+    v[13] = dealii::Point<dim>(x1, x3);
+    v[14] = dealii::Point<dim>(x2, x3);
+    v[15] = dealii::Point<dim>(x3, x3);
+
+    std::vector< dealii::CellData< 2 > > c (9, dealii::CellData<2>());
+
+    c[6].vertices[0] = 8;  c[7].vertices[0] = 9;  c[8].vertices[0] = 10;
+    c[6].vertices[1] = 9;  c[7].vertices[1] = 10; c[8].vertices[1] = 11;
+    c[6].vertices[2] = 12; c[7].vertices[2] = 13; c[8].vertices[2] = 14;
+    c[6].vertices[3] = 13; c[7].vertices[3] = 14; c[8].vertices[3] = 15;
+    c[6].material_id = 0;  c[7].material_id = 0;  c[8].material_id = 0;
+
+    c[3].vertices[0] = 4;  c[4].vertices[0] = 5;  c[5].vertices[0] = 6;
+    c[3].vertices[1] = 5;  c[4].vertices[1] = 6;  c[5].vertices[1] = 7;
+    c[3].vertices[2] = 8;  c[4].vertices[2] = 9;  c[5].vertices[2] = 10;
+    c[3].vertices[3] = 9;  c[4].vertices[3] = 10; c[5].vertices[3] = 11;
+    c[3].material_id = 0;  c[4].material_id = 1;  c[5].material_id = 0;
+
+    c[0].vertices[0] = 0;  c[1].vertices[0] = 1;  c[2].vertices[0] = 2;
+    c[0].vertices[1] = 1;  c[1].vertices[1] = 2;  c[2].vertices[1] = 3;
+    c[0].vertices[2] = 4;  c[1].vertices[2] = 5;  c[2].vertices[2] = 6;
+    c[0].vertices[3] = 5;  c[1].vertices[3] = 6;  c[2].vertices[3] = 7;
+    c[0].material_id = 0;  c[1].material_id = 0;  c[2].material_id = 0;
+
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+
+    triangulation .refine_global (n_refine);
+};
+
+template <uint8_t dim>
+void set_cross (dealii::Triangulation<dim> &triangulation, 
+        const double length, const double width, size_t n_refine)
+{
+    const double x0 = not_cast<double>(0.0);
+    const double x1 = not_cast<double>(64.0 - length / 2.0);
+    const double x2 = not_cast<double>(64.0 - width  / 2.0);
+    const double x3 = not_cast<double>(64.0 + width  / 2.0);
+    const double x4 = not_cast<double>(64.0 + length / 2.0);
+    const double x5 = not_cast<double>(128.0);
+
+    std::vector< dealii::Point< 2 > > v (36);
+
+    v[0]  = dealii::Point<dim>(x0, x0);
+    v[1]  = dealii::Point<dim>(x1, x0);
+    v[2]  = dealii::Point<dim>(x2, x0);
+    v[3]  = dealii::Point<dim>(x3, x0);
+    v[4]  = dealii::Point<dim>(x4, x0);
+    v[5]  = dealii::Point<dim>(x5, x0);
+
+    v[6]  = dealii::Point<dim>(x0, x1);
+    v[7]  = dealii::Point<dim>(x1, x1);
+    v[8]  = dealii::Point<dim>(x2, x1);
+    v[9]  = dealii::Point<dim>(x3, x1);
+    v[10] = dealii::Point<dim>(x4, x1);
+    v[11] = dealii::Point<dim>(x5, x1);
+
+    v[12] = dealii::Point<dim>(x0, x2);
+    v[13] = dealii::Point<dim>(x1, x2);
+    v[14] = dealii::Point<dim>(x2, x2);
+    v[15] = dealii::Point<dim>(x3, x2);
+    v[16] = dealii::Point<dim>(x4, x2);
+    v[17] = dealii::Point<dim>(x5, x2);
+
+    v[18] = dealii::Point<dim>(x0, x3);
+    v[19] = dealii::Point<dim>(x1, x3);
+    v[20] = dealii::Point<dim>(x2, x3);
+    v[21] = dealii::Point<dim>(x3, x3);
+    v[22] = dealii::Point<dim>(x4, x3);
+    v[23] = dealii::Point<dim>(x5, x3);
+
+    v[24] = dealii::Point<dim>(x0, x4);
+    v[25] = dealii::Point<dim>(x1, x4);
+    v[26] = dealii::Point<dim>(x2, x4);
+    v[27] = dealii::Point<dim>(x3, x4);
+    v[28] = dealii::Point<dim>(x4, x4);
+    v[29] = dealii::Point<dim>(x5, x4);
+    
+    v[30] = dealii::Point<dim>(x0, x5);
+    v[31] = dealii::Point<dim>(x1, x5);
+    v[32] = dealii::Point<dim>(x2, x5);
+    v[33] = dealii::Point<dim>(x3, x5);
+    v[34] = dealii::Point<dim>(x4, x5);
+    v[35] = dealii::Point<dim>(x5, x5);
+
+    std::vector< dealii::CellData< 2 > > c (25, dealii::CellData<2>());
+
+c[20].vertices[0]=24; c[21].vertices[0]=25; c[22].vertices[0]=26; c[23].vertices[0]=27; c[24].vertices[0]=28;
+c[20].vertices[1]=25; c[21].vertices[1]=26; c[22].vertices[1]=27; c[23].vertices[1]=28; c[24].vertices[1]=29;
+c[20].vertices[2]=30; c[21].vertices[2]=31; c[22].vertices[2]=32; c[23].vertices[2]=33; c[24].vertices[2]=34;
+c[20].vertices[3]=31; c[21].vertices[3]=32; c[22].vertices[3]=33; c[23].vertices[3]=34; c[24].vertices[3]=35;
+c[20].material_id=0;  c[21].material_id=0;  c[22].material_id=0;  c[23].material_id=0;  c[24].material_id=0;
+
+c[15].vertices[0]=18; c[16].vertices[0]=19; c[17].vertices[0]=20; c[18].vertices[0]=21; c[19].vertices[0]=22;
+c[15].vertices[1]=19; c[16].vertices[1]=20; c[17].vertices[1]=21; c[18].vertices[1]=22; c[19].vertices[1]=23;
+c[15].vertices[2]=24; c[16].vertices[2]=25; c[17].vertices[2]=26; c[18].vertices[2]=27; c[19].vertices[2]=28;
+c[15].vertices[3]=25; c[16].vertices[3]=26; c[17].vertices[3]=27; c[18].vertices[3]=28; c[19].vertices[3]=29;
+c[15].material_id=0;  c[16].material_id=0;  c[17].material_id=1;  c[18].material_id=0;  c[19].material_id=0;
+
+c[10].vertices[0]=12; c[11].vertices[0]=13; c[12].vertices[0]=14; c[13].vertices[0]=15; c[14].vertices[0]=16;
+c[10].vertices[1]=13; c[11].vertices[1]=14; c[12].vertices[1]=15; c[13].vertices[1]=16; c[14].vertices[1]=17;
+c[10].vertices[2]=18; c[11].vertices[2]=19; c[12].vertices[2]=20; c[13].vertices[2]=21; c[14].vertices[2]=22;
+c[10].vertices[3]=19; c[11].vertices[3]=20; c[12].vertices[3]=21; c[13].vertices[3]=22; c[14].vertices[3]=23;
+c[10].material_id=0;  c[11].material_id=1;  c[12].material_id=1;  c[13].material_id=1;  c[14].material_id=0;
+
+c[5].vertices[0]=6;   c[6].vertices[0]=7;   c[7].vertices[0]=8;   c[8].vertices[0]=9;   c[9].vertices[0]=10;
+c[5].vertices[1]=7;   c[6].vertices[1]=8;   c[7].vertices[1]=9;   c[8].vertices[1]=10;  c[9].vertices[1]=11;
+c[5].vertices[2]=12;  c[6].vertices[2]=13;  c[7].vertices[2]=14;  c[8].vertices[2]=15;  c[9].vertices[2]=16;
+c[5].vertices[3]=13;  c[6].vertices[3]=14;  c[7].vertices[3]=15;  c[8].vertices[3]=16;  c[9].vertices[3]=17;
+c[5].material_id=0;   c[6].material_id=0;   c[7].material_id=1;   c[8].material_id=0;   c[9].material_id=0;
+
+c[0].vertices[0]=0;   c[1].vertices[0]=1;   c[2].vertices[0]=2;   c[3].vertices[0]=3;   c[4].vertices[0]=4;
+c[0].vertices[1]=1;   c[1].vertices[1]=2;   c[2].vertices[1]=3;   c[3].vertices[1]=4;   c[4].vertices[1]=5;
+c[0].vertices[2]=6;   c[1].vertices[2]=7;   c[2].vertices[2]=8;   c[3].vertices[2]=9;   c[4].vertices[2]=10;
+c[0].vertices[3]=7;   c[1].vertices[3]=8;   c[2].vertices[3]=9;   c[3].vertices[3]=10;  c[4].vertices[3]=11;
+c[0].material_id=0;   c[1].material_id=0;   c[2].material_id=0;   c[3].material_id=0;   c[4].material_id=0;
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+
+    if (n_refine > 0)
+        triangulation .refine_global (n_refine);
+
+    std::ofstream out ("grid-cross.eps");
+    dealii::GridOut grid_out;
+    grid_out.write_eps (triangulation, out);
+};
+
+template <uint8_t dim>
+std::array<double, 2> solved (dealii::Triangulation<dim> &triangulation,
+        const double yung_1, const double puasson_1,
+        const double yung_2, const double puasson_2)
+{
+    const uint8_t x = 0;
+    const uint8_t y = 1;
+    const uint8_t z = 2;
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef coef;
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                    coef[i][j][k][l] .resize (2);
+
+
+    ::set_coef (coef, 0, yung_1, puasson_1);
+    ::set_coef (coef, 1, yung_2, puasson_2);
+    
+    ElasticProblem2DOnCellV2<dim> problem (triangulation, coef);
+
+    REPORT problem .solved ();
+
+    problem .print_result (std::string("res_"));
+
+    
+
+    uint8_t width_2d_matrix = (dim + 1) * (dim + 1);
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (coef[im][in][jm][jn][1] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", 
+                        coef[im][in][jm][jn][0]);
+            else
+                printf("%f   ", 
+                        coef[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+            printf("\n");
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (coef[im][in][jm][jn][0] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", 
+                        coef[im][in][jm][jn][1]);
+            else
+                printf("%f   ", 
+                        coef[im][in][jm][jn][1]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+            printf("\n");
+//
+//    for (size_t i = 0; i < width_2d_matrix; ++i)
+//    {
+//        uint8_t im = i / (dim + 1);
+//        uint8_t in = i % (dim + 1);
+//
+//        for (size_t j = 0; j < width_2d_matrix; ++j)
+//        {
+//            uint8_t jm = j / (dim + 1);
+//            uint8_t jn = j % (dim + 1);
+//
+//            if (problem.mean_coefficient[im][in][jm][jn] > 0.0000001)
+//                printf("\x1B[31m%f\x1B[0m   ", 
+//                        problem.mean_coefficient[im][in][jm][jn]);
+//            else
+//                printf("%f   ", 
+//                        problem.mean_coefficient[im][in][jm][jn]);
+//        };
+//        for (size_t i = 0; i < 2; ++i)
+//            printf("\n");
+//    };
+//
+//            printf("\n");
+//
+    typename ElasticProblemSup<dim + 1>::TypeCoef newcoef;
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                {
+                    newcoef[i][j][k][l] .resize (1);
+
+                    newcoef[i][j][k][l][0] = problem.meta_coefficient[i][j][k][l];
+                };
+
+//    newcoef = ::unphysical_to_physicaly(newcoef);
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (newcoef[im][in][jm][jn][0] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", newcoef[im][in][jm][jn][0]);
+            else
+                printf("%f   ", newcoef[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    enum {x,y,z};
+    double delta1 = 
+        coef[x][y][x][y][0] * coef[x][z][x][z][0] - 
+        coef[x][y][x][z][0] * coef[x][y][x][z][0];
+    double delta2 = 
+        coef[x][y][x][y][1] * coef[x][z][x][z][1] - 
+        coef[x][y][x][z][1] * coef[x][y][x][z][1];
+
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                {
+                    coef[i][j][k][l][0] /= delta1;
+                    coef[i][j][k][l][1] /= delta2;
+                    coef[i][j][k][l][0] = 
+                        (coef[i][j][k][l][0] * 2 + coef[i][j][k][l][1] * 1) / 3; 
+                };
+
+    double delta3 = 
+        coef[x][y][x][y][0] * coef[x][z][x][z][0] - 
+        coef[x][y][x][z][0] * coef[x][y][x][z][0];
+
+    for (size_t i = 0; i < width_2d_matrix; ++i)
+    {
+        uint8_t im = i / (dim + 1);
+        uint8_t in = i % (dim + 1);
+
+        for (size_t j = 0; j < width_2d_matrix; ++j)
+        {
+            uint8_t jm = j / (dim + 1);
+            uint8_t jn = j % (dim + 1);
+
+            if (coef[im][in][jm][jn][1] > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", 
+                        coef[im][in][jm][jn][0]);
+            else
+                printf("%f   ", 
+                        coef[im][in][jm][jn][0]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+            printf("\n");
+
+    printf("%f\n", coef[x][y][x][z] / relta3);
+//
+    std::array<double, 2> meta;
+//    meta[0] = newcoef[0][0][0][0][0];
+//    meta[1] = newcoef[0][0][1][1][0];
+
+    return meta;
+
+};
+
+int main(int argc, char *argv[])
+{
+//    int x = 0;
+//    for (auto i : {0, 1, 2})
+//        printf("%d\n", i);
+//    for (auto i : {"раз", "два"})
+//        printf("%s\n", i);
+//    enum {x, y, z};
+//    for (auto i : {x, y, z, x})
+//        printf("%d\n", i);
+//    return 0;
+    std::vector<std::array<double, 2>> meta;
+
+//    {
+//        dealii::Triangulation<2> tria;
+//
+//        ::set_quadrate <2> (tria, 24.0, 104.0, 2);
+//
+////        auto res = ::solved<2>(tria, 100.0, 0.25, 1.0, 0.25);
+//        meta .push_back (::solved<2>(tria, 100.0, 0.25, 1.0, 0.25));
+////        printf("%f %f\n", res[0], res[1]);
+//    };
+
+    {
+        FILE *F;
+        F = fopen ("mata-quadrate.gpd", "w");
+
+        {
+            size_t i = 32;
+            while (i < 34)
+            {
+                dealii::Triangulation<2> tria;
+
+                ::set_band <2> (tria, 64.0 - 64.0/3.0, 64.0 + 63.0/3.0, 1);
+
+                auto res = ::solved<2>(tria, 2.0, 0.25, 1.0, 0.25);
+
+                meta .push_back (res);
+
+//                fprintf (F, "%f %f %f\n", 4.0*i*i, res[0], res[1]);
+
+                i += 2;
+            };
+        };
+
+        fclose(F);
+    };
+
+//    {
+////        FILE *F;
+////        F = fopen ("mata.gpd", "w");
+//
+//        {
+//            size_t i = 52;
+//            while (i < 54)
+//            {
+//                dealii::Triangulation<2> tria;
+//
+//                ::set_cross <2> (tria, 25.6, 76.8, 1);
+//
+//                auto res = ::solved<2>(tria, 100.0, 0.25, 1.0, 0.25);
+//
+//                meta .push_back (res);
+//
+////                fprintf (F, "%f %f %f\n", 4.0*i*i, res[0], res[1]);
+//                printf ("%f %f %f\n", 4.0*i*i, res[0], res[1]);
+//
+//                i += 2;
+//            };
+//        };
+//
+////        fclose(F);
+//    };
+
+//    for(auto i : meta)
+//        printf("%f %f\n", i[0], i[1]);
+
+//        ::set_quadrate <2> (tria, 128.0 / 3.0, 2 * 128.0 / 3.0, 2);
+
+//    {
+//        size_t i = 2;
+//        while (i < 62)
+//        {
+//            metas .push_back (::solved<2>(tria, 2.0, 0.25, 1.0, 0.25));
+//            i += 2;
+//        };
+//    };
+//    for (auto i : metas)
+//        printf("%f %f\n", i[0], i[1]);
+
+//    std::array<Femenist::Function<double, dim>, 3 > coef;
+
+//    dealii::GridGenerator ::hyper_cube (tria, 0, 3);
+//    std::vector< dealii::Point< 2 > > v (4);
+//    v[0][0] = 0.0; v[0][1] = 0.0;
+//    v[1][0] = 4.0; v[1][1] = 0.0;
+//    v[2][0] = 0.0; v[2][1] = 4.0;
+//    v[3][0] = 4.0; v[3][1] = 4.0;
+//
+//    std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 2;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+
+//    dealii::Triangulation<2> tria;
+//
+//    std::vector<dealii::Point< 2 > > v (8);
+//
+//    v[0][0] = 0.0; v[0][1] = 0.0;
+//    v[1][0] = 1.0; v[1][1] = 0.0;
+//    v[2][0] = 3.0; v[2][1] = 0.0;
+//    v[3][0] = 4.0; v[3][1] = 0.0;
+//    v[4][0] = 0.0; v[4][1] = 4.0;
+//    v[5][0] = 1.0; v[5][1] = 4.0;
+//    v[6][0] = 3.0; v[6][1] = 4.0;
+//    v[7][0] = 4.0; v[7][1] = 4.0;
+//
+//    std::vector< dealii::CellData< 2 > > c (3, dealii::CellData<2>());
+//
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 4;
+//    c[0].vertices[3] = 5;
+//    c[0].material_id = 0;
+//
+//    c[1].vertices[0] = 1;
+//    c[1].vertices[1] = 2;
+//    c[1].vertices[2] = 5;
+//    c[1].vertices[3] = 6;
+//    c[1].material_id = 1;
+//
+//    c[2].vertices[0] = 2;
+//    c[2].vertices[1] = 3;
+//    c[2].vertices[2] = 6;
+//    c[2].vertices[3] = 7;
+//    c[2].material_id = 0;
+//
+//    tria .create_triangulation (v, c, dealii::SubCellData());
+//
+//    tria .refine_global (1);
+//
+////    foo_2<2> (tria);
+//    foo_3<2> (tria);
+
+    return 0;
+}
+////////////////////////////////////////////////////////////

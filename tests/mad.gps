@@ -1,0 +1,133 @@
+reset 
+
+#set terminal png enhanced font "Arial,12" dashed dl 5 size 800, 600
+
+#set output "Безумие.png"
+
+x1 = 0.0
+y1 = -1.0
+f1 = 1.0
+
+x2 = 1.0
+y2 = 0.0
+f2 = 0.0
+
+x3 = 0.0
+y3 = 1.0
+f3 = 1.0
+
+x4 = -1.0
+y4 = 0.0
+f4 = 0.0
+
+ax = x1
+bx = x2 - x1
+cx = x4 - x1
+dx = x3 - x2 - x4 + x1
+
+ay = y1
+by = y2 - y1
+cy = y4 - y1
+dy = y3 - y2 - y4 + y1
+
+As = by * dx - bx * dy
+Ar = cy * dx - cx * dy
+
+Bs(x,y) = ax * dy - ay * dx - by * cx + bx * cy - dy * x + dx * y    
+Br(x,y) = ax * dy - ay * dx + by * cx - bx * cy - dy * x + dx * y
+
+Cs(x,y) = ay * cx - ax * cy + cy * x - cx * y
+Cr(x,y) = ay * bx - ax * by + by * x - bx * y
+
+PAs(x,y) =  ay * cx - ax * cy + cy * x - cx * y
+PAr(x,y) = -ay * bx + ax * by - by * x + bx * y
+
+PB = by * cx - bx * cy
+
+s(x,y) = (abs(As) > 1e-10) ? ((Bs(x,y) - sqrt(Bs(x,y)**2 - 4.0 * As * Cs(x,y))) / (2.0 * As)) : \
+                             (+ Cs(x,y) / Bs(x,y))
+                             #(- PAs(x,y) / PB)
+r(x,y) = (abs(Ar) > 1e-10) ? ((Br(x,y) + sqrt(Br(x,y)**2 - 4.0 * Ar * Cr(x,y))) / (2.0 * Ar)) : \
+                             (+ Cr(x,y) / Br(x,y))
+                             #(- PAr(x,y) / PB)
+
+root_s(x,y) = sqrt(Bs(x,y)**2 - 4.0 * As * Cs(x,y))
+root_r(x,y) = sqrt(Br(x,y)**2 - 4.0 * Ar * Cr(x,y))
+
+s_dx(x,y) =  (abs(As) > 1e-10) ? (-dy + ((dy * Bs(x,y) + 2.0 * cy * As)/(root_s(x,y)))) / (2.0 * As):\
+             (cy / Bs(x,y))
+r_dx(x,y) =  (abs(As) > 1e-10) ? (-dy - ((dy * Br(x,y) + 2.0 * by * Ar)/(root_r(x,y)))) / (2.0 * Ar):\
+             (by / Br(x,y))
+
+s_dy(x,y) =  (abs(As) > 1e-10) ? (dx - ((dx * Bs(x,y) + 2.0 * cx * As)/(root_s(x,y)))) / (2.0 * As):\
+             (cx / Bs(x,y))
+r_dy(x,y) =  (abs(As) > 1e-10) ? (dx + ((dx * Br(x,y) + 2.0 * bx * Ar)/(root_r(x,y)))) / (2.0 * Ar):\
+             (bx / Br(x,y))
+
+ condition = 1 == 1 #((abs(dx) > 1e-10) && (abs(dy) > 1e-10))
+
+f_(s,r) = (1==1) ? (f1 + (f2 - f1) * s + (f4 - f1) * r + (f3 - f2 - f4 + f1) * s * r) : \
+                              (f1 + (f2 - f1) * s + (f4 - f1) * r)
+
+ r1(x,y) = condition ? \
+          (by * cx - bx * cy - ay * dx + ax * dy - dy * x + dx * y \
+           + sqrt(\
+                  -4.0 * (cy * dx - cx * dy) * (ay * bx - ax * by + by * x - bx * y) \
+                  + (-by * cx + bx * cy + ay * dx - ax * dy + dy * x - dx * y)**2 \
+                 ) \
+          )/(2.0 * (cy * dx - cx * dy)) : \
+          -((-x1 * y + x2 * y + x * y1 - x2 * y1 - x * y2 + x1 * y2) /(x2 * y1 - x4 * y1 - x1 * y2 + x4 * y2 + x1 * y4 - x2 * y4))
+ 
+ s1(x, y) =  condition ? (-ax - cx * r(x,y) + x) / (bx + dx * r(x,y)) : \
+                       -((x1 * y - x4 * y - x * y1 + x4 * y1 + x * y4 - x1 * y4) \
+                         /(x2 * y1 - x4 * y1 - x1 * y2 + x4 * y2 + x1 * y4 - x2 * y4))
+ 
+ 
+ # s1(x,y) = condition ? \
+ #          (by * bx - cx * cy - ay * dx + ax * dy - dy * x + dx * y \
+ #           + sqrt(\
+ #                  -4.0 * (cy * dx - bx * dy) * (ay * cx - ax * by + by * x - cx * y) \
+ #                  + (-by * bx + cx * cy + ay * dx - ax * dy + dy * x - dx * y)**2 \
+ #                 ) \
+ #          )/(2.0 * (cy * dx - bx * dy)) : \
+ #          -((-x1 * y + x2 * y + x * y1 - x2 * y1 - x * y2 + x1 * y2) /(x2 * y1 - x4 * y1 - x1 * y2 + x4 * y2 + x1 * y4 - x2 * y4))
+
+f(x,y) = f_(s(x,y),r(x,y))
+
+f_dx(x,y) = (f2 - f1) * s_dx(x,y) + (f4 - f1) * r_dx(x,y) + (f3 - f2 - f4 + f1) * (s_dx(x,y) * r(x,y) + s(x,y) * r_dx(x,y))
+f_dy(x,y) = (f2 - f1) * s_dy(x,y) + (f4 - f1) * r_dy(x,y) + (f3 - f2 - f4 + f1) * (s_dy(x,y) * r(x,y) + s(x,y) * r_dy(x,y))
+
+Dx = 0.00001
+f_dx_dig(x,y) = (f(x+Dx/2.0,y) - f(x-Dx/2.0,y)) / Dx
+f_dy_dig(x,y) = (f(x,y+Dx/2.0) - f(x,y-Dx/2.0)) / Dx
+
+#print ax,bx,cx,dx,ay,by,cy,dy
+
+#print -4.0 * (cy * dx - cx * dy) * (ay * bx - ax * by + by * 0.0 - bx * 0.0) \
+#        + (-by * cx + bx * cy + ay * dx - ax * dy + dy * 0.0 - dx * 0.0)**2
+
+#print cy * dx - cx * dy
+
+#print r1(x1,y1), s1(x1,y1), f(x1,y1), r(x1,y1), s(x1,y1)
+
+#print f(x1,y1), f(x3,y3), As, Ar, dx, dy
+#print f(x1,y1), f(x2,y2), f(x3,y3), f(x4,y4), Cs(x2,y2), Cr(x2,y2), s(x2,y2), r(x2,y2)
+
+set xlabel "X"
+set xrange [-1.0:2.0]
+set yrange [-1.0:1.0]
+
+#splot r(x,y), r1(x,y)
+
+ splot f(x,y), f_dx(x,y), f_dx_dig(x,y)+0.0\
+ , '-' w lp
+ 0.0 -1.0 1.0 
+ 1.0 0.0 0.0
+ 0.0 1.0 1.0
+ -1.0 0.0 0.0
+ 0.0 -1.0 1.0 
+ e
+ 
+ pause mouse keypress
+
+

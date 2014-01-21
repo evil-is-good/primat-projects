@@ -1,0 +1,889 @@
+#include "../../elastic_test_on_cell/sources/cgal/cgal.h"
+
+#include <stdlib.h>
+#include <projects/deal/tests/heat_conduction_problem_on_cell/heat_conduction_problem_on_cell.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+#include <deal.II/grid/grid_out.h>
+#include <deal.II/grid/grid_reordering.h>
+#include <ctime>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Triangulation_vertex_base_2<K> Vb;
+typedef CGAL::Delaunay_mesh_face_base_2<K> Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb, Fb> Tds;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds> CDT;
+typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+
+typedef CDT::Vertex_handle Vertex_handle;
+typedef CDT::Point Point;
+
+//#define FOR_I(begin, end) for(size_t i = begin; i < end; ++i)
+//#define FOR_J(begin, end) for(size_t j = begin; j < end; ++j)
+
+void tri_import(dealii::Triangulation<2> &tri, const char *filename)
+{
+    FILE *F;
+    
+    F = fopen(filename,"r");
+    if (F) printf("12345\n");
+
+    double aa,ba,ca,da;
+    
+    fscanf(F,"%lf %lf %lf %lf",&aa,&ba,&ca,&da);
+    
+    int num_v;
+    fscanf(F,"%d",&num_v);
+    std::vector< dealii::Point< 2 > > v (num_v);
+    for (unsigned int i=0; i<num_v; ++i)
+    {
+        fscanf(F,"%lf %lf",&v[i][0],&v[i][1]);
+    };
+    
+    int num_c;
+    fscanf(F,"%d",&num_c);
+    std::vector< dealii::CellData< 2 > > c (num_c, dealii::CellData<2>());;
+    for (unsigned int i=0; i<num_c; ++i)
+    {
+        unsigned int m_id = 0; 
+        fscanf(F,"%d %d %d %d %d",&c[i].vertices[0],
+                                   &c[i].vertices[1],
+                                   &c[i].vertices[2],
+                                   &c[i].vertices[3],
+                                   &m_id);
+        c[i].material_id = m_id;
+    };
+    
+    tri.create_triangulation (v, c, dealii::SubCellData());
+};
+
+template<int dim>
+double const0 (const dealii::Point<dim> &p)
+{
+    return 0.0;
+};
+
+template<int dim>
+double square (const dealii::Point<dim> &p)
+{
+    uint8_t num_true = 0;
+    for (size_t i = 0; i < dim; ++i)
+    if ((p[i] > 1.0) && (p[i] < 3.0))
+        ++num_true;
+
+    if (num_true == dim)
+        return 2.0;
+    else
+        return 1.0;
+};
+
+template<int dim>
+double band (const dealii::Point<dim> &p)
+{
+    if ((p[0] > 1.0) && (p[0] < 3.0))
+        return 2.0;
+    else
+        return 1.0;
+};
+
+template <size_t num_points>
+void set_tria(dealii::Triangulation< 2 > &triangulation, 
+        const double points[num_points], 
+        const size_t material_id[num_points - 1][num_points - 1])
+{
+
+    const size_t num_cells = num_points - 1;
+
+    std::vector< dealii::Point< 2 > > v (num_points * num_points);
+
+    FOR_I (0, num_points)
+        FOR_J (0, num_points)
+        {
+            v[i * num_points + j] = dealii::Point< 2 >(points[j], points[i]);
+        };
+
+    std::vector< dealii::CellData< 2 > > c (
+            num_cells * num_cells, dealii::CellData< 2 >());
+
+    FOR_I (0, num_cells)
+        FOR_J (0, num_cells)
+        {
+            c[i * num_cells + j].vertices[0] = i * num_points + j + 0;
+            c[i * num_cells + j].vertices[1] = i * num_points + j + 1;
+            c[i * num_cells + j].vertices[2] = i * num_points + j + num_points;
+            c[i * num_cells + j].vertices[3] = i * num_points + j + num_points + 1;
+
+            c[i * num_cells + j].material_id = material_id[i][j];
+
+//            if ((i == 1) or (i==2) or (j==1) or (j==2))
+//                c[i * num_cells + j].set_refine_flag ();
+        };
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+//    triangulation .execute_coarsening_and_refinement ();
+};
+
+
+void set_grid(dealii::Triangulation< 2 > &triangulation)
+{
+    std::vector<dealii::Point<2> > v;
+    std::vector<dealii::CellData<2> > c;
+
+    CDT cdt;
+    std::vector<Vertex_handle> vec_of_vertices;
+    std::vector<std::vector<Vertex_handle> > vec_of_domains;
+
+//    double x_begin = -1.0;
+//    double x_end = 1.0;
+//    double step_by_x = 0.05;
+//    double x_current;
+//    size_t num_node_x = (x_end - x_begin) / step_by_x + 1;
+//
+//    for(size_t item_node_x = 0; item_node_x < num_node_x; ++item_node_x)
+//    {
+//         x_current = x_begin + item_node_x * step_by_x;
+//         vec_of_vertices.push_back( cdt.insert( 
+//                     Point(x_current*40.0+64.0, 
+//                         sqrt(1.0 - x_current * x_current)*40.0+64.0 )) );  
+//    }
+//
+//    for(size_t item_node_x = 1; item_node_x < num_node_x - 1; ++item_node_x)
+//    {
+//        x_current = x_end - item_node_x * step_by_x;
+//        vec_of_vertices.push_back( cdt.insert( 
+//                    Point(x_current*40.0+64.0, 
+//                        - sqrt(1.0 - x_current * x_current)*40.0+64.0 )) );  
+//    }
+    
+//    vec_of_vertices.push_back(cdt.insert(Point(64.0-32.0, 64.0-64.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(64.0+32.0, 64.0-64.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(64.0+32.0, 64.0+64.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(64.0-32.0, 64.0+64.0) ));
+
+  double width_outer_domain = 600.0;
+  double height_outer_domain = 600.0;
+  
+  double begin_x_outer_domain = 0.0;
+  double begin_y_outer_domain = 0.0;
+  
+    vec_of_vertices.push_back(cdt.insert(Point(width_outer_domain/3.0, begin_y_outer_domain) ));
+    vec_of_vertices.push_back(cdt.insert(Point(width_outer_domain/3.0*2.0, begin_y_outer_domain ) ));
+    vec_of_vertices.push_back(cdt.insert(Point(width_outer_domain/3.0*2.0, height_outer_domain  ) ));
+    vec_of_vertices.push_back(cdt.insert(Point(width_outer_domain/3.0, height_outer_domain  ) ));
+
+//    vec_of_vertices.push_back(cdt.insert(Point(0.0, 0.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(128.0/2.0,  0.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(128.0/2.0,  128.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(0.0,  128.0) ));
+
+    vec_of_domains.push_back(vec_of_vertices);
+    vec_of_vertices.clear();     
+    
+//    vec_of_vertices.push_back(cdt.insert(Point(0.0, 0.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(128.0, 0.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(128.0, 128.0) ));
+//    vec_of_vertices.push_back(cdt.insert(Point(0.0, 128.0) ));
+//
+//    vec_of_domains.push_back(vec_of_vertices);
+//    vec_of_vertices.clear();  
+    
+  size_t num_nodes_by_x = 0;
+  size_t num_nodes_by_y = 0;
+  
+  double end_x_outer_domain = begin_x_outer_domain + width_outer_domain;
+  double end_y_outer_domain = begin_y_outer_domain + height_outer_domain;
+  
+
+  
+  double step_by_x = width_outer_domain / (num_nodes_by_x + 1); 
+  double step_by_y = height_outer_domain / (num_nodes_by_y + 1); 
+  
+  for(size_t item_node = 0; item_node <= num_nodes_by_x; ++item_node)
+  {
+     vec_of_vertices.push_back(cdt.insert(Point( begin_x_outer_domain + item_node * step_by_x,
+                                                 begin_y_outer_domain ) ));      
+  }
+  
+  for(size_t item_node = 0; item_node <= num_nodes_by_y; ++item_node)
+  {
+     vec_of_vertices.push_back(cdt.insert(Point( end_x_outer_domain,
+                                                 begin_y_outer_domain +  item_node * step_by_y) ));      
+  }
+  
+  for(size_t item_node = 0; item_node <= num_nodes_by_x; ++item_node)
+  {
+     vec_of_vertices.push_back(cdt.insert(Point( end_x_outer_domain - item_node * step_by_x,
+                                                 end_y_outer_domain ) ));      
+  }
+  
+  for(size_t item_node = 0; item_node <= num_nodes_by_y; ++item_node)
+  {
+     vec_of_vertices.push_back(cdt.insert(Point( begin_x_outer_domain,
+                                                 end_y_outer_domain -  item_node * step_by_y) ));      
+  }
+  
+    vec_of_domains.push_back(vec_of_vertices);
+    vec_of_vertices.clear(); 
+    
+    for(auto it = vec_of_domains.begin(); it != vec_of_domains.end(); ++it) 
+    {
+       for(auto vit = it->begin() + 1; vit != it->end(); ++vit)
+       {
+          cdt.insert_constraint( *(vit - 1), *vit );
+       }
+       cdt.insert_constraint( *( it->end() - 1), *( it->begin() ) );
+    }
+    
+    
+    std::list<Point> list_of_seeds;
+    list_of_seeds.push_back(Point(300.0, 300.0));
+
+    std::cout << "Meshing the domain..." << std::endl;
+  
+    CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+                               Criteria(), true);
+    CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+                               Criteria());
+//    CGAL::refine_Delaunay_mesh_2(cdt, Criteria());
+
+    std::cout << "Number of vertices: " << cdt.number_of_vertices() << std::endl;
+    std::cout << "Number of finite faces: " << cdt.number_of_faces() << std::endl;
+    
+    size_t mesh_faces_counter = 0;
+  
+    for(CDT::Finite_faces_iterator fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit) 
+    {
+        if(fit->is_in_domain()) 
+            ++mesh_faces_counter;
+    }
+    
+    std::cout << "Number of faces in the mesh domain: " << mesh_faces_counter << std::endl;
+    
+    CDT::Triangle trg;
+    
+    size_t mat_id; 
+
+    for(auto fit = cdt.finite_faces_begin(); fit != cdt.finite_faces_end(); ++fit)
+    {
+//        puts("!!!!!!!!!!!!!!");
+        if(fit->is_in_domain())
+        { 
+            mat_id = 1;
+        }
+        else
+        {
+            mat_id = 0;
+        }      
+      
+        trg = cdt.triangle(fit);
+      
+        size_t t = v.size()*10;
+        size_t indx[7] = {t+0, t+1, t+2, t+3, t+4, t+5, t+6};
+      
+        double middle_segment01_x = 0.5 * (CGAL::to_double(trg[0].x()) + CGAL::to_double(trg[1].x()));
+        double middle_segment01_y = 0.5 * (CGAL::to_double(trg[0].y()) + CGAL::to_double(trg[1].y()));
+      
+        double middle_segment12_x = 0.5 * (CGAL::to_double(trg[1].x()) + CGAL::to_double(trg[2].x()));
+        double middle_segment12_y = 0.5 * (CGAL::to_double(trg[1].y()) + CGAL::to_double(trg[2].y()));
+
+        double middle_segment02_x = 0.5 * (CGAL::to_double(trg[0].x()) + CGAL::to_double(trg[2].x()));
+        double middle_segment02_y = 0.5 * (CGAL::to_double(trg[0].y()) + CGAL::to_double(trg[2].y()));
+      
+        double center_of_mass_x = (CGAL::to_double(trg[0].x()) + CGAL::to_double(trg[1].x()) +
+                                   CGAL::to_double(trg[2].x())) / 3.0;
+        double center_of_mass_y = (CGAL::to_double(trg[0].y()) + CGAL::to_double(trg[1].y()) +
+                                   CGAL::to_double(trg[2].y())) / 3.0;
+      
+        FOR_I(0, v.size())
+        {
+            if (
+                    (fabs(v[i](0) - trg[0].x()) < 1e-10) and
+                    (fabs(v[i](1) - trg[0].y()) < 1e-10))
+                indx[0] = i;
+            if (
+                    (fabs(v[i](0) - trg[1].x()) < 1e-10) and
+                    (fabs(v[i](1) - trg[1].y()) < 1e-10))
+                indx[1] = i;
+            if (
+                    (fabs(v[i](0) - trg[2].x()) < 1e-10) and
+                    (fabs(v[i](1) - trg[2].y()) < 1e-10))
+                indx[2] = i;
+            if (
+                    (fabs(v[i](0) - middle_segment01_x) < 1e-10) and
+                    (fabs(v[i](1) - middle_segment01_y) < 1e-10))
+                indx[3] = i;
+            if (
+                    (fabs(v[i](0) - middle_segment12_x) < 1e-10) and
+                    (fabs(v[i](1) - middle_segment12_y) < 1e-10))
+                indx[4] = i;
+            if (
+                    (fabs(v[i](0) - middle_segment02_x) < 1e-10) and
+                    (fabs(v[i](1) - middle_segment02_y) < 1e-10))
+                indx[5] = i;
+            if (
+                    (fabs(v[i](0) - center_of_mass_x) < 1e-10) and
+                    (fabs(v[i](1) - center_of_mass_y) < 1e-10))
+                indx[6] = i;
+        };
+
+        if (indx[0] == t)
+        {
+            v.push_back(dealii::Point<2>( CGAL::to_double(trg[0].x()),  CGAL::to_double(trg[0].y()) ) );
+            indx[0] = v.size()-1;
+        }
+        if (indx[1] == t+1)
+        {
+            v.push_back(dealii::Point<2>( CGAL::to_double(trg[1].x()),  CGAL::to_double(trg[1].y()) ) );
+            indx[1] = v.size()-1;
+        }
+        if (indx[2] == t+2)
+        {
+            v.push_back(dealii::Point<2>( CGAL::to_double(trg[2].x()),  CGAL::to_double(trg[2].y()) ) );
+            indx[2] = v.size()-1;
+        }
+        if (indx[3] == t+3)
+        {
+            v.push_back(dealii::Point<2>( middle_segment01_x, middle_segment01_y ));
+            indx[3] = v.size()-1;
+        }
+        if (indx[4] == t+4)
+        {
+            v.push_back(dealii::Point<2>( middle_segment12_x, middle_segment12_y ));
+            indx[4] = v.size()-1;
+        }
+        if (indx[5] == t+5)
+        {
+            v.push_back(dealii::Point<2>( middle_segment02_x, middle_segment02_y ));
+            indx[5] = v.size()-1;
+        }
+        if (indx[6] == t+6)
+        {
+            v.push_back(dealii::Point<2>( center_of_mass_x, center_of_mass_y));
+            indx[6] = v.size()-1;
+        }
+
+//        printf("%d %d %d %d %d %d %d\n", 
+//                indx[0],
+//                indx[1],
+//                indx[2],
+//                indx[3],
+//                indx[4],
+//                indx[5],
+//                indx[6]);
+
+//        v.push_back(dealii::Point<2>(0.0, 0.0));
+//        v.push_back(dealii::Point<2>(1.0, 0.0));
+//        v.push_back(dealii::Point<2>(2.0, 0.0));
+//        v.push_back(dealii::Point<2>(0.0, 2.0));
+//        v.push_back(dealii::Point<2>(1.0, 2.0));
+//        v.push_back(dealii::Point<2>(2.0, 2.0));
+
+        {
+            dealii::CellData<2> temp_c;
+
+            temp_c.vertices[0] = indx[0];
+            temp_c.vertices[1] = indx[3];
+            temp_c.vertices[2] = indx[6];
+            temp_c.vertices[3] = indx[5];
+            temp_c.material_id = mat_id;
+
+//            double mid_x = (
+//                    v[indx[0]](0) +
+//                    v[indx[3]](0) +
+//                    v[indx[6]](0) +
+//                    v[indx[5]](0)) / 4.0;
+//
+//            double mid_y = (
+//                    v[indx[0]](1) +
+//                    v[indx[3]](1) +
+//                    v[indx[6]](1) +
+//                    v[indx[5]](1)) / 4.0;
+//
+//            if (((mid_x < 64.0) and (mid_y < 64.0)) or
+//                ((mid_x > 64.0) and (mid_y > 64.0)))
+//                temp_c.material_id = 1;
+//            else
+//                temp_c.material_id = 0;
+
+            c.push_back(temp_c);
+        }
+
+        {
+            dealii::CellData<2> temp_c;
+
+            temp_c.vertices[0] = indx[1];
+            temp_c.vertices[1] = indx[4];
+            temp_c.vertices[2] = indx[6];
+            temp_c.vertices[3] = indx[3];
+            temp_c.material_id = mat_id;
+
+//            double mid_x = (
+//                    v[indx[1]](0) +
+//                    v[indx[4]](0) +
+//                    v[indx[6]](0) +
+//                    v[indx[3]](0)) / 4.0;
+//
+//            double mid_y = (
+//                    v[indx[1]](1) +
+//                    v[indx[4]](1) +
+//                    v[indx[6]](1) +
+//                    v[indx[3]](1)) / 4.0;
+//
+//            if (((mid_x < 64.0) and (mid_y < 64.0)) or
+//                ((mid_x > 64.0) and (mid_y > 64.0)))
+//                temp_c.material_id = 1;
+//            else
+//                temp_c.material_id = 0;
+
+            c.push_back(temp_c);
+        }
+
+        {
+            dealii::CellData<2> temp_c;
+
+            temp_c.vertices[0] = indx[2];
+            temp_c.vertices[1] = indx[5];
+            temp_c.vertices[2] = indx[6];
+            temp_c.vertices[3] = indx[4];
+            temp_c.material_id = mat_id;
+
+//            double mid_x = (
+//                    v[indx[2]](0) +
+//                    v[indx[5]](0) +
+//                    v[indx[6]](0) +
+//                    v[indx[4]](0)) / 4.0;
+//
+//            double mid_y = (
+//                    v[indx[2]](1) +
+//                    v[indx[5]](1) +
+//                    v[indx[6]](1) +
+//                    v[indx[4]](1)) / 4.0;
+//
+//            if (((mid_x < 64.0) and (mid_y < 64.0)) or
+//                ((mid_x > 64.0) and (mid_y > 64.0)))
+//                temp_c.material_id = 1;
+//            else
+//                temp_c.material_id = 0;
+
+            c.push_back(temp_c);
+        }
+
+
+    }
+
+    printf("%d %d\n", v.size(), c.size());
+    puts("1");
+//    dealii::GridReordering<2>::invert_all_cells_of_negative_grid(v, c);
+    dealii::GridReordering<2>::reorder_cells(c);
+    puts("2");
+    triangulation .create_triangulation_compatibility (v, c, dealii::SubCellData());
+    puts("3");
+
+};
+
+std::vector<double> foo (const double lower, const double top, size_t n_refine)
+{
+    const uint8_t dim = 2;
+
+    std::array<std::vector<double>, 3> coef;
+
+    coef[0] .resize (2);
+    coef[1] .resize (2);
+    coef[2] .resize (2);
+
+    coef[0][0] = 1.0; coef[0][1] = 100.0;
+    coef[1][0] = 1.0; coef[1][1] = 100.0;
+    coef[2][0] = 0.0; coef[2][1] = 0.0;
+
+    dealii::Triangulation<dim> triangulation;
+
+    const double x0 = 0.0;
+    const double x1 = lower;
+    const double x3 = top;
+    const double x4 = 128.0;
+
+    const double length = 96.0; //128.0 / 5.0 * 3.0;
+    const double width  = length - sqrt(length*length - top*top); // 128.0 / 5.0;
+
+//    std::vector< dealii::Point< 2 > > v (8);
+//
+//    v[0][0] = x0; v[0][1] = x0;
+//    v[1][0] = x4; v[1][1] = x0;
+//    v[2][0] = x1; v[2][1] = x1;
+//    v[3][0] = x3; v[3][1] = x1;
+//    v[4][0] = x0; v[4][1] = x4;
+//    v[5][0] = x1; v[5][1] = x3;
+//    v[6][0] = x3; v[6][1] = x3;
+//    v[7][0] = x4; v[7][1] = x4;
+//
+//    std::vector< dealii::CellData< 2 > > c (5, dealii::CellData<2>());
+//
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 2;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+//
+//    c[1].vertices[0] = 0;
+//    c[1].vertices[1] = 2;
+//    c[1].vertices[2] = 4;
+//    c[1].vertices[3] = 5;
+//    c[1].material_id = 0;
+//    
+//    c[2].vertices[0] = 2;
+//    c[2].vertices[1] = 3;
+//    c[2].vertices[2] = 5;
+//    c[2].vertices[3] = 6;
+//    c[2].material_id = 1;
+//
+//    c[3].vertices[0] = 4;
+//    c[3].vertices[1] = 5;
+//    c[3].vertices[2] = 7;
+//    c[3].vertices[3] = 6;
+//    c[3].material_id = 0;
+//    
+//    c[4].vertices[0] = 1;
+//    c[4].vertices[1] = 7;
+//    c[4].vertices[2] = 3;
+//    c[4].vertices[3] = 6;
+//    c[4].material_id = 0;
+//    triangulation .create_triangulation (v, c, dealii::SubCellData());
+
+    const size_t material_id_for_quadrate[4][4] =
+    {
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {0, 1, 1, 0},
+        {0, 0, 0, 0}
+    };
+
+    const double dot[5] = 
+    {
+        (0.0),
+        (lower),
+        (64.0),
+        (top),
+        (128.0)
+    };
+
+//    ::set_tria <5> (triangulation, dot, material_id_for_quadrate);
+
+    ::set_grid(triangulation);
+
+//    const size_t material_id_for_cross[5][5] =
+//    {
+//        {0, 0, 0, 0, 0},
+//        {0, 0, 1, 0, 0},
+//        {0, 1, 1, 1, 0},
+//        {0, 0, 1, 0, 0},
+//        {0, 0, 0, 0, 0}
+//    };
+//
+//    const double dot[6] = 
+//    {
+//        (0.0),
+//        (64.0 - length / 2.0),
+//        (64.0 - width  / 2.0),                    
+//        (64.0 + width  / 2.0),                
+//        (64.0 + length / 2.0),
+//        (128.0)
+//    };
+
+//    ::set_tria <6> (triangulation, dot, material_id_for_cross);
+
+//    const size_t material_id_for_shell[6][6] =
+//    {
+//        {0, 0, 0, 0, 0, 0},
+//        {0, 1, 1, 1, 1, 0},
+//        {0, 1, 0, 0, 1, 0},
+//        {0, 1, 0, 0, 1, 0},
+//        {0, 1, 1, 1, 1, 0},
+//        {0, 0, 0, 0, 0, 0}
+//    };
+//
+//    const double dot[7] = 
+//    {
+//        (0.0),
+//        (64.0 - length / 2.0),
+//        (64.0 - length / 2.0 + width),
+//        (64.0),
+//        (64.0 + length / 2.0 - width),
+//        (64.0 + length / 2.0),
+//        (128.0)
+//    };
+//
+//    ::set_tria <7> (triangulation, dot, material_id_for_shell);
+
+//    triangulation .refine_global (n_refine);
+
+                std::ofstream out ("grid-cross.eps");
+                dealii::GridOut grid_out;
+                grid_out.write_eps (triangulation, out);
+
+    class ::HeatConductionProblemOnCell<dim> problem (triangulation, coef);
+
+    REPORT problem .solved ();
+
+    problem .print_result ("res_");
+
+//    printf("%f %f %f\n", problem.meta_coefficient[0],
+//                         problem.meta_coefficient[1],
+//                         problem.meta_coefficient[2]);
+
+    std::vector<double> meta(3);
+    meta[0] = problem.meta_coefficient[0];
+    meta[1] = problem.meta_coefficient[1];
+    meta[2] = problem.meta_coefficient[2];
+
+    return meta;
+
+};
+
+int main(int argc, char *argv[])
+{
+//    const uint8_t dim = 2;
+//
+//    std::array<std::vector<double>, 3> coef;
+//
+//    coef[0] .resize (2);
+//    coef[1] .resize (2);
+//    coef[2] .resize (2);
+//
+//    coef[0][0] = 100.0; coef[0][1] = 1.0;
+//    coef[1][0] = 100.0; coef[1][1] = 1.0;
+//    coef[2][0] = 0.0; coef[2][1] = 0.0;
+//
+//    dealii::Triangulation<dim> triangulation;
+//    dealii::GridGenerator ::hyper_cube (triangulation, 0, 128);
+//
+////    std::vector< dealii::Point< 2 > > v (8);
+////
+////    v[0][0] = 0.0; v[0][1] = 0.0;
+////    v[1][0] = 1.0; v[1][1] = 0.0;
+////    v[2][0] = 3.0; v[2][1] = 0.0;
+////    v[3][0] = 4.0; v[3][1] = 0.0;
+////    v[4][0] = 0.0; v[4][1] = 4.0;
+////    v[5][0] = 1.0; v[5][1] = 4.0;
+////    v[6][0] = 3.0; v[6][1] = 4.0;
+////    v[7][0] = 4.0; v[7][1] = 4.0;
+////
+////    std::vector< dealii::CellData< 2 > > c (3, dealii::CellData<2>());
+////
+////    c[0].vertices[0] = 0;
+////    c[0].vertices[1] = 1;
+////    c[0].vertices[2] = 4;
+////    c[0].vertices[3] = 5;
+////    c[0].material_id = 0;
+////
+////    c[1].vertices[0] = 1;
+////    c[1].vertices[1] = 2;
+////    c[1].vertices[2] = 5;
+////    c[1].vertices[3] = 6;
+////    c[1].material_id = 1;
+////    
+////    c[2].vertices[0] = 2;
+////    c[2].vertices[1] = 3;
+////    c[2].vertices[2] = 6;
+////    c[2].vertices[3] = 7;
+////    c[2].material_id = 0;
+//
+////    std::vector< dealii::Point< 2 > > v (6);
+////
+////    v[0][0] = 0.0; v[0][1] = 0.0;
+////    v[1][0] = 1.0; v[1][1] = 0.0;
+////    v[2][0] = 2.0; v[2][1] = 0.0;
+////    v[3][0] = 0.0; v[3][1] = 2.0;
+////    v[4][0] = 1.0; v[4][1] = 2.0;
+////    v[5][0] = 2.0; v[5][1] = 2.0;
+////
+////    std::vector< dealii::CellData< 2 > > c (2, dealii::CellData<2>());
+////
+////    c[0].vertices[0] = 0;
+////    c[0].vertices[1] = 1;
+////    c[0].vertices[2] = 3;
+////    c[0].vertices[3] = 4;
+////    c[0].material_id = 0;
+////
+////    c[1].vertices[0] = 1;
+////    c[1].vertices[1] = 2;
+////    c[1].vertices[2] = 4;
+////    c[1].vertices[3] = 5;
+////    c[1].material_id = 1;
+//    
+////    std::vector< dealii::Point< 2 > > v (8);
+////
+////    v[0][0] = 0.0; v[0][1] = 0.0;
+////    v[1][0] = 4.0; v[1][1] = 0.0;
+////    v[2][0] = 1.0; v[2][1] = 1.0;
+////    v[3][0] = 3.0; v[3][1] = 1.0;
+////    v[4][0] = 0.0; v[4][1] = 4.0;
+////    v[5][0] = 1.0; v[5][1] = 3.0;
+////    v[6][0] = 3.0; v[6][1] = 3.0;
+////    v[7][0] = 4.0; v[7][1] = 4.0;
+////
+////    std::vector< dealii::CellData< 2 > > c (5, dealii::CellData<2>());
+////
+////    c[0].vertices[0] = 0;
+////    c[0].vertices[1] = 1;
+////    c[0].vertices[2] = 2;
+////    c[0].vertices[3] = 3;
+////    c[0].material_id = 0;
+////
+////    c[1].vertices[0] = 0;
+////    c[1].vertices[1] = 2;
+////    c[1].vertices[2] = 4;
+////    c[1].vertices[3] = 5;
+////    c[1].material_id = 0;
+////    
+////    c[2].vertices[0] = 2;
+////    c[2].vertices[1] = 3;
+////    c[2].vertices[2] = 5;
+////    c[2].vertices[3] = 6;
+////    c[2].material_id = 1;
+////
+////    c[3].vertices[0] = 4;
+////    c[3].vertices[1] = 5;
+////    c[3].vertices[2] = 7;
+////    c[3].vertices[3] = 6;
+////    c[3].material_id = 0;
+////    
+////    c[4].vertices[0] = 1;
+////    c[4].vertices[1] = 7;
+////    c[4].vertices[2] = 3;
+////    c[4].vertices[3] = 6;
+////    c[4].material_id = 0;
+////
+////    triangulation .create_triangulation (v, c, dealii::SubCellData());
+//
+////    tri_import (triangulation,
+////                "/home/primat/deal.ii-data/test3/cube.mesh");
+//
+////    tri_import (triangulation, "mesh");
+//
+////    std::vector< dealii::Point< 2 > > v (4);
+////    v[0][0] = 0.0; v[0][1] = 0.0;
+////    v[1][0] = 4.0; v[1][1] = 0.0;
+////    v[2][0] = 0.0; v[2][1] = 4.0;
+////    v[3][0] = 4.0; v[3][1] = 4.0;
+////
+////    std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
+////    c[0].vertices[0] = 0;
+////    c[0].vertices[1] = 1;
+////    c[0].vertices[2] = 2;
+////    c[0].vertices[3] = 3;
+////    c[0].material_id = 0;
+//
+////    std::vector< dealii::Point< 2 > > v (6);
+////    v[0][0] = 0.0; v[0][1] = 0.0;
+////    v[1][0] = 2.0; v[1][1] = 0.0;
+////    v[2][0] = 4.0; v[2][1] = 0.0;
+////    v[3][0] = 0.0; v[3][1] = 4.0;
+////    v[4][0] = 2.0; v[4][1] = 4.0;
+////    v[5][0] = 4.0; v[5][1] = 4.0;
+////
+////    std::vector< dealii::CellData< 2 > > c (2, dealii::CellData<2>());
+////    c[0].vertices[0] = 0;
+////    c[0].vertices[1] = 1;
+////    c[0].vertices[2] = 3;
+////    c[0].vertices[3] = 4;
+////    c[0].material_id = 0;
+////
+////    c[1].vertices[0] = 1;
+////    c[1].vertices[1] = 2;
+////    c[1].vertices[2] = 4;
+////    c[1].vertices[3] = 5;
+////    c[1].material_id = 0;
+////
+////    triangulation .create_triangulation (v, c, dealii::SubCellData());
+////////////////
+//    triangulation .refine_global (4);
+//    {
+////        dealii::Point<dim> center (2.0,2.0);
+//        dealii::Triangulation<2>::active_cell_iterator
+//            cell = triangulation .begin_active(),
+//                 end_cell = triangulation .end();
+//        for (; cell != end_cell; ++cell)
+//        {
+//            dealii::Point<dim> midle_p(0.0, 0.0);
+//
+//            for (size_t i = 0; i < 4; ++i)
+//            {
+//                midle_p(0) += cell->vertex(i)(0);
+//                midle_p(1) += cell->vertex(i)(1);
+//            };
+//            midle_p(0) /= 4;
+//            midle_p(1) /= 4;
+//
+////            if (center.distance(midle_p) < 1.0)
+//            if (
+//                    (44.0 < midle_p(0)) and (midle_p(0) < 84.0) and
+//                    (44.0 < midle_p(1)) and (midle_p(1) < 84.0)
+//                ) 
+//                cell->set_material_id(1);
+//            else
+//                cell->set_material_id(0);
+//        };
+//    };
+//
+//    std::ofstream out ("grid-1.eps");
+//    dealii::GridOut grid_out;
+//    grid_out.write_eps (triangulation, out);
+//
+//    class ::HeatConductionProblemOnCell<dim> problem (triangulation, coef);
+//
+//    REPORT problem .solved ();
+//
+//    problem .print_result ("res_");
+//
+//    printf("%f %f %f\n", problem.mean_coefficient[0],
+//                         problem.mean_coefficient[1],
+//                         problem.mean_coefficient[2]);
+//
+//    printf("%f %f %f\n", problem.meta_coefficient[0],
+//                         problem.meta_coefficient[1],
+//                         problem.meta_coefficient[2]);
+////
+///////////
+////    const uint8_t dim = 1;
+////
+////    std::array<Femenist::Function<double, dim>, 1 > coef;
+////
+////    coef[0] = const1<dim>;
+////
+////    dealii::Triangulation<dim> triangulation;
+////    dealii::GridGenerator ::hyper_cube (triangulation, 0, 4);
+////    triangulation .refine_global (2);
+////
+////    class ::HeatConductionProblemOnCell<dim> problem (triangulation, coef);
+////
+////    REPORT problem .solved ();
+////
+////    problem .print_result ("res_");
+////
+////    printf("%f\n", problem.mean_coefficient[0]);
+////
+////    printf("%f\n", problem.meta_coefficient[0]);
+
+    time_t time_1 = time(NULL);
+    std::vector<std::vector<double> > metas;
+    std::ofstream ofs ("T-qadrate-3.gpd");
+//    std::ofstream ofs ("T-shell-3.gpd");
+//    metas .push_back (foo(24.0, 104.0, 2));
+    {
+        double i = 40.0;
+        while (i < 44.0)
+        {
+            metas .push_back (foo(65.0 - i / 2.0, 65.0 + i / 2.0, 6));
+//            metas .push_back (foo(0.0, i, 3));
+            ofs << i*i << " " << metas.back()[0] << std::endl;
+            i += 4.0;
+        };
+    };
+    for (auto i : metas)
+        printf("%f %f %f\n", i[0], i[1], i[2]);
+    printf("%ld\n", (time(NULL) - time_1));
+//    std::cout << metas << std::endl;
+    return 0;
+}
+/////////////////:////////////:////////

@@ -1,0 +1,130 @@
+ax + bx*s + cx*r + dx*s*r == x, ay + by*s + cy*r + dy*s*r == y
+
+s = (1.0 / (2.0 * (by * dx - bx * dy))) * (-by * cx + bx * cy - ay * dx + ax * dy - dy * x + dx * y - sqrt(-4.0 * (by * dx - bx * dy) * (ay * cx - ax * cy + cy * x - cx * y) + (by * cx - bx * cy + ay * dx - ax * dy + dy * x - dx * y)**2))
+
+r = (1.0/(cy * dx - cx * dy)) * \
+( \
+-ay * dx + ax * dy + (by^2 * cx * dx)/(2.0 * (by * dx - bx * dy)) \
+- (bx * by * cy * dx)/(2.0 * (by * dx - bx * dy)) + (ay * by dx**2)/(2.0 * (by * dx - bx * dy)) \
+- (bx * by * cx * dy)/(2.0 * (by * dx - bx * dy)) + (bx**2 * cy * dy)/(2.0 * (by * dx - bx * dy)) \
+- (ay * bx * dx * dy)/(2.0 * (by * dx - bx * dy)) - (ax * by * dx * dy)/(2.0 * (by * dx - bx * dy)) \
++ (ax * bx * dy**2)/(2.0 * (by * dx - bx * dy)) \
+- dy * x + (by * dx * dy * x)/(2.0 * (by * dx - bx * dy)) \
+- (bx * dy**2 * x)/(2.0 * (by * dx - bx * dy)) + dx * y \
+- (by * dx**2 * y)/(2.0 * (by * dx - bx * dy)) \
++ (bx * dx * dy * y)/(2.0 * (by * dx - bx * dy)) \
++ 1.0/(2.0 * (by * dx - bx * dy)) * by * dx \
+* sqrt(-4.0 * (by * dx - bx * dy) (ay * cx - ax * cy + cy * x - cx * y) \
++ (by * cx - bx * cy + ay * dx - ax * dy + dy * x - dx * y)**2) \
+- 1.0/(2.0 * (by * dx - bx * dy)) * bx * dy \
+* sqrt(-4.0 * (by * dx - bx * dy) * (ay * cx - ax * cy + cy * x - cx * y) \
++ (by * cx - bx * cy + ay * dx - ax * dy + dy * x - dx * y)**2))
+
+
+
+
+
+
+
+
+f1 + ((f1 - f2) (x4*y - x4*y1 + x*y1 - x*y4 + x1 (-y + y4)))/(
+ x4 (y1 - y2) + x1 (y2 - y4) + 
+  x2 (-y1 + 
+     y4)) + ((f1 - f2 + f3 - f4) (x2 (y - y1) + x (y1 - y2) + 
+      x1 (-y + y2)) (x4 (-y + y1) + x1 (y - y4) + 
+      x (-y1 + y4)))/(x4 (-y1 + y2) + x2 (y1 - y4) + 
+    x1 (-y2 + y4))^2 + ((f1 - f4) (x2 (y - y1) + x (y1 - y2) + 
+    x1 (-y + y2)))/(x4 (-y1 + y2) + x2 (y1 - y4) + x1 (-y2 + y4))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    -((x1 y - x4 y - x y1 + x4 y1 + x y4 - x1 y4)/(x2 y1 - x4 y1 - x1 y2 + x4 y2 + x1 y4 - x2 y4))
+    -((-x1 y + x2 y + x y1 - x2 y1 - x y2 + x1 y2)/(x2 y1 - x4 y1 - x1 y2 + x4 y2 + x1 y4 - x2 y4))
+ 
+ m = (x2 y1 - x4 y1 - x1 y2 + x4 y2 + x1 y4 - x2 y4)
+ 
+ s = (x4*y1 - x1*y4)/m + (y4 - y1)/m * x + (x1 - x4)/m * y
+ r = (x1*y2 - x2*y1)/m + (y1 - y2)/m * x + (x2 - x1)/m * y
+ 
+ a = f1 + (f2 - f1) * 
+ 
+ 
+ 
+ m = 2.0 * (cy*dx - cx*dy)
+ 
+ r = (by*cx - bx*cy - ay*dx + ax*dy)/m - dy/m * x + dx/m * y + 
+     sqrt(
+          (
+           (ax*dy)^2 + (bx*cy)^2 + (ay*dx)^2 + (by*cx)^2 +
+           4.0*(ax*by*cy*dx + ay*bx*cx*dy) -
+           2.0*(bx*by*cx*cy + ay*by*cx*dx + ay*bx*cy*dx + ax*by*cx*dy + ax*bx*cy*dy + ax*ay*dx*dy)
+          ) +
+          ((by*cx + bx*cy + ay*dx - ax*dy) * dy - 2.0*by*cy*dx) * x * 2.0 +
+          ((by*cx + bx*cy + ax*dy - ay*dx) * dx - 2.0*bx*cx*dy) * y * 2.0 +
+          dx*dy * x * y * 2.0 +
+          dy^2 x^2 +
+          dx^2 y^2
+         )/m
+         
+ r = a - b * x + c * y + sqrt(d + e * x + g * y + b*c * x * y + b^2 * x^2 + c^2 * y^2) 
+ s = a - b
+ 
+ 
+ 
+ 
+ A = by*cx
+ B = bx*cy
+ C = ay*dx
+ D = ax*dy
+ 
+ E1 = by*cx
+ E2 = bx*cy
+ 
+ 
+ by^2*cx^2 - 2.0*bx*by*cx cy + bx^2*cy^2 - 2.0*ay*by*cx*dx - 
+           2.0*ay*bx*cy*dx + 4.0*ax*by*cy*dx + ay^2*dx^2 + 4.0*ay*bx*cx*dy - 
+           2.0*ax*by*cx*dy - 2.0*ax*bx*cy*dy - 2.0*ax*ay*dx*dy + ax^2*dy^2
+ 
+ 
+ 1/4 (4 af + (2 bf (x2 y - x3 y + x4 y + x y1 + x3 y1 - 2 x4 y1 - 
+        x y2 + x4 y2 + x y3 - x1 (y + y3 - 2 y4) - x y4 - 
+        x2 y4 + \[Sqrt](4 (x2 (-y + y1) + x1 (y - y2) + 
+              x (-y1 + y2)) ((x1 - x4) (y2 - y3) - (x2 - x3) (y1 - 
+                 y4)) + (x3 y - x4 y - x3 y1 + x4 y2 + 
+             x1 (y - 2 y2 + y3) - x2 (y - 2 y1 + y4) + 
+             x (-y1 + y2 - y3 + y4))^2)))/((x3 - x4) (y1 - y2) - (x1 -
+          x2) (y3 - y4)) + (2 cf (x2 y - x3 y + x4 y + x y1 - 
+        2 x2 y1 + x3 y1 - x y2 - x4 y2 + x y3 - x1 (y - 2 y2 + y3) - 
+        x y4 + x2 y4 + \[Sqrt](4 (x2 (-y + y1) + x1 (y - y2) + 
+              x (-y1 + y2)) ((x1 - x4) (y2 - y3) - (x2 - x3) (y1 - 
+                 y4)) + (x3 y - x4 y - x3 y1 + x4 y2 + 
+             x1 (y - 2 y2 + y3) - x2 (y - 2 y1 + y4) + 
+             x (-y1 + y2 - y3 + y4))^2)))/((x1 - x4) (y2 - y3) - (x2 -
+          x3) (y1 - y4)) + (df (x2 y - x3 y + x4 y + x y1 + x3 y1 - 
+        2 x4 y1 - x y2 + x4 y2 + x y3 - x1 (y + y3 - 2 y4) - x y4 - 
+        x2 y4 + \[Sqrt](4 (x2 (-y + y1) + x1 (y - y2) + 
+              x (-y1 + y2)) ((x1 - x4) (y2 - y3) - (x2 - x3) (y1 - 
+                 y4)) + (x3 y - x4 y - x3 y1 + x4 y2 + 
+             x1 (y - 2 y2 + y3) - x2 (y - 2 y1 + y4) + 
+             x (-y1 + y2 - y3 + y4))^2)) (x2 y - x3 y + x4 y + x y1 - 
+        2 x2 y1 + x3 y1 - x y2 - x4 y2 + x y3 - x1 (y - 2 y2 + y3) - 
+        x y4 + x2 y4 + \[Sqrt](4 (x2 (-y + y1) + x1 (y - y2) + 
+              x (-y1 + y2)) ((x1 - x4) (y2 - y3) - (x2 - x3) (y1 - 
+                 y4)) + (x3 y - x4 y - x3 y1 + x4 y2 + 
+             x1 (y - 2 y2 + y3) - x2 (y - 2 y1 + y4) + 
+             x (-y1 + y2 - y3 + y4))^2)))/(((x1 - x4) (y2 - 
+           y3) - (x2 - x3) (y1 - y4)) ((x3 - x4) (y1 - y2) - (x1 - 
+           x2) (y3 - y4))))
+ 
+ 
+ 
+ 
+ 
+ 

@@ -1,0 +1,10 @@
+unset surface
+set contour
+set view map
+set cntrparam levels auto 10
+set xlabel 'x'
+set ylabel 'y'
+
+set terminal postscript mono eps
+set output 'gnuplot.eps'
+splot 'true-res.gpd' w l

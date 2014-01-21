@@ -1,0 +1,7 @@
+Module Test1. 
+
+Inductive nat : Type := 
+  | O : nat 
+  | S : nat -> nat. 
+
+Eval simpl in (S O).

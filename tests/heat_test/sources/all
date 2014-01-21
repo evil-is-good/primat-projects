@@ -1,0 +1,99 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  heat.cpp
+ *
+ *    Description:  
+ *
+ *        Version:  1.0
+ *        Created:  17.09.2012 10:17:15
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  YOUR NAME (), 
+ *   Organization:  
+ *
+ * =====================================================================================
+ */
+#include <stdlib.h>
+#include <projects/deal/tests/heat_conduction_problem/heat_conduction_problem.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/tria_accessor.h>
+#include <deal.II/grid/tria_iterator.h>
+
+template<int dim>
+double const2 (const dealii::Point<dim> &p)
+{
+    return 2.0;
+};
+
+template<int dim>
+double const1 (const dealii::Point<dim> &p)
+{
+    return 1.0;
+};
+
+template<int dim>
+double const0 (const dealii::Point<dim> &p)
+{
+    return 0.0;
+};
+
+template<int dim>
+double boundary (const dealii::Point<dim> &p)
+{
+    return (p(0)*p(0))*(p(1)*p(1));
+};
+
+template<int dim>
+double source (const dealii::Point<dim> &p)
+{
+    return -2.0*((p(0)*p(0)) + (p(1)*p(1)));
+};
+
+int main(int argc, char *argv[])
+{
+    const uint8_t dim = 2;
+
+    const uint8_t xx = 0;
+    const uint8_t yy = 1;
+    const uint8_t xy = 2;
+
+    typename HeatConductionProblemSup<dim>::TypeCoef coef;
+    Femenist::Function<double, dim> rhsv;
+    Femenist::Function<double, dim> bound;
+
+    coef[xx] .push_back (3.0);
+    coef[yy] .push_back (1.0);
+    coef[xy] .push_back (0.0);
+    rhsv    = source<dim>;
+    bound   = boundary<dim>;
+
+    std::vector< dealii::Point< 2 > > v (4);
+    v[0][0] = 0.0; v[0][1] = 0.0;
+    v[1][0] = 4.0; v[1][1] = 0.0;
+    v[2][0] = 0.0; v[2][1] = 4.0;
+    v[3][0] = 4.0; v[3][1] = 4.0;
+
+    std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
+    c[0].vertices[0] = 0;
+    c[0].vertices[1] = 1;
+    c[0].vertices[2] = 2;
+    c[0].vertices[3] = 3;
+    c[0].material_id = 0;
+
+    dealii::Triangulation<dim> tria;
+
+    tria .create_triangulation (v, c, dealii::SubCellData());
+
+    tria .refine_global (1);
+
+    class ::HeatConductionProblem<dim> hc_problem (tria, coef, bound, rhsv);
+
+    REPORT hc_problem .solved ();
+
+    hc_problem .print_result ("output.gpd");
+
+    return 0;
+}
+//
