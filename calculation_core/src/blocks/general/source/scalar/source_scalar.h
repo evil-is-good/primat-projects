@@ -4,6 +4,7 @@
 #include "../interface/source_interface.h"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
+#include <deal.II/base/quadrature_lib.h>
 
 //! Элемент вектора праой части уравнения в МКЭ, скалярный случай
 /*!
@@ -20,7 +21,7 @@ template <u8 dim>
 class SourceScalar : public SourceInterface<dim>
 {
     public:
-    typedef std::function<arr<dbl, dim> (const dealii::Point<dim>&)> Func;
+    typedef std::function<dbl (const dealii::Point<dim>&)> Func;
 
     SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe);
 
@@ -34,7 +35,7 @@ class SourceScalar : public SourceInterface<dim>
 
     Func                       f; //!< Функция из правой части уравнения.
     dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
-    dealii::FEValues<dim>      fe_values; //!< Тип функций формы.
+    dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
     cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
     cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
     u8                         material_id = 0; //!< Идентефикатор материала ячейки.

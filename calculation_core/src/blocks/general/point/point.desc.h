@@ -29,12 +29,26 @@
 
 namespace prmt
 {
-    template <int spacedim>
+    //! Точка приматского формата
+    template <int dim>
         class Point
         {
             private:
-            Point () {};
+                Point () {};
         };
+
+    //! Точка с параметром
+    template <typename T, int dim>
+        class PointWithParam
+        {
+            public:
+                Point<dim> p;
+                T param;
+        };
+
+    //! Точка с типом
+    template <int dim>
+        using PointWithType = PointWithParam<i32, dim>;
 };
 
 

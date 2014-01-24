@@ -1,7 +1,7 @@
 #ifndef LAPLACIAN_INTERFACE
 #define LAPLACIAN_INTERFACE
  
-#include <projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include "../../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 #include <deal.II/dofs/dof_handler.h>
 
 //! Интерфейс к классу являющимся элементом матрици жескости

@@ -4,6 +4,7 @@
 #include "../interface/laplacian_interface.h"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
+#include <deal.II/base/quadrature_lib.h>
 
 //! Элемент матрици жескости получиный из лапласиана в МКЭ, скалярный случай
 /*!
@@ -107,7 +108,7 @@ class LaplacianScalar : public LaplacianInterface<dim>
 
     arr<arr<vec<dbl>,dim>,dim> C; //!< Матрица коэффициентов, например теплопроводности.
     dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
-    dealii::FEValues<dim>      fe_values; //!< Тип функций формы.
+    dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
     cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
     cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
     u8                         material_id = 0; //!< Идентефикатор материала ячейки.

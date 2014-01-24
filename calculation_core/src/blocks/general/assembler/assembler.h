@@ -8,8 +8,8 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/lac/vector.h>
 
-#include "/home/primat/projects/calculation_core/blocks/general/laplacian/interface/laplacian_interface.h"
-#include "/home/primat/projects/calculation_core/blocks/general/source/interface/source_interface.h"
+#include "../laplacian/interface/laplacian_interface.h"
+#include "../source/interface/source_interface.h"
 
 //! Сборка матриц и векторов
 namespace Assembler

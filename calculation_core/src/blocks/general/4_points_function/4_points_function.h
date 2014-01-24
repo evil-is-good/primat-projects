@@ -145,6 +145,10 @@ class Scalar4PointsFunc<2>
         dbl dx (cdbl x, cdbl y) const;
         dbl dy (cdbl x, cdbl y) const;
 
+        dbl operator() (const prmt::Point<2> &p) const;
+        dbl dx (const prmt::Point<2> &p) const;
+        dbl dy (const prmt::Point<2> &p) const;
+
     private:
         cdbl a_x, b_x, c_x, d_x, a_y, b_y, c_y, d_y;
         const LocVar s, r;
@@ -192,6 +196,21 @@ dbl Scalar4PointsFunc<2>::dx (cdbl x, cdbl y) const
 dbl Scalar4PointsFunc<2>::dy (cdbl x, cdbl y) const
 {
     return f_.dx(s(x, y)[0], r(x, y)[1], s.dy(x, y)[0], r.dy(x, y)[1]);
+};
+
+dbl Scalar4PointsFunc<2>::operator() (const prmt::Point<2> &p) const
+{
+    return operator()(p.x(), p.y());
+};
+
+dbl Scalar4PointsFunc<2>::dx (const prmt::Point<2> &p) const
+{
+    return dx(p.x(), p.y());
+};
+
+dbl Scalar4PointsFunc<2>::dy (const prmt::Point<2> &p) const
+{
+    return dy(p.x(), p.y());
 };
 ///////////////////////////
 

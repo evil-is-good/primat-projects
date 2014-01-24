@@ -64,7 +64,7 @@ prmt::Report HeatConductionProblem<dim>::assemble_system ()
                    \ /
                     '
 
-template <u8 dim>
+    template <u8 dim>
 ::M ()
 {
     cu16 dofs_per_cell = finite_element.dofs_per_cell;
@@ -91,19 +91,19 @@ template <u8 dim>
         for (size_t i = 0; i < dofs_per_cell; ++i)
         {
             for (size_t j = 0; j < dofs_per_cell; ++j)
-               this->system_equations.A  .add (local_dof_indices[i],
+                this->system_equations.A  .add (local_dof_indices[i],
                         local_dof_indices[j],
                         cell_matrix(i,j));
         };
     };
-    
+
     REPORT_USE( 
             prmt::Report report;
             report.result = true;
             _return (report););
 };
 
-template <u8 dim>
+    template <u8 dim>
 ::m ()
 {
     dealii::QGauss<dim>  quadrature_formula(2);
@@ -145,84 +145,96 @@ class ScalarProblemOnCell
 {
     public:
 
-    ScalarProblemOnCell ();
+        ScalarProblemOnCell ();
 
-    {
-        Domain<2> d;
-        set_grid (d.grid);
-        d.fe = FE_Q<2>(1);
-        d.dof_init ();
-
-        // dealii::SparseMatrix<dbl> matrix;
-        SystemsLinearAlgebraicEquations slae;
-        arr<dealii::Vector<dbl>, 2> solution;
-        arr<dealii::Vector<dbl>, 2> rhsv;
-
-        BlackOnWhiteSubstituter bows;
-        prepare_system_equations_for_hcp_on_cell (slae, solution, rhsv, bows, d);
-
-        Laplacian<2,1> element_matrix;
-
-        HeatConductionProblemSup<dim>::TypeCoef coef;
-        coef[x][x] .push_back (1.0);
-        coef[y][y] .push_back (1.0);
-        coef[x][y] .push_back (0.0);
-        coef[x][x] .push_back (2.0);
-        coef[y][y] .push_back (2.0);
-        coef[x][y] .push_back (0.0);
-        set_constants_for_hcp(element_matrix.C, coef);
-
-        element_matrix.quadrature = dealii::QGauss<2>(2);
-        element_matrix.init ();
-
-        assemble_matrix<2,1,Laplasian<2,1>>(slae.matrix, element_matrix, bows);
-        ASSEMBLER::assemble_matrix
-
-        FOR(i, 0, 2)
         {
-            arr<vec<dbl>, 2> coef_for_rhs;
-            FOR(j, 0, 2)
-                FOR(k, 0, element_matrix.C.size())
+            Domain<2> d;
+            set_grid (d.grid);
+            d.fe = FE_Q<2>(1);
+            d.dof_init ();
+
+            // dealii::SparseMatrix<dbl> matrix;
+            SystemsLinearAlgebraicEquations slae;
+            arr<dealii::Vector<dbl>, 2> solution;
+            arr<dealii::Vector<dbl>, 2> rhsv;
+
+            BlackOnWhiteSubstituter bows;
+            prepare_system_equations_for_hcp_on_cell (slae, solution, rhsv, bows, d);
+
+            Laplacian<2,1> element_matrix;
+
+            HeatConductionProblemSup<dim>::TypeCoef coef;
+            coef[x][x] .push_back (1.0);
+            coef[y][y] .push_back (1.0);
+            coef[x][y] .push_back (0.0);
+            coef[x][x] .push_back (2.0);
+            coef[y][y] .push_back (2.0);
+            coef[x][y] .push_back (0.0);
+            set_constants_for_hcp(element_matrix.C, coef);
+
+            element_matrix.quadrature = dealii::QGauss<2>(2);
+            element_matrix.init ();
+
+            assemble_matrix<2,1,Laplasian<2,1>>(slae.matrix, element_matrix, bows);
+            ASSEMBLER::assemble_matrix
+
+                FOR(i, 0, 2)
                 {
-                    coef_for_rhs[i] .puts_back (element_matrix.C[i][j][k]);
+                    arr<vec<dbl>, 2> coef_for_rhs;
+                    FOR(j, 0, 2)
+                        FOR(k, 0, element_matrix.C.size())
+                        {
+                            coef_for_rhs[i] .puts_back (element_matrix.C[i][j][k]);
+                        };
+                    LoopBordersAsSource<2,1> element_rhsv (coef_for_rhs);
+
+                    assemble_rhsv_on_cell<2,1,LoopBordersAsSource<2,1>>(rhsv[i], element_rhsv);
+
+                    dealii::SolverControl solver_control (10000, 1e-12);
+                    dealii::SolverCG<> solver (solver_control);
+                    solver.solve (
+                            slae.matrix,
+                            solution[i],
+                            rhsv[i]
+                            ,dealii::PreconditionIdentity()
+                            );
+                    FOR(j, 0, slae.solve[i].size())
+                        solution[i][j] = bows.subst (solution[i][j]);
                 };
-            LoopBordersAsSource<2,1> element_rhsv (coef_for_rhs);
 
-            assemble_rhsv_on_cell<2,1,LoopBordersAsSource<2,1>>(rhsv[i], element_rhsv);
+            FOR(i, 0, 2)
+                print_sol_for_hcp(solution[i], d.dof_hendler, "name i");
 
-            dealii::SolverControl solver_control (10000, 1e-12);
-            dealii::SolverCG<> solver (solver_control);
-            solver.solve (
-                    slae.matrix,
-                    solution[i],
-                    rhsv[i]
-                    ,dealii::PreconditionIdentity()
-                    );
-            FOR(j, 0, slae.solve[i].size())
-                solution[i][j] = bows.subst (solution[i][j]);
+            arr<dbl, 2> meta_coef;
+            calculate_meta_coefficients (meta_coef, slae);
+
+            printf(meta_coef);
         };
-
-        FOR(i, 0, 2)
-            print_sol_for_hcp(solution[i], d.dof_hendler, "name i");
-
-        arr<dbl, 2> meta_coef;
-        calculate_meta_coefficients (meta_coef, slae);
-
-        printf(meta_coef);
-    };
 }
+
+extern void make_grid(
+        dealii::Triangulation< 2 >&,
+        vec<prmt::Point<2>>,
+        vec<st>);
 
 main()
 {
     //HEAT_CONDUCTION_PROBLEM
     {
         Domain<2> d;
-        set_grid (d.grid);
+        {
+            vec<prmt::Point<2>> outer_border;
+            vec<st> type_outer_border;
+            GTools::give_rectangle_with_border_condition(
+                    outer_border, type_border, arr<st, 4>({0, 0, 0, 0}),
+                    prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+            make_grid (d.grid, outer_border, type_outer_border);
+        };
         d.fe = FE_Q<2>(1);
         d.dof_init ();
 
         SystemsLinearAlgebraicEquations slae;
-        ATools::trivial_prepare_system_equations (slae, d);
+        ATools ::trivial_prepare_system_equations (slae, d);
 
         LaplacianScalar<2> element_matrix (d.fe);
         {
@@ -231,21 +243,22 @@ main()
             coef[y][y] .push_back (1.0);
             coef[x][y] .push_back (0.0);
             coef[y][x] .push_back (0.0);
-            HCP::set_constants(element_matrix.C, coef);
-        }
+            HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+        };
 
-        Source<2,1> element_rhsv (func);
+        SourceScalar<2> element_rhsv (func, d.fe);
 
         Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_hendler);
         Assembler::assemble_rhsv<2> (slae.matrix, element_rhsv, domain.dof_hendler);
 
-        std::vector<prmt::BoundaryValues<2,1>> bound (1);
-        bound[0].function = [] (const dealii::Point<2> &p) {return p(0);};
-        bound[0].boundari_indicator = 0;
-        bound[0].type = Dirichlet;
+        vec<BoundaryValueScalar> bound (1);
+        bound[0].function      = [] (const dealii::Point<2> &p) {return p(0);};
+        bound[0].boundary_in   = 0;
+        bound[0].boundary_type = TBV::Dirichlet;
 
         for (b : bound)
-            b .apply_to (slae);
+            ATools ::apply_boundary_value_scalar (b) .to_slae (slae, domain);
+            // b .apply_to (slae); 
         // applay_boundary_values<2,1> (slae, bound);
 
         dealii::SolverControl solver_control (10000, 1e-12);
@@ -257,7 +270,9 @@ main()
                 ,dealii::PreconditionIdentity()
                 );
 
-        HCP::print_sol(slae.solution, d.dof_hendler, "name");
+        HCPTools ::print_temperature (slae.solution, d.dof_hendler, "temperature");
+        HCPTools ::print_heat_conductions (
+                slae.solution, element_matrix.C, d, "heat_conductions");
     };
 
     //ELASTIC_PROBLEM

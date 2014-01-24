@@ -1,11 +1,16 @@
 #ifndef BOUBDARY_VALUE
 #define BOUBDARY_VALUE
 
+#include "../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
+
+#include <deal.II/base/function.h>
+#include <deal.II/lac/vector.h>
+
 //! Тип граничного условия
 /*!
  * Boundary value type
  */
-namespace BVT
+namespace TBV
 {
     cu8 Dirichlet = 0;
     cu8 Neumann   = 1;
@@ -23,21 +28,21 @@ class BoundaryValueScalar
 
             void operator= (const TypeFunc func)
             {
-                function = func;
+                this->func = func;
             };
 
             virtual dbl value (const dealii::Point<dim> &p,
                     cu32  component = 0) const override
             {
-                return function (p);
+                return func (p);
             };
 
-            TypeFunc function;
+            TypeFunc func;
         };
 
         FunctionFromDealii function;
-        st boundari_id;
-        u8 boundari_type;
+        st boundary_id;
+        u8 boundary_type;
 };
 
 //! Граничное условие для векторной задачи
@@ -52,24 +57,25 @@ class BoundaryValueVector
 
             void operator= (const TypeFunc func)
             {
-                function = func;
+                func = func;
             };
 
             virtual void vector_value (const dealii::Point<dim> &p,
                     dealii::Vector<dbl> &values) const override
             {
-                auto res = funcion(p);
-
+                arr<dbl, dim> res = func(p);
+                dealii::Vector<dbl> v(1);
+                v[0] = 0.0;
                 FOR (i, 0, dim)
-                    values(i) = res[i];
+                    values = 0.0;//res[i];
             };
 
-            TypeFunc function;
+            TypeFunc func;
         };
 
         FunctionFromDealii function;
-        st boundari_id;
-        u8 boundari_type;
+        st boundary_id;
+        u8 boundary_type;
 };
 
 #endif

@@ -2,17 +2,16 @@
 
 #define SYSTEM_LINEAR_ALGEBRAIC_EQUATION
 
-#include <projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include "../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/sparse_matrix.h>
 
-template <u8 dim>
 struct  SystemsLinearAlgebraicEquations 
 {
     void matrix_reinit (dealii::CompressedSparsityPattern &csp)
     {
         this->sparsity_pattern .copy_from (csp);
-        this->A .reinit (this->sparsity_pattern);
+        this->matrix .reinit (this->sparsity_pattern);
     };
     
     dealii::SparsityPattern   sparsity_pattern;

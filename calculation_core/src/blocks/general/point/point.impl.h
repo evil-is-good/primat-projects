@@ -43,7 +43,8 @@ namespace prmt
         {
             public:
                 Point () : _x(0.0), _y(0.0) {};
-                Point (dbl x, dbl y) { _x = x; _y = y; };
+                Point (cdbl x, cdbl y) : _x(x), _y(y) {};
+                Point (const dealii::Point<2, dbl> &p) : _x(p(0)), _y(p(1)) {};
 
                 dbl& x() { return _x; };
                 dbl& y() { return _y; };
@@ -54,6 +55,12 @@ namespace prmt
                 operator dealii::Point<2, dbl> () const
                 {
                     return dealii::Point<2, dbl>(_x, _y);
+                };
+
+                void operator= (const dealii::Point<2, dbl> &p)
+                {
+                    _x = p(0);
+                    _y = p(1);
                 };
                 
                 dbl distance (const Point<2> &p) const
