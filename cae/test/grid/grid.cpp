@@ -39,7 +39,7 @@
 
 struct FaceInfo2
 {
-    FaceInfo2(){}
+    FaceInfo2() : nesting_level(0) {};
     int nesting_level;
 
     bool in_domain(){ 
@@ -688,16 +688,26 @@ void create_grid_using_cgal<cguc_type::Default> (CDT &cdt,
 
 };
 
-void extract_border (CDT &cdt, vec<CDT::Point> &border_on_cdt)
+void extract_border (const CDT &cdt, vec<CDT::Point> &border_on_cdt)
 {
+    // auto fc = cdt.incident_edges (cdt.infinite_vertex());
     CDT::Face_circulator fc = cdt.incident_faces (cdt.infinite_vertex());
     CDT::Face_circulator end_fc = fc;
+    printf("2.1.2.1\n");
     FOR(i, 0, 9000)
     {
         st e = 3;
-        if (fc->is_constrained(0)) e = 0;
-        if (fc->is_constrained(1)) e = 1;
-        if (fc->is_constrained(2)) e = 2;
+    printf("2.1.2.2\n");
+        // if (fc->is_constrained(0)) e = 0;
+    printf("2.1.2.3\n");
+        // if (fc->is_constrained(1)) e = 1;
+        // if (fc->is_constrained(2)) e = 2;
+        for (st i = 0; i < 3; ++i)
+        {
+            if (fc->is_constrained(i))
+                e = i;
+        };
+
         if (e < 3)
         {
             // append_in_file("border_grid_cgal.gpd", 
@@ -719,7 +729,10 @@ void extract_border (CDT &cdt, vec<CDT::Point> &border_on_cdt)
             break;
         };
     };
-    border_on_cdt .push_back (border_on_cdt.front());
+    printf("2.1.2.4\n");
+    printf("%d\n", border_on_cdt.size());
+    border_on_cdt .push_back (border_on_cdt.front()); 
+    printf("2.1.2.5\n");
     // for (auto i : border_on_cdt)
     //     append_in_file("border_grid_cgal.gpd", 
     //             std::to_string(i.x()) +
@@ -851,11 +864,28 @@ void create_grid_using_cgal_2 (CDT &cdt,
         vec_of_domains.push_back(vec_of_vertices);
     };
 
-    add_border_to_domain (outer_border);
+    auto add_constreins = [&vec_of_domains, &cdt] ()
+    {
+        for (auto vv : vec_of_domains)
+        {
+            for (st i = 0; i < vv.size() - 1; ++i)
+            {
+                cdt.insert_constraint(vv[i], vv[i + 1]);
+            };
+            cdt.insert_constraint(vv.back(), vv.front());
+        };
+    };
+    printf("2.1.1\n");
 
-    CGAL::refine_Delaunay_mesh_2(cdt, Criteria(/* 0.125, 0.1 */));
+    add_border_to_domain (outer_border);
+    add_constreins ();
+
+    CGAL::refine_Delaunay_mesh_2(cdt, Criteria( 0.125, 0.1 ));
+    // CGAL::refine_Delaunay_mesh_2(cdt, Criteria(/* 0.125, 0.1 */));
+    printf("2.1.2\n");
 
     extract_border (cdt, border_on_cdt);
+    printf("2.1.3\n");
 };
 
 void set_grid(
@@ -916,13 +946,15 @@ void set_grid(
 void make_grid(
         dealii::Triangulation< 2 > &triangulation,
         vec<prmt::Point<2>> outer_border,
-        vec<prmt::Point<2>> inner_border,
         vec<st> type_outer_border)
 {
     CDT cdt;
     vec<CDT::Point> border_on_cdt;
+    printf("2.1\n");
     create_grid_using_cgal_2(cdt, border_on_cdt, outer_border);
+    printf("2.2\n");
 
     convert_to_dealii_format_without_domains(cdt, border_on_cdt,
             triangulation, outer_border, type_outer_border);
+    printf("2.3\n");
 };

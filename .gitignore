@@ -22,7 +22,7 @@
 *.log
 *.i
 *.e
-*.*x
+*.aux
 *.bmp
 *.jpg
 *.dvi

@@ -1,0 +1,154 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+\begin{document}
+
+\begin{equation}
+    \begin{array}{c}
+    \sum_{i,j=0}^2 C_{ij}\frac{\partial U}{\partial j}\frac{\partial U}{\partial k}=
+    \sum_{i,j=0}^2 C_{ij}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial k}= \\ \\
+\end{array}
+\end{equation} 
+
+\begin{equation}
+    \begin{array}{c}
+        \frac{\partial}{\partial \alpha_{a}}:
+
+        C_{00}
+        (\frac{\partial\phi_{a}}{\partial 0}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 0}+
+        \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 0}\frac{\partial\phi_{a}}{\partial 0})+ \\ \\
+
+        C_{01}
+        (\frac{\partial\phi_{a}}{\partial 0}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 1}+
+        \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 0}\frac{\partial\phi_{a}}{\partial 1})+ \\ \\
+
+        C_{10}
+        (\frac{\partial\phi_{a}}{\partial 1}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 0}+
+        \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 1}\frac{\partial\phi_{a}}{\partial 0})+ \\ \\
+
+        C_{11}
+        (\frac{\partial\phi_{a}}{\partial 1}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 1}+
+        \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)}{\partial 1}\frac{\partial\phi_{a}}{\partial 1})\\ \\
+\end{array}
+\end{equation} 
+
+\begin{equation}
+    \begin{array}{c}
+        \alpha_{b}*[
+
+        C_{00}
+        (\frac{\partial\phi_{a}}{\partial 0}\frac{\partial\phi_{b}}{\partial 0}+
+        \frac{\partial\phi_{b}}{\partial 0}\frac{\partial\phi_{a}}{\partial 0})+ \\ \\
+
+        C_{01}
+        (\frac{\partial\phi_{a}}{\partial 0}\frac{\partial\phi_{b}}{\partial 1}+
+        \frac{\partial\phi_{b}}{\partial 0}\frac{\partial\phi_{a}}{\partial 1})+ \\ \\
+
+        C_{10}
+        (\frac{\partial\phi_{a}}{\partial 1}\frac{\partial\phi_{b}}{\partial 0}+
+        \frac{\partial\phi_{b}}{\partial 1}\frac{\partial\phi_{a}}{\partial 0})+ \\ \\
+
+        C_{11}
+        (\frac{\partial\phi_{a}}{\partial 1}\frac{\partial\phi_{b}}{\partial 1}+
+        \frac{\partial\phi_{b}}{\partial 1}\frac{\partial\phi_{a}}{\partial 1}) ] = \\ \\
+        \alpha_{b}*2*\sum_{i,j=0}^2C_{ij}\frac{\partial\phi_{a}}{\partial i}\frac{\partial\phi_{b}}{\partial j} \\ \\
+\end{array}
+\end{equation} 
+
+\begin{equation}
+    \begin{array}{c}
+    \sum_{i,j,k,l=0}^2 C_{ijkl}\frac{\partial U_i}{\partial j}\frac{\partial U_l}{\partial k}=
+    \sum_{i,j,k,l=0}^2 C_{ijkl}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_i}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_l}{\partial k}= \\ \\
+
+    \sum_{j,k=0}^2 C_{0jk0}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{0jk1}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{0jk2}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}{\partial k}+ \\ \\
+
+
+    \sum_{j,k=0}^2 C_{1jk0}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{1jk1}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{1jk2}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}{\partial k}+ \\ \\
+
+
+    \sum_{j,k=0}^2 C_{2jk0}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_0}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{2jk1}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_1}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{2jk2}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}
+    {\partial j}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_2}{\partial k} \\ \\
+\end{array}
+\end{equation} 
+
+\begin{equation}
+    \begin{array}{c}
+        \frac{\partial}{\partial \alpha_{ab}}:
+
+        \sum_{j,k=0}^2 C_{bjkb}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_b}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{bjkb}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_b}{\partial j}
+    \frac{\partial\phi_{ab}}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{bjk\overline{b}}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_{\overline{b}}}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{bjk\overline{\overline{b}}}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_{\overline{\overline{b}}}}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{\overline{b}jkb}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_{\overline{b}}}{\partial j}
+    \frac{\partial\phi_{ab}}{\partial k}+ \\ \\
+
+    \sum_{j,k=0}^2 C_{\overline{\overline{b}}jkb}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_{\overline{\overline{b}}}}{\partial j}
+    \frac{\partial\phi_{ab}}{\partial k}= \\ \\
+
+    \sum_{j,k,l=0}^2 C_{ljkb}\frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_l}{\partial j}
+    \frac{\partial\phi_{ab}}{\partial k}+ \\ \\
+
+    \sum_{j,k,l=0}^2 C_{bjkl}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_l}{\partial k}= \\ \\
+
+    2*\sum_{j,k,l=0}^2 C_{bjkl}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{(\sum_{m=0}^3\alpha_m\partial\phi_m)_l}{\partial k} \\ \\
+\end{array}
+\end{equation} 
+
+\begin{equation}
+    \begin{array}{c}
+        \alpha_{cd}*
+    2*\sum_{j,k=0}^2 C_{bjkd}\frac{\partial\phi_{ab}}{\partial j}
+    \frac{\phi_{cd}}{\partial k} \\ \\
+\end{array}
+\end{equation} 
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+

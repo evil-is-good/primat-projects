@@ -145,6 +145,11 @@ namespace HCPTools
         grad[0] .reinit (domain.dof_handler.n_dofs());
         grad[1] .reinit (domain.dof_handler.n_dofs());
 
+        vec<dbl> gradx;
+        vec<prmt::Point<2>> ps;
+
+        vec<st> N(domain.dof_handler.n_dofs());
+
         for (
                 auto cell = domain.dof_handler.begin_active(); 
                 cell     != domain.dof_handler.end(); 
@@ -162,13 +167,30 @@ namespace HCPTools
 
             Scalar4PointsFunc<2> function_on_cell(points, values);
 
+            dbl midl_x = (cell->vertex(0)(0) + cell->vertex(1)(0) + cell->vertex(2)(0) + cell->vertex(3)(0)) / 4.0;
+            dbl midl_y = (cell->vertex(0)(1) + cell->vertex(1)(1) + cell->vertex(2)(1) + cell->vertex(3)(1)) / 4.0;
+
+            gradx .push_back (function_on_cell.dy(midl_x, midl_y));
+            ps .push_back (prmt::Point<2>(midl_x, midl_y));
+
+
+                // auto indx = cell->vertex_dof_index(0, 0);
+
+                // grad[0][indx] = function_on_cell.dx(cell->vertex(0));
+                // grad[1][indx] = function_on_cell.dy(cell->vertex(0));
             for (st i = 0; i < dofs_per_cell; ++i)
             {
                 auto indx = cell->vertex_dof_index(i, 0);
 
-                grad[0][indx] = function_on_cell.dx(cell->vertex(i));
-                grad[1][indx] = function_on_cell.dy(cell->vertex(i));
+                grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                ++(N[indx]); 
             };
+        };
+        for (st i = 0; i < N.size(); ++i)
+        {
+            grad[0][i] /= N[i];
+            grad[1][i] /= N[i];
         };
 
         {
@@ -184,6 +206,13 @@ namespace HCPTools
             std::ofstream output (name);
             data_out.write_gnuplot (output);
         };
+        FILE *F;
+        F = fopen("gradx.gpd", "w");
+        for (st i = 0; i < ps.size(); ++i)
+        {
+            fprintf(F, "%lf %lf %lf\n", ps[i].x(), ps[i].y(), gradx[i]);
+        };
+        fclose(F);
     }
 };
 

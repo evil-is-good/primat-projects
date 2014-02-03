@@ -1,0 +1,638 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+
+\makeatletter
+\newcommand{\rmnum}[1]{\romannumeral #1}
+\newcommand{\Rmnum}[1]{\expandafter\@slowromancap\romannumeral #1@}
+\makeatother
+
+\begin{document}
+
+\section{Одномерное уравнение теплопроводности.}
+
+\begin{equation} \label{e1}
+    \begin{array}{c}
+        \frac{d}{dx} \big( \lambda(x) \frac{dT(x)}{dx} \big) = 0, \\ \\
+        \left. T(x) \right|_{x=0} = T(0), \left. T(x) \right|_{x=L} = T(L). \\ \\
+        x_1 = \frac{L}{2}
+    \end{array} 
+\end{equation}
+
+$x_1$ - точка разделения двух сред $\lambda_1$ и $\lambda_2$.
+
+\begin{equation*}
+    \begin{cases}
+        \lambda(x) = \lambda_1; \ 0 \le x \le x_1\\
+        \lambda(x) = \lambda_2; \ x_1 \le x \le L\\
+    \end{cases} 
+\end{equation*}
+
+После обезразмеривания, уравнение принимает вид:
+
+\begin{equation} \label{e1b}
+    \begin{array}{c}
+        \frac{d}{dx} \big( \lambda(x) \frac{dT(x)}{dx} \big) = 0, \\ \\
+        \left. T(x) \right|_{x=0} = T(0), \left. T(x) \right|_{x=1} = T(1). \\ \\
+         x_1 = \frac{1}{2} \\ \\
+         \varepsilon = 1
+    \end{array} 
+\end{equation}
+
+\subsection{Аналитическое решение.}
+
+\begin{equation*}
+        \frac{dT(x)}{dx} = \frac{C}{\lambda(x)}
+\end{equation*}
+
+\begin{equation*}
+    \begin{cases}
+        T(x)^{\Rmnum{1}} - T(0) = \int\limits_0^x \frac{C}{\lambda_1}dt; \ 0 \le x \le \frac{1}{2}\\
+        T(1) - T(x)^{\Rmnum{2}} = \int\limits_x^1 \frac{C}{\lambda_2}dt; \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    \begin{cases}
+        T^{\Rmnum{1}}(x) = \frac{C}{\lambda_1}x + T(0); \ 0 \le x \le \frac{1}{2}\\ \\ 
+        T^{\Rmnum{2}}(x) = \frac{C}{\lambda_2}(x-1) + T(1); \ \frac{1}{2} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    T^{\Rmnum{1}}(1/2) = T^{\Rmnum{2}}(1/2)
+\end{equation*}
+
+\begin{equation*}
+    \frac{C}{\lambda_1}\frac{1}{2} + T(0) = \frac{C}{\lambda_2}(\frac{1}{2}-1) + T(1)
+\end{equation*}
+
+\begin{equation}\label{e2}
+    C = \frac{T(1)-T(0)}{\frac{1/2}{\lambda_1} + \frac{1-1/2}{\lambda_2}} =
+    2\frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}(T(1)-T(0))
+\end{equation}
+
+Если $T(0) = b$ и $T(1) = a+b$, то
+
+\begin{equation}\label{e3}
+    C = 2a \frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}
+\end{equation}
+
+\begin{equation}\label{e4}
+    \begin{cases}
+        T^{\Rmnum{1}}(x) = \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b; \ 0 \le x \le \frac{1}{2}\\ \\
+        T^{\Rmnum{2}}(x) = \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation}
+
+(\ref{e4}) есть аналитическое решение уравнения (\ref{e1b}).
+
+\subsection{Асимптотическое решение.}
+
+\begin{equation} \label{e5}
+    \begin{array}{c}
+        \frac{d}{d\xi} \big( \lambda(\xi) \frac{d\Psi(\xi)}{d\xi} \big) = 
+        - \frac{d\lambda(\xi)}{d\xi}, \\ \\
+        \left. \Psi(\xi) \right|_{\xi=0} = \left. \Psi(\xi) \right|_{\xi=1}. \\ \\
+        \left. k(\xi) \right|_{\xi=0} = \left. k(\xi) \right|_{\xi=1}. \\ \\
+        k(\xi) = -(\lambda(\xi) \frac{d\Psi(\xi)}{d\xi} + \lambda(\xi)) \\ \\
+        \varepsilon = 1, \xi_1 = \frac{1}{2} \\ \\
+        T(0) = 0
+    \end{array} 
+\end{equation}
+
+\begin{equation*}
+        \frac{d\Psi(x)}{dx} = \frac{C}{\lambda(x)} - 1
+\end{equation*}
+
+\begin{equation*}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(x) = \int\limits_0^x (\frac{C}{\lambda_1} - 1)dt; \ 0 \le x \le \frac{1}{2}\\
+        - \Psi^{\Rmnum{2}}(x) = \int\limits_x^1 (\frac{C}{\lambda_2} - 1)dt; \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(\xi) = (\frac{C}{\lambda_1} - 1)\xi; \ 0 \le \xi \le \frac{1}{2}\\
+        \Psi^{\Rmnum{2}}(\xi) = (\frac{C}{\lambda_2} - 1)(\xi - 1); \ \frac{1}{2} \le \xi \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    \Psi^{\Rmnum{1}}(1/2) = \Psi^{\Rmnum{2}}(1/2)
+\end{equation*}
+
+\begin{equation*}
+    (\frac{C}{\lambda_1} - 1)1/2 = (\frac{C}{\lambda_2} - 1)(1/2 - 1)
+\end{equation*}
+
+\begin{equation}\label{e6}
+    C = \frac{1}{\frac{1/2}{\lambda_1} + \frac{1-1/2}{\lambda_2}} =
+    2\frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}
+\end{equation}
+
+\begin{equation} \label{e7}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(\xi) = (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\xi; \ 0 \le \xi \le \frac{1}{2}\\
+        \Psi^{\Rmnum{2}}(\xi) = (\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\xi - 1); \ \frac{1}{2} \le \xi \le 1\\
+    \end{cases} 
+\end{equation}
+
+\begin{equation} \label{e8}
+    \stackrel{o}{T}(x) = T_0(x) + \Psi(\xi)T'_0(x)
+\end{equation}
+
+$\stackrel{o}{T}(x)$ - асимптотическое приближение к $T(x)$.
+Так как $\varepsilon = 1$, то $\xi = x$.
+Из (\ref{e1}) $T_0(x) = ax+b$, $T'_0(x) = a$.
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        ax+b + a(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)x;
+        \ 0 \le x \le \frac{1}{2}\\
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        ax+b + a(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(x - 1);  
+        \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\begin{equation} \label{e9}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b;
+        \ 0 \le x \le \frac{1}{2}\\
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x - 1) + a + b;  
+        \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation}
+
+Из (\ref{e4}) и (\ref{e9}) видно, что $\stackrel{o}{T}(x) \equiv T(x)$ при условиях (\ref{e1}).   
+
+
+\begin{equation}\label{e10}
+    \begin{cases}
+        q^{\Rmnum{1}}(x) = -\frac{2a\lambda_2\lambda_1}{\lambda_1 + \lambda_2};
+        \ 0 \le x \le \frac{1}{2}\\
+        q^{\Rmnum{2}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2};
+        \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation}
+
+где $q(x)=-\lambda(x)T'(x)$ - тепловой поток.
+
+
+\begin{equation} \label{e11}
+    \stackrel{o}{q}(x) = k(\xi)T'_0(x)
+\end{equation}
+
+$\stackrel{o}{q}(x)$ - асимптотическое приближение к $q(x)$.
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{q}^{\Rmnum{1}}(x) = 
+        -\lambda_1(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1 + 1)a;
+        \ 0 \le x \le \frac{1}{2}\\
+        \stackrel{o}{q}^{\Rmnum{2}}(x) =
+        -\lambda_2(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1 + 1)a;
+        \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\begin{equation}\label{e12}
+    \begin{cases}
+        \stackrel{o}{q}^{\Rmnum{1}}(x) = -\frac{2a\lambda_2\lambda_1}{\lambda_1 + \lambda_2};
+        \ 0 \le x \le \frac{1}{2}\\
+        \stackrel{o}{q}^{\Rmnum{2}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2};
+        \ \frac{1}{2} \le x \le 1\\
+    \end{cases} 
+\end{equation}
+
+Из (\ref{e10}) и (\ref{e12}) видно, что $\stackrel{o}{q}(x) \equiv q(x)$ при условиях (\ref{e1}).   
+
+\section{Тоже самое, но тело разбито не на две, а на четыре части.}
+
+\begin{equation} \label{e13}
+    \begin{array}{c}
+        \frac{d}{dx} \big( \lambda(x) \frac{dT(x)}{dx} \big) = 0, \\ \\
+        \left. T(x) \right|_{x=0} = T(0), \left. T(x) \right|_{x=1} = T(1). \\ \\
+        \varepsilon = 1
+    \end{array} 
+\end{equation}
+
+\begin{equation*}
+    \begin{cases}
+        \lambda(x) = \lambda_1; \ 0 \le x \le \frac{1}{4}\\
+        \lambda(x) = \lambda_2; \ \frac{1}{4} \le x \le \frac{1}{2}\\
+        \lambda(x) = \lambda_1; \ \frac{1}{2} \le x \le \frac{3}{4}\\
+        \lambda(x) = \lambda_2; \ \frac{3}{4} \le x \le 1\\
+    \end{cases} 
+\end{equation*}
+
+\subsection{Аналитическое решение.}
+
+\begin{equation*}
+    \begin{cases}
+        T^{\Rmnum{1}}(x) = \frac{C}{\lambda_1}x + T(0); \ 0 \le x \le \frac{1}{4}\\ 
+        T^{\Rmnum{2}}(x) = \frac{C}{\lambda_1}(x-\frac{1}{2}) -
+        \frac{C}{\lambda_1}(\frac{1}{4}) -
+        \frac{C}{\lambda_2}(\frac{1}{4}) + T(1); \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        T^{\Rmnum{3}}(x) = \frac{C}{\lambda_1}(x-\frac{3}{4}) -
+        \frac{C}{\lambda_2}(\frac{1}{4}) + T(1); \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        T^{\Rmnum{4}}(x) = \frac{C}{\lambda_2}(x-1) + T(1); \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    T^{\Rmnum{1}}(1/4) = T^{\Rmnum{2}}(1/4)
+\end{equation*}
+
+\begin{equation*}
+    \frac{C}{\lambda_1}\frac{1}{4} + T(0) = 
+        \frac{C}{\lambda_1}(\frac{1}{4}-\frac{1}{2}) -
+        \frac{C}{\lambda_1}(\frac{1}{4}) -
+        \frac{C}{\lambda_2}(\frac{1}{4}) + T(1) 
+\end{equation*}
+
+\begin{equation*}
+    C = \frac{T(1)-T(0)}{\frac{1/4 + 1/4}{\lambda_1} + \frac{1/4 + 1/4}{\lambda_2}} =
+    2\frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}(T(1)-T(0))
+\end{equation*}
+
+Если $T(0) = b$ и $T(1) = a+b$, то
+
+\begin{equation}\label{e14}
+    C = 2a \frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}
+\end{equation}
+
+\begin{equation}\label{e15}
+    \begin{cases}
+        T^{\Rmnum{1}}(x) = \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b; \ 0 \le x \le \frac{1}{4}\\ 
+        T^{\Rmnum{2}}(x) = \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-\frac{1}{2}) -
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}(\frac{1}{4}) -
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(\frac{1}{4}) + a + b; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        T^{\Rmnum{3}}(x) = \frac{2a\lambda_2}{\lambda_1 + \lambda_2}(x-\frac{3}{4}) -
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(\frac{1}{4}) + a + b; \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        T^{\Rmnum{4}}(x) = \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+\begin{equation}\label{e16}
+    \begin{cases}
+        q^{\Rmnum{1}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}\varepsilon; \ 0 \le x \le \frac{1}{4}\\ 
+        q^{\Rmnum{2}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}\varepsilon; \ \frac{1}{4} \le x \le \frac{1}{2}\\
+        q^{\Rmnum{3}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}\varepsilon; \ \frac{3}{4} \le x \le 1\\
+        q^{\Rmnum{4}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}\varepsilon; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+\subsection{Асимптотическое решение.}
+
+\begin{equation} \label{e17}
+    \begin{array}{c}
+        \frac{d}{d\xi} \big( \lambda(\xi) \frac{d\Psi(\xi)}{d\xi} \big) = 
+        - \frac{d\lambda(\xi)}{d\xi}, \\ \\
+        \left. \Psi(\xi) \right|_{\xi=0} = \left. \Psi(\xi) \right|_{\xi=1}. \\ \\
+        \left. k(\xi) \right|_{\xi=0} = \left. k(\xi) \right|_{\xi=1}. \\ \\
+        k(\xi) = -(\lambda(\xi) \frac{d\Psi(\xi)}{d\xi} + \frac{d\lambda(\xi)}{d\xi}) \\ \\
+        \varepsilon = 1 \\ \\
+        T(0) = 0
+    \end{array} 
+\end{equation}
+
+\begin{equation*}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(\xi) = (\frac{C}{\lambda_1} - 1)\xi; \ 0 \le \xi \le \frac{1}{4}\\ 
+        \Psi^{\Rmnum{2}}(\xi) = (\frac{C}{\lambda_1} - 1)(\xi-\frac{1}{2}) -
+        (\frac{C}{\lambda_1} - 1)(\frac{1}{4}) -
+        (\frac{C}{\lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{4} \le \xi \le \frac{1}{2}\\ 
+        \Psi^{\Rmnum{3}}(\xi) = (\frac{C}{\lambda_1} - 1)(\xi-\frac{3}{4}) -
+        (\frac{C}{\lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{2} \le \xi \le \frac{3}{4}\\ 
+        \Psi^{\Rmnum{4}}(\xi) = (\frac{C}{\lambda_2} - 1)(\xi-1); \ \frac{3}{4} \le \xi \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    \Psi^{\Rmnum{1}}(1/4) = \Psi^{\Rmnum{2}}(1/4)
+\end{equation*}
+
+\begin{equation*}
+    (\frac{C}{\lambda_1} - 1)\frac{1}{4} = 
+        (\frac{C}{\lambda_1} - 1)(\frac{1}{4}-\frac{1}{2}) -
+        (\frac{C}{\lambda_1} - 1)(\frac{1}{4}) -
+        (\frac{C}{\lambda_2} - 1)(\frac{1}{4}) 
+\end{equation*}
+
+\begin{equation}\label{e18}
+    C = 2 \frac{\lambda_1 \lambda_2}{\lambda_1 + \lambda_2}
+\end{equation}
+
+\begin{equation} \label{e19}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(\xi) = (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\xi; \ 0 \le \xi \le \frac{1}{4}\\ 
+        \Psi^{\Rmnum{2}}(\xi) = (\frac{2\lambda_1}{\lambda_1 + \lambda_2}  - 1)(\xi-\frac{1}{2}) -
+        (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}) -
+        (\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{4} \le \xi \le \frac{1}{2}\\ 
+        \Psi^{\Rmnum{3}}(\xi) = (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(\xi-\frac{3}{4}) -
+        (\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{2} \le \xi \le \frac{3}{4}\\ 
+        \Psi^{\Rmnum{4}}(\xi) = (\frac{2\lambda_1}{\lambda_1 + \lambda_2}  - 1)(\xi-1); \ \frac{3}{4} \le \xi \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        ax+b + a(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)x; \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        ax+b + a(\frac{2\lambda_1}{\lambda_1 + \lambda_2}  - 1)(x-\frac{1}{2}) -
+        a(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}) -
+        a(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        ax+b + a(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(x-\frac{3}{4}) -
+        a(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\frac{1}{4}); \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        ax+b + a(\frac{2\lambda_1}{\lambda_1 + \lambda_2}  - 1)(x-1); \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation} \label{e20}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b; \ 0 \le x \le \frac{1}{4}\\ 
+
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-\frac{1}{2}) -
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}\frac{1}{4} -
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}\frac{1}{4} + a + b; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}(x-\frac{3}{4}) -
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}\frac{1}{4} + a + b; \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+\begin{equation*}
+    \stackrel{o}{T}(x) \equiv T(x)
+\end{equation*}
+
+\begin{equation}\label{e21}
+    \begin{cases}
+        \stackrel{o}{q}^{\Rmnum{1}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}; \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{q}^{\Rmnum{2}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}; \ \frac{1}{4} \le x \le \frac{1}{2}\\
+        \stackrel{o}{q}^{\Rmnum{3}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}; \ \frac{3}{4} \le x \le 1\\
+        \stackrel{o}{q}^{\Rmnum{4}}(x) = -\frac{2a\lambda_1\lambda_2}{\lambda_1 + \lambda_2}; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+\begin{equation*}
+    \stackrel{o}{q}(x) \equiv q(x)
+\end{equation*}
+
+\section{Тоже самое, только теперь $\varepsilon = 1/2$.}
+
+Аналитическое решение остаётся тем же, а асимптотическое меняется.
+
+\begin{equation} \label{e22}
+    \begin{cases}
+        \Psi^{\Rmnum{1}}(\xi) = (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\xi;
+        \ 0 \le \xi \le \frac{1}{2}\\
+        \Psi^{\Rmnum{2}}(\xi) = (\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1)(\xi - 1);
+        \ \frac{1}{2} \le \xi \le 1\\
+    \end{cases} 
+\end{equation}
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        T_0(x) + \Psi^{\Rmnum{1}}(\xi)T'_0(x)\varepsilon; \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        T_0(x) + \Psi^{\Rmnum{2}}(\xi)T'_0(x)\varepsilon; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        T_0(x) + \Psi^{\Rmnum{1}}(\xi)T'_0(x)\varepsilon; \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        T_0(x) + \Psi^{\Rmnum{2}}(\xi)T'_0(x)\varepsilon; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\xi a\varepsilon
+\end{equation*}
+
+\begin{equation*}
+    x = x_i + \xi \varepsilon, x_i = 0, \xi = \frac{x}{\varepsilon}
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\frac{x}{\varepsilon} a\varepsilon
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b;
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(\xi - 1) a\varepsilon
+\end{equation*}
+
+\begin{equation*}
+    x = x_i + \xi \varepsilon, x_i = 0, \xi = \frac{x}{\varepsilon}
+\end{equation*}
+
+\begin{equation*}
+    \begin{gathered}
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)
+        (\frac{x}{\varepsilon}- 1) a\varepsilon = \\
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax-
+        (\frac{2\lambda_1}{\lambda_1 + \lambda_2}-1)a\varepsilon + b = \\
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_1-\lambda_2}{2(\lambda_1+\lambda_2)}a + b
+    \end{gathered}
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)\xi a\varepsilon
+\end{equation*}
+
+\begin{equation*}
+    x = x_i + \xi \varepsilon, x_i = 1/2, \xi = \frac{x-1/2}{\varepsilon}
+\end{equation*}
+
+\begin{equation*}
+    \begin{gathered}
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)
+        \frac{x-1/2}{\varepsilon} a\varepsilon = \\
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_2-\lambda_1}{2(\lambda_1+\lambda_2)}a + b
+    \end{gathered}
+\end{equation*}
+
+\begin{equation*}
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)(\xi-1) a\varepsilon
+\end{equation*}
+
+\begin{equation*}
+    x = x_i + \xi \varepsilon, x_i = 1/2, \xi = \frac{x-1/2}{\varepsilon}
+\end{equation*}
+
+\begin{equation*}
+    \begin{gathered}
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        a + b + (\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1)
+        (\frac{x-1/2}{\varepsilon}-1) a\varepsilon = \\
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; 
+    \end{gathered}
+\end{equation*}
+
+\begin{equation} \label{e23}
+    \begin{cases}
+        \stackrel{o}{T^{\Rmnum{1}}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b; \ 0 \le x \le \frac{1}{4}\\ 
+
+        \stackrel{o}{T^{\Rmnum{2}}}(x) = 
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_1-\lambda_2}{2(\lambda_1+\lambda_2)}a + b
+        ; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+
+        \stackrel{o}{T^{\Rmnum{3}}}(x) = 
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_2-\lambda_1}{2(\lambda_1+\lambda_2)}a + b;
+        \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        
+        \stackrel{o}{T^{\Rmnum{4}}}(x) = 
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+Преабразуем выражениия (\ref{e15}).
+
+\begin{equation*}
+    \begin{gathered}
+        T^{\Rmnum{2}}(x) = \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-\frac{1}{2}) -
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}(\frac{1}{4}) -
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}(\frac{1}{4}) + a + b = \\
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax + 
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}(\frac{1}{4}-\frac{1}{2})a + 
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}(\frac{1}{4})a + a + b = \\
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax - 
+        \frac{\lambda_1-\lambda_2}{2(\lambda_1+\lambda_2)}a + b
+    \end{gathered}
+\end{equation*}
+
+\begin{equation*}
+    \begin{gathered}
+        T^{\Rmnum{3}}(x) = \frac{2a\lambda_2}{\lambda_1 + \lambda_2}(x-\frac{3}{4}) -
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}(\frac{1}{4}) + a + b = \\ 
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}ax + 
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}(\frac{3}{4}-1)a - 
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}(\frac{3}{4})a + a + b = \\
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}ax - 
+        \frac{\lambda_2-\lambda_1}{2(\lambda_1+\lambda_2)}a + b
+    \end{gathered}
+\end{equation*}
+
+Получили:
+
+\begin{equation} \label{e24}
+    \begin{cases}
+        T^{\Rmnum{1}}(x) = 
+        \frac{2a\lambda_2}{\lambda_1 + \lambda_2}x + b; \ 0 \le x \le \frac{1}{4}\\ 
+
+        T^{\Rmnum{2}}(x) = 
+        \frac{2\lambda_1}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_1-\lambda_2}{2(\lambda_1+\lambda_2)}a + b
+        ; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+
+        T^{\Rmnum{3}}(x) = 
+        \frac{2\lambda_2}{\lambda_1 + \lambda_2}ax-
+        \frac{\lambda_2-\lambda_1}{2(\lambda_1+\lambda_2)}a + b;
+        \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        
+        T^{\Rmnum{4}}(x) = 
+        \frac{2a\lambda_1}{\lambda_1 + \lambda_2}(x-1) + a + b; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+Из (\ref{e23}) и (\ref{e24}) видно, что $\stackrel{o}{T}(x) \equiv T(x)$.   
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{q^{\Rmnum{1}}}(x) = 
+        k^{\Rmnum{1}}(\xi)T'_0(x)\varepsilon; \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{q^{\Rmnum{2}}}(x) = 
+        k^{\Rmnum{2}}(\xi)T'_0(x)\varepsilon; \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        \stackrel{o}{q^{\Rmnum{3}}}(x) = 
+        k^{\Rmnum{1}}(\xi)T'_0(x)\varepsilon; \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        \stackrel{o}{q^{\Rmnum{4}}}(x) = 
+        k^{\Rmnum{2}}(\xi)T'_0(x)\varepsilon; \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation*}
+    \begin{cases}
+        \stackrel{o}{q}^{\Rmnum{1}}(x) = 
+        -\lambda_1(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1 + 1)a\varepsilon;
+        \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{q}^{\Rmnum{2}}(x) = 
+        -\lambda_2(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1 + 1)a\varepsilon;
+        \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        \stackrel{o}{q}^{\Rmnum{3}}(x) = 
+        -\lambda_1(\frac{2\lambda_2}{\lambda_1 + \lambda_2} - 1 + 1)a\varepsilon;
+        \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        \stackrel{o}{q}^{\Rmnum{4}}(x) = 
+        -\lambda_2(\frac{2\lambda_1}{\lambda_1 + \lambda_2} - 1 + 1)a\varepsilon;
+        \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation*}
+
+\begin{equation} \label{e25}
+    \begin{cases}
+        \stackrel{o}{q}^{\Rmnum{1}}(x) = 
+        -\frac{2\lambda_1\lambda_2}{\lambda_1 + \lambda_2}a\varepsilon;
+        \ 0 \le x \le \frac{1}{4}\\ 
+        \stackrel{o}{q}^{\Rmnum{2}}(x) = 
+        -\frac{2\lambda_1\lambda_2}{\lambda_1 + \lambda_2}a\varepsilon;
+        \ \frac{1}{4} \le x \le \frac{1}{2}\\ 
+        \stackrel{o}{q}^{\Rmnum{3}}(x) = 
+        -\frac{2\lambda_1\lambda_2}{\lambda_1 + \lambda_2}a\varepsilon;
+        \ \frac{1}{2} \le x \le \frac{3}{4}\\ 
+        \stackrel{o}{q}^{\Rmnum{4}}(x) = 
+        -\frac{2\lambda_1\lambda_2}{\lambda_1 + \lambda_2}a\varepsilon;
+        \ \frac{3}{4} \le x \le 1\\ 
+    \end{cases} 
+\end{equation}
+
+Из (\ref{e16}) и (\ref{e25}) видно, что $\stackrel{o}{q}(x) \equiv q(x)$.   
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
