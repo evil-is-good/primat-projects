@@ -52,10 +52,6 @@
 #include <iostream>
 // #include </usr/local/include/boost/lexical_cast.hpp>
 
-#include "projects/calculation_core/blocks/general/laplacian/scalar/laplacian_scalar.h"
-#include "projects/calculation_core/blocks/special/problem_on_cell/assembler/assembler.h"
-#include "projects/calculation_core/blocks/special/problem_on_cell/source/scalar/source_scalar.h"
-
 #include <time.h>
 
 template<uint8_t dim>

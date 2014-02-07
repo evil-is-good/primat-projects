@@ -49,8 +49,6 @@
 #include <iostream>
 #include </usr/local/include/boost/lexical_cast.hpp>
 
-#include "projects/calculation_core/blocks/general/laplacian/vector/laplacian_vector.h"
-
 
 template <uint8_t dim>
 class ElasticProblem2DOnCellV2 : public Problem< 
@@ -106,7 +104,9 @@ class ElasticProblem2DOnCellV2 : public Problem<
         double mean_coefficient[dim + 1][dim + 1][dim + 1][dim + 1];
         HeatConductionProblemOnCell<dim> problem_of_torsion_rod;
         dealii::Vector<double> solution[dim + 1][dim + 1];
-        vec<std::pair<dealii::Point<2>, arr<arr<arr<arr<dbl,3>,3>,3>,3> >> stress_tau;
+        std::vector<
+            std::pair<dealii::Point<2>,
+            std::array<std::array<std::array<std::array<double, 3>, 3>, 3>, 3> > > stress_tau;
         
     protected:
         typename ElasticProblemSup<dim + 1>::TypeCoef coefficient;

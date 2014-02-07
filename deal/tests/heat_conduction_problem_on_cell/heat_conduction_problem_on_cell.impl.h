@@ -189,12 +189,6 @@ uint8_t HeatConductionProblemOnCell<dim>::conver (uint8_t index_i, uint8_t index
 };
 
 template<uint8_t dim>
-void foo1 (SourceInterface<dim> &s)
-{
-    int i;
-};
-
-template<uint8_t dim>
 prmt::Report HeatConductionProblemOnCell<dim>::solved ()
 {
 //    printf("AAA 1\n");
@@ -218,48 +212,25 @@ prmt::Report HeatConductionProblemOnCell<dim>::solved ()
 //                           mean_coefficient[2]);
 //    printf("AAA 4\n");
 
-    // std::array<std::vector<double>, dim> coef_for_rhs;
-    // for(size_t i = 0; i < dim; ++i)
-    //     coef_for_rhs[i] .resize (coefficient[i].size());
+    std::array<std::vector<double>, dim> coef_for_rhs;
+    for(size_t i = 0; i < dim; ++i)
+        coef_for_rhs[i] .resize (coefficient[i].size());
 
-    // for(size_t i = 0; i < dim; ++i)
-    // {
-    //     for(size_t j = 0; j < dim; ++j)
-    //     {
-    //         for(size_t k = 0; k < coefficient[conver(i,j)].size(); ++k)
-    //             coef_for_rhs[j][k] = coefficient[conver(i,j)][k];
-    //     };
-    //     
-    //     solution[i]  = 0;
-    //     heat_flow[i] = 0;
-
-    //     this->element_rh_vector .set_coefficient (coef_for_rhs);
-
-    //     REPORT assemble_right_vector_of_system_parallel (assigned_to heat_flow[i]);
-    // };
-
-    dealii::Vector<dbl> hf[2];
-    hf[0].reinit(this->domain.dof_handler.n_dofs());
-    hf[1].reinit(this->domain.dof_handler.n_dofs());
-    
-    POC::SourceScalar<dim> f(finite_element);
-    FOR(i, 0, dim)
-        f.C[i] .resize (2);
-    // foo1<dim>(f);
-    FOR(i, 0, dim)
+    for(size_t i = 0; i < dim; ++i)
     {
+        for(size_t j = 0; j < dim; ++j)
+        {
+            for(size_t k = 0; k < coefficient[conver(i,j)].size(); ++k)
+                coef_for_rhs[j][k] = coefficient[conver(i,j)][k];
+        };
+        
+        solution[i]  = 0;
         heat_flow[i] = 0;
-        FOR(j, 0, dim)
-            FOR(k, 0, dim)
-                f.C[j][k] = coefficient[conver(i,j)][k];
-        REPORT Assembler::POC::assemble_rhsv<dim> (heat_flow[i], f, this->domain.dof_handler, black_on_white_substituter);
+
+        this->element_rh_vector .set_coefficient (coef_for_rhs);
+
+        REPORT assemble_right_vector_of_system_parallel (assigned_to heat_flow[i]);
     };
-    // FOR(i, 0, dim)
-    // FOR(j, 0, heat_flow[i].size())
-    //     // if (abs(heat_flow[i][j] - hf[i][j]) > 1e-10)
-    //     {
-    //         printf("%ld %ld %f %f\n", i, j, heat_flow[i][j], hf[i][j]);
-    //     };
 
 //    {
 //        heat_flow[0] = 0.0;
@@ -441,6 +412,7 @@ prmt::Report HeatConductionProblemOnCell<dim>::setup_system ()
         heat_flow[i] .reinit (this->domain.dof_handler.n_dofs());
     };
     anal_x .reinit (this->domain.dof_handler.n_dofs()); ////////////////
+//    printf("AAAAAAAAAAAAAAAAA\n");
 
     REPORT_USE( 
             prmt::Report report;
@@ -592,19 +564,6 @@ prmt::Report HeatConductionProblemOnCell<dim>::calculate_flow ()
 template<uint8_t dim>
 prmt::Report HeatConductionProblemOnCell<dim>::assemble_matrix_of_system ()
 {
-    // puts("1!!!");
-    LaplacianScalar<dim> lp(finite_element);
-    
-    lp.C[0][0] .push_back (1.0);
-    lp.C[0][1] .push_back (0.0);
-    lp.C[1][0] .push_back (0.0);
-    lp.C[1][1] .push_back (1.0);
-
-    lp.C[0][0] .push_back (2.0);
-    lp.C[0][1] .push_back (0.0);
-    lp.C[1][0] .push_back (0.0);
-    lp.C[1][1] .push_back (2.0);
-
     dealii::QGauss<dim>  quadrature_formula(2);
 
     dealii::FEValues<dim> fe_values (finite_element, quadrature_formula,
@@ -614,7 +573,6 @@ prmt::Report HeatConductionProblemOnCell<dim>::assemble_matrix_of_system ()
     const unsigned int dofs_per_cell = finite_element.dofs_per_cell;
 
     dealii::FullMatrix<double> cell_matrix (dofs_per_cell, dofs_per_cell);
-    dealii::FullMatrix<double> cell_matrix_check (dofs_per_cell, dofs_per_cell);
 
     std::vector<unsigned int> local_dof_indices (dofs_per_cell);
 
@@ -624,37 +582,25 @@ prmt::Report HeatConductionProblemOnCell<dim>::assemble_matrix_of_system ()
     typename dealii::DoFHandler<dim>::active_cell_iterator endc =
         this->domain.dof_handler.end();
 
-    // puts("2!!!");
     for (; cell != endc; ++cell)
     {
         fe_values .reinit (cell);
         cell_matrix = 0;
-        cell_matrix_check = 0;
-        lp.update_on_cell (cell);
 
-       for (size_t i = 0; i < dofs_per_cell; ++i)
-           for (size_t j = 0; j < dofs_per_cell; ++j)
-               cell_matrix_check(i,j) += this->element_stiffness_matrix
-                   (i, j, quadrature_formula, fe_values, cell->material_id()); 
-        // for (unsigned int q_point=0; q_point<4; ++q_point)
-        //     for (unsigned int i=0; i<dofs_per_cell; ++i)
-        //     {
-        //         for (unsigned int j=0; j<dofs_per_cell; ++j)
-        //             cell_matrix(i,j) += (fe_values.shape_grad (i, q_point) *
-        //                     fe_values.shape_grad (j, q_point) *
-        //                     fe_values.JxW (q_point)
-        //             * this->coefficient[0][cell->material_id()]
-        //                 );
-        //     }
-    // puts("3!!!");
-       for (size_t i = 0; i < dofs_per_cell; ++i)
-           for (size_t j = 0; j < dofs_per_cell; ++j)
-               cell_matrix(i,j) += lp(i,j);
-
-       for (size_t i = 0; i < dofs_per_cell; ++i)
-           for (size_t j = 0; j < dofs_per_cell; ++j)
-               if (abs(cell_matrix[i][j] - cell_matrix_check[i][j]) > 1e-10)
-                   puts("2222222222222222!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+//        for (size_t i = 0; i < dofs_per_cell; ++i)
+//            for (size_t j = 0; j < dofs_per_cell; ++j)
+//                cell_matrix(i,j) += this->element_stiffness_matrix
+//                    (i, j, quadrature_formula, fe_values, cell->material_id()); 
+        for (unsigned int q_point=0; q_point<4; ++q_point)
+            for (unsigned int i=0; i<dofs_per_cell; ++i)
+            {
+                for (unsigned int j=0; j<dofs_per_cell; ++j)
+                    cell_matrix(i,j) += (fe_values.shape_grad (i, q_point) *
+                            fe_values.shape_grad (j, q_point) *
+                            fe_values.JxW (q_point)
+                    * this->coefficient[0][cell->material_id()]
+                        );
+            }
 
         cell ->get_dof_indices (local_dof_indices);
 
@@ -1446,10 +1392,6 @@ prmt::Report HeatConductionProblemOnCell<dim>:: output_results ()
 
             std::ofstream output (file_name.data());
             data_out.write_gnuplot (output);
-            // file_name += ".vtk";
-            str name = str("res_") + suffix[i] + "res.vtk";
-            std::ofstream out (name.data());
-            data_out.write_vtk (out);
         };
     };
 

@@ -4253,13 +4253,20 @@ int main(int argc, char *argv[])
                 F = fopen ("mata-quadrate.gpd", "w");
 
                 {
-        const double yung_1 = g_yung_1;
-        const double puasson_1 = g_puasson_1;
-        const double yung_2 = g_yung_2;
-        const double puasson_2 = g_puasson_2;
+        // const double yung_1 = g_yung_1;
+        // const double puasson_1 = g_puasson_1;
+        // const double yung_2 = g_yung_2;
+        // const double puasson_2 = g_puasson_2;
 
-                    double i = 0.5;//108
-                    while (i < 0.6)
+                    cdbl yung_2 = 40.0;
+                    cdbl yung_1 = 393.0;
+                    cdbl puasson_2 = 0.35;
+                    cdbl puasson_1 = 0.4;
+
+                    dbl delta = 0.005;
+
+                    double i = 0.005;//108
+                    while (delta < 0.155)
                     {
                         glob_i = i;
 
@@ -4268,20 +4275,22 @@ int main(int argc, char *argv[])
                         const double dot[5] = 
                         {
                             (0.0),
-                            (0.5 - i / 2.0),
+                            (delta/2.0),
+                            // (0.5 - i / 2.0),
                             (0.5),
-                            (0.5 + i / 2.0),
+                            // (0.5 + i / 2.0),
+                            (1.0 - delta/2.0),
                             (1.0)
                         };
 
 // 
-                        ::set_grid(tria);
+                        // ::set_grid(tria);
 
-                       // ::set_tria <5> (tria, dot, material_id_for_quadrate);
+                       ::set_tria <5> (tria, dot, material_id_for_quadrate);
 //                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 //                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
                         //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                        tria .refine_global (1);
+                        tria .refine_global (3);
 
                         {
                         std::ofstream out ("grid-igor.eps");
@@ -4299,7 +4308,7 @@ int main(int argc, char *argv[])
                                 yung_1, puasson_1, yung_2, puasson_2);
 
                         fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
-                                i*i,
+                                delta,
                                 meta.back()[0],
                                 meta.back()[1],
                                 meta.back()[2],
@@ -4317,7 +4326,7 @@ int main(int argc, char *argv[])
                                );
 
                         printf("\x1B[31m%f %f %f %f %f %f %f %f %f %f %f %f %f %f\x1B[0m\n", 
-                                i*i,
+                                delta,
                                 meta.back()[0],
                                 meta.back()[1],
                                 meta.back()[2],
@@ -4333,7 +4342,7 @@ int main(int argc, char *argv[])
                                 fork[1]
                               );
 
-                        i += 4;
+                        delta += 0.005;
                     };
 
                 };
@@ -5312,6 +5321,8 @@ int main(int argc, char *argv[])
 //    coef[2][2][2][2][0] = 200.0;
 
                 {
+                    cdbl S   = 83.138438;
+                    dbl share = 0.01;
                     double i = 60.0;
                     while (i < 65.0)
                     {
@@ -5321,7 +5332,7 @@ int main(int argc, char *argv[])
 //                        ::set_hexagon_grid <60> (tria, 100.0, i);// / sqrt(2.0));
                         ::set_hexagon_grid_pure (tria, 100.0, i);
 //                        ::set_hexagon_brave <50> (tria, 100.0, 30.0);// / sqrt(2.0));
-                        tria .refine_global (2);
+                        tria .refine_global (3);
 //                        ::set_arbirary_tria (tria);
 
 //                dealii::Point<2> center (0.0, 0.0);

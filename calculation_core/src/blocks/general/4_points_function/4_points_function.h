@@ -72,11 +72,11 @@ class Scalar4PointsFunc
  * \f]
  * Градиент функции в локальных координатах будет иметь вид:
  * \f[
-        \mathrm{\frac{\partial f}{\partial x} = b_f\frac{\partial s}{\partial x}+c_f\frac{\partial r}{\partial x}+d_f\frac{\partial s}{\partial x}r + s\frac{\partial r}{\partial x})} \\ 
+        \mathrm{\frac{\partial f}{\partial x} = b_f\frac{\partial s}{\partial x}+c_f\frac{\partial r}{\partial x}+d_f(\frac{\partial s}{\partial x}r + s\frac{\partial r}{\partial x})} \\ 
         \mathrm{\frac{\partial f}{\partial y} = b_f\frac{\partial s}{\partial y}+c_f\frac{\partial r}{\partial y}+d_f(\frac{\partial s}{\partial y}r + s\frac{\partial r}{\partial y})}
  * \f]
   \f[
- * \mathrm{\frac{\partial s}{\partial x}} = \left\{\begin{eqnarray} \mathrm{\frac{\partial B_s}{\partial x}\frac{1}{2A} - \frac{B\frac{\partial B_s}{\partial x}-2A\frac{\partial C_s}{\partial x}}{\sqrt{B_s^2-4A_sC_s}}; A_s \neq 0, A_r \neq 0} \\ \mathrm{\frac{\frac{\partial C_s}{\partial x}B_s-C_s\frac{\partial B_s}{\partial x}}{B_s^2}; A_s = 0, A_r = 0}  \end{eqnarray} \right.  \\
+ * \mathrm{\frac{\partial s}{\partial x}} = \left\{\begin{eqnarray} \mathrm{\frac{\partial B_s}{\partial x}\frac{1}{2A} - \frac{B\frac{\partial B_s}{\partial x}-2A\frac{\partial C_s}{\partial x}}{\sqrt{B_s^2-4A_sC_s}}; A_s \neq 0, A_r \neq 0} \\ \mathrm{\frac{\frac{\partial C_s}{\partial x}B_s-C_s\frac{\partial B_s}{\partial x}}{B_s^2}; A_s = 0, A_r = -1}  \end{eqnarray} \right.  \\
  * \f]
   \f[
  * \mathrm{\frac{\partial r}{\partial x}} = \left\{\begin{eqnarray} \mathrm{\frac{\partial B_r}{\partial x}\frac{1}{2A} - \frac{B\frac{\partial B_r}{\partial x}-2A\frac{\partial C_r}{\partial x}}{\sqrt{B_r^2-4A_rC_r}}; A_s \neq 0, A_r \neq 0} \\ \mathrm{\frac{\frac{\partial C_r}{\partial x}B_r-C_r\frac{\partial B_r}{\partial x}}{B_r^2}; A_s = 0, A_r = 0}  \end{eqnarray} \right.  \\

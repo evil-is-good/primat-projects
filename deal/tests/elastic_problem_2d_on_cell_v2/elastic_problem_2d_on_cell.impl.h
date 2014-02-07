@@ -364,86 +364,6 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::setup_system ()
 template<uint8_t dim>
 prmt::Report ElasticProblem2DOnCellV2<dim>::assemble_matrix_of_system ()
 {
-    LaplacianVector<dim> lp(finite_element);
-    for (size_t i = 0; i < dim; ++i)
-        for (size_t j = 0; j < dim; ++j)
-            for (size_t k = 0; k < dim; ++k)
-                for (size_t l = 0; l < dim; ++l)
-                    lp.C[i][j][k][l] .resize (2);
-
-        {
-            const double yung = 23.0;
-            const double puasson = 0.21;
-            const double lambda = 
-                (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
-            const double mu     = 
-                yung / (2 * (1 + puasson));
-
-            lp.C[x][x][x][x][0] = lambda + 2 * mu;
-            lp.C[y][y][y][y][0] = lambda + 2 * mu;
-            // lp.C[z][z][z][z][0] = lambda + 2 * mu;
-
-            lp.C[x][x][y][y][0] = lambda;
-            lp.C[y][y][x][x][0] = lambda;
-
-            lp.C[x][y][x][y][0] = mu;
-            lp.C[y][x][y][x][0] = mu;
-            lp.C[x][y][y][x][0] = mu;
-            lp.C[y][x][x][y][0] = mu;
-
-            // lp.C[x][x][z][z][0] = lambda;
-            // lp.C[z][z][x][x][0] = lambda;
-
-            // lp.C[x][z][x][z][0] = mu;
-            // lp.C[z][x][z][x][0] = mu;
-            // lp.C[x][z][z][x][0] = mu;
-            // lp.C[z][x][x][z][0] = mu;
-
-            // lp.C[z][z][y][y][0] = lambda;
-            // lp.C[y][y][z][z][0] = lambda;
-
-            // lp.C[z][y][z][y][0] = mu;
-            // lp.C[y][z][y][z][0] = mu;
-            // lp.C[z][y][y][z][0] = mu;
-            // lp.C[y][z][z][y][0] = mu;
-        };
-        {
-            const double yung = 49.0;
-            const double puasson = 0.21;
-            const double lambda = 
-                (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
-            const double mu     = 
-                yung / (2 * (1 + puasson));
-
-            lp.C[x][x][x][x][1] = lambda + 2 * mu;
-            lp.C[y][y][y][y][1] = lambda + 2 * mu;
-            // lp.C[z][z][z][z][1] = lambda + 2 * mu;
-
-            lp.C[x][x][y][y][1] = lambda;
-            lp.C[y][y][x][x][1] = lambda;
-
-            lp.C[x][y][x][y][1] = mu;
-            lp.C[y][x][y][x][1] = mu;
-            lp.C[x][y][y][x][1] = mu;
-            lp.C[y][x][x][y][1] = mu;
-
-            // lp.C[x][x][z][z][1] = lambda;
-            // lp.C[z][z][x][x][1] = lambda;
-
-            // lp.C[x][z][x][z][1] = mu;
-            // lp.C[z][x][z][x][1] = mu;
-            // lp.C[x][z][z][x][1] = mu;
-            // lp.C[z][x][x][z][1] = mu;
-
-            // lp.C[z][z][y][y][1] = lambda;
-            // lp.C[y][y][z][z][1] = lambda;
-
-            // lp.C[z][y][z][y][1] = mu;
-            // lp.C[y][z][y][z][1] = mu;
-            // lp.C[z][y][y][z][1] = mu;
-            // lp.C[y][z][z][y][1] = mu;
-        };
-
     dealii::QGauss<dim>  quadrature_formula(2);
 
     dealii::FEValues<dim> fe_values (finite_element, quadrature_formula,
@@ -466,29 +386,36 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::assemble_matrix_of_system ()
     {
         fe_values .reinit (cell);
         cell_matrix = 0;
-        lp.update_on_cell (cell);
 
-        // for (size_t i = 0; i < dofs_per_cell; ++i)
-        //     for (size_t j = 0; j < dofs_per_cell; ++j)
-        //         cell_matrix(i,j) += this->element_stiffness_matrix
-        //             (i, j, quadrature_formula, fe_values, cell->material_id()); 
         for (size_t i = 0; i < dofs_per_cell; ++i)
             for (size_t j = 0; j < dofs_per_cell; ++j)
-                cell_matrix(i,j) += lp(i,j);
+                cell_matrix(i,j) += this->element_stiffness_matrix
+                    (i, j, quadrature_formula, fe_values, cell->material_id()); 
 
         cell ->get_dof_indices (local_dof_indices);
+
+//        for (size_t i = 0; i < dofs_per_cell; ++i)
+//            printf("loc1 %d\n", local_dof_indices[i]);
 
         for (size_t i = 0; i < dofs_per_cell; ++i)
             local_dof_indices[i] = black_on_white_substituter .subst (
                     local_dof_indices[i]);
+
+//        for (size_t i = 0; i < dofs_per_cell; ++i)
+//            printf("loc2 %d\n", local_dof_indices[i]);
 
         for (size_t i = 0; i < dofs_per_cell; ++i)
             for (size_t j = 0; j < dofs_per_cell; ++j)
                this->system_equations.A .add (local_dof_indices[i],
                                               local_dof_indices[j],
                                               cell_matrix(i,j));
+//        printf("AAAAAAAAAAAAAAA %f\n", this->system_equations.A.el(0,0));
     };
-
+//    for (size_t i = 0; i < this->system_equations.A.m(); ++i)
+//        for (size_t j = 0; j < this->system_equations.A.m(); ++j)
+//            if (this->system_equations.A.el(i,j))
+//                printf("A[%ld][%ld]=%f\n", i,j,this->system_equations.A.el(i,j));
+    
     REPORT_USE( 
             prmt::Report report;
             report.result = true;
@@ -534,6 +461,8 @@ assemble_right_vector_of_system ()
 
         for (size_t i = 0; i < dofs_per_cell; ++i)
         {
+//            if (local_dof_indices[i] == 3)
+//                printf("%f\n", cell_rhs(i));
             this->system_equations.b (local_dof_indices[i]) +=
                 cell_rhs (i);
         };
