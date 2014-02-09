@@ -3,6 +3,7 @@ import math
 from math import cos
 from math import sin
 
+
 def D(phi):
     tmp = scipy.zeros((6, 6))
     tmp[0, 0] = tmp[1, 1] = cos(phi)**2.0
@@ -18,7 +19,7 @@ def D(phi):
     tmp[5, 4] = - sin(phi)
 
     scipy.savetxt("D", tmp)
-    return tmp
+    return scipy.matrix(tmp)
 
 def make_A(E, nu):
     A = scipy.zeros((6, 6))
@@ -47,14 +48,15 @@ def make_A(E, nu):
     # for l in range(4, 6):
     #     A[l, l] = G
 
-    return A
+    return scipy.matrix(A)
 
 def make_G(E, nu):
     G = scipy.zeros((3, 3))
     for i in range(3):
         for j in range(3):
             G[i, j] = E / (2 * (1 + nu))
-    return G
+    return scipy.matrix(G)
+
 
 def make_B(A0, Ak, G0, Gk, phi):
     x = 0
@@ -62,25 +64,26 @@ def make_B(A0, Ak, G0, Gk, phi):
     z = 2
 
     B = scipy.zeros((6,6))
-    B[0, 0] = cos(phi)**2.0
+    B[0, 0] = cos(phi)**2.0*1
     B[0, 1] = sin(phi)**2.0
-    B[0, 3] = sin(2.0 * phi)
+    B[0, 3] = sin(2.0 * phi)*1
     B[1, 0] = (A0[0, 0] * sin(phi)**2.0 + (A0[1, 0] - Ak[1, 0]) * cos(phi)**2.0) / Ak[1, 1]
+    print B[1,0], A0[0,0]/Ak[1,1]
     B[1, 1] = (A0[1, 1] * cos(phi)**2.0 + (A0[1, 0] - Ak[1, 0]) * sin(phi)**2.0) / Ak[1, 1]
-    B[1, 2] = (A0[0, 2] * sin(phi)**2.0 + A0[1, 2] * cos(phi)**2.0 - Ak[1, 2]) / Ak[1, 1]
-    B[1, 3] = -sin(2.0 * phi) * (2.0 * G0[0, 1] + Ak[1, 0]) / Ak[1, 1]
-    B[2, 2] = 1.0
-    B[3, 0] = sin(2.0 * phi) * (A0[1, 0] - A0[0, 0]) / (4.0 * Gk[x, y])
-    B[3, 1] = sin(2.0 * phi) * (A0[1, 1] - A0[0, 1]) / (4.0 * Gk[x, y])
-    B[3, 2] = sin(2.0 * phi) * (A0[1, 2] - A0[0, 2]) / (4.0 * Gk[x, y])
-    B[3, 3] = cos(2.0 * phi) * G0[0, 1] / Gk[x, y]
-    B[4, 4] = cos(phi) * G0[1, 2] / Gk[y, z]
-    B[4, 5] = -sin(phi) * G0[0, 2] / Gk[y, z]
-    B[5, 4] = sin(phi)
-    B[5, 5] = cos(phi)
+    B[1, 2] = (A0[0, 2] * sin(phi)**2.0 + A0[1, 2] * cos(phi)**2.0 - Ak[1, 2]) / Ak[1, 1]*1
+    B[1, 3] = -sin(2.0 * phi) * (2.0 * G0[0, 1] + Ak[1, 0]) / Ak[1, 1]*1
+    B[2, 2] = 1.0*1
+    B[3, 0] = sin(2.0 * phi) * (A0[1, 0] - A0[0, 0]) / (4.0 * Gk[x, y])*1
+    B[3, 1] = sin(2.0 * phi) * (A0[1, 1] - A0[0, 1]) / (4.0 * Gk[x, y])*1
+    B[3, 2] = sin(2.0 * phi) * (A0[1, 2] - A0[0, 2]) / (4.0 * Gk[x, y])*1
+    B[3, 3] = cos(2.0 * phi) * G0[0, 1] / Gk[x, y]*1
+    B[4, 4] = cos(phi) * G0[1, 2] / Gk[y, z]*1
+    B[4, 5] = -sin(phi) * G0[0, 2] / Gk[y, z]*1
+    B[5, 4] = sin(phi)*1
+    B[5, 5] = cos(phi)*1
 
-    scipy.savetxt("B", B)
-    return B
+    scipy.savetxt("B1", B)
+    return scipy.matrix(B)
 
 def make_S(A0, Ak, G0, Gk, phi):
 
@@ -112,7 +115,7 @@ def make_S(A0, Ak, G0, Gk, phi):
 
     scipy.savetxt("R", R)
     scipy.savetxt("P", P)
-    return R.I * P
+    return scipy.matrix(R.I) * scipy.matrix(P)
 
 def static(OMEGA, omega, YOUNG, POISSON, young, poisson, phi):
 
@@ -120,6 +123,8 @@ def static(OMEGA, omega, YOUNG, POISSON, young, poisson, phi):
 
     A0 = make_A(YOUNG, POISSON)
     a = [make_A(young, poisson) for i in range(n)]
+    print A0
+    print a[0]
 
     G0 = make_G(YOUNG, POISSON)
     G = [make_G(young, poisson) for i in range(n)]
@@ -127,30 +132,40 @@ def static(OMEGA, omega, YOUNG, POISSON, young, poisson, phi):
     I = scipy.eye(6, 6)
 
     B = [make_B(A0, a[k], G0, G[k], phi[k]) for k in range(n)]
+    # print B[0][1, 2]
+    B[0][1, 0] = 0.0
+    B[0][1, 2] = 0.0
 
-    print D(phi[0])
-    print B[0]
-    print D(phi[0]) * B[0]
+    # print D(phi[0])
+    # print B[0]
+    # print D(phi[0]) * B[0]
 
-    E = scipy.matrix(OMEGA * I + sum([omega[k] * D(phi[k]) * B[k] for k in range(n)])).I
+    # E = scipy.matrix(OMEGA * I + sum([omega[k] * D(phi[k]) * B[k] for k in range(n)])).I
+    E = scipy.matrix(OMEGA * scipy.matrix(I) + sum([omega[k] * scipy.matrix(D(phi[k])) * scipy.matrix(B[k]) for k in range(n)])).I
+    print E.I
+    print E
+    scipy.savetxt("E.I", E.I)
+    scipy.savetxt("E", E)
+    scipy.savetxt("DB", D(phi[0])*B[0])
 
-    A = E.T * (OMEGA * A0 + sum([omega[k] * B[k].T * a[k] * B[k] for k in range(n)])) * E
+    # A = E.T * (OMEGA * A0 + sum([omega[k] * B[k].T * a[k] * B[k] for k in range(n)])) * E
+    A = E.T * (OMEGA * scipy.matrix(A0) + sum([omega[k] * B[k].T * scipy.matrix(a[k]) * B[k] for k in range(n)])) * E
 
     return A
 
 # delta = 0.005
-# 
+#
 # V = 1.0
 # V0 = (1.0 - delta)**2.0
 # Va = V - V0
-# 
+#
 # OMEGA = V0 / V
-# 
+#
 # omega = [(1.0 * delta) / V, ((1.0 - delta) * delta) / V]
 # # omega = [(1.0 * delta) / V, ((1.0) * delta) / V]
-# 
+#
 # phi = [0.0, math.pi / 2.0]
-# 
+#
 # A = static(OMEGA, omega, 40.0, 0.35, 393.0, 0.4, phi)
 
 V = 1.0
@@ -160,24 +175,27 @@ Va = V - V0
 OMEGA = V0 / V
 
 omega = [Va / V]
+print "omega", omega
 
-# phi = [0]
-phi = [math.pi / 2]
+phi = [0]
+# phi = [math.pi /2.0]
 
-E0 = 40.0
-E1 = 393.0
+# E0 = 40.0
+E0 = 1.0
+# E1 = 393.0
+E1 = 10.0
 
-A = static(OMEGA, omega, E0, 0.35, E1, 0.4, phi)
+A = static(OMEGA, omega, E0, 0.4, E1, 0.4, phi)
 
 
-print A
+# print A
 # scipy.array_repr(A, precision = 2)
 print 1.0 / A[0,0], 1.0 / A[1, 1], 1.0 / A[2, 2]
 print (E0 + E1) / 2.0, (2.0*E0*E1) / (E1 + E0)
 
 # print D(0.0)
 # print D(math.pi/2.0)
-# 
+#
 # scipy.savetxt("D0", D(0))
 # scipy.savetxt("Dpi2", D(math.pi/2.0))
 # for i in range(0, 3, 2):
