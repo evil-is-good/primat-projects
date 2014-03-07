@@ -4,9 +4,16 @@
 #include "../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 #include "../point/point.h"
 
+//! Геометрический инструментарий
 namespace GTools
 {
 
+    //! Отрезок
+    /*! Формирует кусочнолинейную кривую curve в виде отрезка. \n
+     *  Число вершин полученной кривой num_points + 1. \n
+     *  first и second - начальная и конечная вершины отрезка (сама конечная
+     *  вершина не попадает в состав кривой)
+     */
     void give_line_without_end_point(
             vec<prmt::Point<2>> &curve,
             cst num_points,
@@ -25,6 +32,13 @@ namespace GTools
         };
     };
 
+    //! Прямоугольник
+    /*! Формирует кусочнолинейную кривую curve в виде прямоугольника. \n
+     *  Число вершин полученной кривой (num_points_on_edge + 1) * 4. \n
+     *  first и second - две противоположных вершины, первая в точке (x0, y0),
+     *  вторая в точке (x0+a, y0+b); где a - ширина прямоугольника, b - его
+     *  высота.
+     */
     void give_rectangle(
             vec<prmt::Point<2>> &curve,
             cst num_points_on_edge,
@@ -49,10 +63,19 @@ namespace GTools
 
     };
 
+    //! Прямоугольник с пронумерованными границами (для задания на них граничных условий)
+    /*! Формирует кусочнолинейную кривую curve в виде прямоугольника. \n
+     *  Число вершин полученной кривой (num_points_on_edge + 1) * 4. \n
+     *  first и second - две противоположных вершины, первая в точке (x0, y0),
+     *  вторая в точке (x0+a, y0+b); где a - ширина прямоугольника, b - его
+     *  высота. \n
+     *  piace_id - выходной параметр; нумерация кусков. \n
+     *  side_id - входной параметр; номера четырёх границ прямоугольника.
+     */
     void give_rectangle_with_border_condition(
             vec<prmt::Point<2>> &curve,
-            vec<st> &type_edge,
-            const arr<st, 4> type_border,
+            vec<st> &piace_id,
+            const arr<st, 4> side_id,
             cst num_points_on_edge,
             const prmt::Point<2> first,
             const prmt::Point<2> second)

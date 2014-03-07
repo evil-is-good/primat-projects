@@ -2,7 +2,7 @@
 #define points_function_def 1
 
 #include <cmath>
-#include </home/primat/projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include <../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h>
 
 //! Скалярная функция, построенныя по 4 известным точкам
 template <u8 dim>
@@ -91,6 +91,7 @@ class Scalar4PointsFunc
 template <>
 class Scalar4PointsFunc<2>
 {
+    public:
     class LinFunc
     {
             LinFunc () = delete;
@@ -101,25 +102,25 @@ class Scalar4PointsFunc<2>
             dbl dx (cdbl x, cdbl y) const;
             dbl dy (cdbl x, cdbl y) const;
 
-        private:
             cdbl a, b, c;
+        private:
     };
 
     class LocVar
     {
             LocVar () = delete;
         public:
-            LocVar (cdbl _A, const LinFunc _C, const LinFunc _B);
+            LocVar (cdbl _A, const LinFunc _B, const LinFunc _C);
 
             arr<dbl,2> operator() (cdbl x, cdbl y) const;
             arr<dbl,2> dx (cdbl x, cdbl y) const;
             arr<dbl,2> dy (cdbl x, cdbl y) const;
 
+            cdbl A;
+            const LinFunc B, C;
         private:
             arr<dbl,2> quad_roots (cdbl x, cdbl y) const;
 
-            cdbl A;
-            const LinFunc B, C;
     };
 
     class LocFunc
@@ -149,10 +150,11 @@ class Scalar4PointsFunc<2>
         dbl dx (const prmt::Point<2> &p) const;
         dbl dy (const prmt::Point<2> &p) const;
 
-    private:
         cdbl a_x, b_x, c_x, d_x, a_y, b_y, c_y, d_y;
-        const LocVar s, r;
+        const LocVar s;
+        const LocVar r;
         const LocFunc f_;
+    private:
 
 };
 
@@ -181,21 +183,103 @@ Scalar4PointsFunc<2>::Scalar4PointsFunc (arr<prmt::Point<2>, 4> nodes,
       ),
 
     f_(f_values)
-{};
+{
+    // printf("%f %f %f %f %f %f %f %f %f %f %f\n", a_x, b_x, c_x, d_x, a_y, b_y, c_y, d_y,
+    //         a_y * b_x - a_x * b_y, b_y, -b_x);
+};
 
 dbl Scalar4PointsFunc<2>::operator() (cdbl x, cdbl y) const
 {
-    return f_(s(x, y)[0], r(x, y)[1]);
+    /*
+     * одной точке (x, y) кооответствуют две точки (s, r),
+     * одна в правильном, единичном, квадрате, вторая в другом прямоугольнике
+     * вроде бы если точки ячейки идут по кругу, правилиная точка (s[0], r[1]),
+     * но на всякий случай проверяю
+    */
+    const auto t_s = s(x, y);
+    const auto t_r = r(x, y);
+    dbl valid_s;
+    dbl valid_r;
+    // if (
+    //         (t_s[0] > -1e-10) and (t_s[0] < (1.0 + 1e-10)) and
+    //         (t_r[1] > -1e-10) and (t_r[1] < (1.0 + 1e-10))
+    //    )
+    // {
+        valid_s = t_s[0];
+        valid_r = t_r[1];
+    // // printf("s0 %f r1 %f s1 %f r0 %f s %f r %f\n", 
+    // //         valid_s, valid_r, t_s[0], t_r[1], t_s[1], t_r[0]);
+    // }
+    // else
+    // {
+    //     valid_s = t_s[1];
+    //     valid_r = t_r[0];
+    // };
+    // printf("s0 %f r1 %f s1 %f r0 %f s %f r %f\n", 
+    //        t_s[0], t_r[1], t_s[1], t_r[0], valid_s, valid_r);
+
+    return f_(valid_s, valid_r);
+    // return f_(s(x, y)[0], r(x, y)[1]);
 };
 
 dbl Scalar4PointsFunc<2>::dx (cdbl x, cdbl y) const
 {
-    return f_.dx(s(x, y)[0], r(x, y)[1], s.dx(x, y)[0], r.dx(x, y)[1]);
+    const auto t_s = s(x, y);
+    const auto t_r = r(x, y);
+    dbl valid_s;
+    dbl valid_r;
+    dbl valid_s_dx;
+    dbl valid_r_dx;
+    if (
+            (t_s[0] > -1e-10) and (t_s[0] < (1.0 + 1e-10)) and
+            (t_r[1] > -1e-10) and (t_r[1] < (1.0 + 1e-10))
+       )
+    {
+        valid_s = t_s[0];
+        valid_r = t_r[1];
+        valid_s_dx = s.dx(x, y)[0];
+        valid_r_dx = r.dx(x, y)[1];
+    }
+    else
+    {
+        valid_s = t_s[1];
+        valid_r = t_r[0];
+        valid_s_dx = s.dx(x, y)[1];
+        valid_r_dx = r.dx(x, y)[0];
+    };
+
+    return f_.dx(valid_s, valid_r, valid_s_dx, valid_r_dx);
+    // return f_.dx(s(x, y)[0], r(x, y)[1], s.dx(x, y)[0], r.dx(x, y)[1]);
 };
 
 dbl Scalar4PointsFunc<2>::dy (cdbl x, cdbl y) const
 {
-    return f_.dx(s(x, y)[0], r(x, y)[1], s.dy(x, y)[0], r.dy(x, y)[1]);
+    const auto t_s = s(x, y);
+    const auto t_r = r(x, y);
+    dbl valid_s;
+    dbl valid_r;
+    dbl valid_s_dy;
+    dbl valid_r_dy;
+    if (
+            (t_s[0] > -1e-10) and (t_s[0] < (1.0 + 1e-10)) and
+            (t_r[1] > -1e-10) and (t_r[1] < (1.0 + 1e-10))
+       )
+    {
+        valid_s = t_s[0];
+        valid_r = t_r[1];
+        valid_s_dy = s.dy(x, y)[0];
+        valid_r_dy = r.dy(x, y)[1];
+    }
+    else
+    {
+        valid_s = t_s[1];
+        valid_r = t_r[0];
+        valid_s_dy = s.dy(x, y)[1];
+        valid_r_dy = r.dy(x, y)[0];
+    };
+
+    return f_.dy(valid_s, valid_r, valid_s_dy, valid_r_dy);
+    // return f_.dy(s(x, y)[0], r(x, y)[1], s.dy(x, y)[0], r.dy(x, y)[1]);
 };
 
 dbl Scalar4PointsFunc<2>::operator() (const prmt::Point<2> &p) const
@@ -253,6 +337,8 @@ arr<dbl,2> Scalar4PointsFunc<2>::LocVar::operator() (cdbl x, cdbl y) const
     }
     else
     {
+    // printf("C=%f B=%f res=%f\n",
+    //         C(x,y), B(x, y), C(x, y) / B(x, y));
         cdbl res = C(x, y) / B(x, y);
         return arr<dbl, 2>{res, res};
     };
@@ -294,7 +380,12 @@ arr<dbl,2> Scalar4PointsFunc<2>::LocVar::dy (cdbl x, cdbl y) const
 
 arr<dbl,2> Scalar4PointsFunc<2>::LocVar::quad_roots (cdbl x, cdbl y) const
 {
+    // puts("!!!");
     cdbl sq_root = std::sqrt(B(x, y) * B(x, y) - 4.0 * A * C(x, y));
+    // printf("C=%f B=%f sq_root=%f under_root=%f res=%f\n",
+    //         C(x,y), B(x, y), sq_root, 
+    //         B(x, y) * B(x, y) - 4.0 * A * C(x, y),
+    //         (B(x, y) + sq_root) / (2.0 * A));
     
     return arr<dbl, 2>{
         (B(x, y) - sq_root) / (2.0 * A),
@@ -307,7 +398,9 @@ Scalar4PointsFunc<2>::LinFunc::LinFunc (cdbl _a, cdbl _b, cdbl _c) :
     a (_a),
     b (_b),
     c (_c)
-{};
+{
+    // printf("%f %f %f\n", _a, _b, _c);
+};
 
 dbl Scalar4PointsFunc<2>::LinFunc::operator() (cdbl x, cdbl y) const
 {

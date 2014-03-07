@@ -21,6 +21,8 @@ template <u8 dim>
 class BoundaryValueScalar
 {
     public:
+        //! Для приведения формата граничных условий к формату принитаму
+        //в deal.ii
         class FunctionFromDealii : public dealii::Function<dim>
         {
         public:
@@ -40,8 +42,11 @@ class BoundaryValueScalar
             TypeFunc func;
         };
 
+        //! Функция граничного условия
         FunctionFromDealii function;
+        //! Номер граници
         st boundary_id;
+        //! Тип граничного условия
         u8 boundary_type;
 };
 
@@ -50,6 +55,8 @@ template <u8 dim>
 class BoundaryValueVector
 {
     public:
+        //! Для приведения формата граничных условий к формату принитаму
+        //в deal.ii
         class FunctionFromDealii : public dealii::Function<dim>
         {
         public:
@@ -73,8 +80,11 @@ class BoundaryValueVector
             TypeFunc func;
         };
 
+        //! Функция граничного условия
         FunctionFromDealii function;
+        //! Номер граници
         st boundary_id;
+        //! Тип граничного условия
         u8 boundary_type;
 };
 

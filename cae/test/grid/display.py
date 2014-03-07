@@ -25,7 +25,7 @@ def ploting(file_name, func, linew):
 
 ploting("area.out", plt.fill, 1)
 # plt.linewidth = 15
-ploting("border.out", plt.plot, 15)
+# ploting("border.out", plt.plot, 15)
 
 # plt.plot([0.,1.,1.],[1.,1.,0.],'g',lw=15)
 # f = open("out.file","r")
@@ -44,7 +44,7 @@ ploting("border.out", plt.plot, 15)
 # plt.plot([0.,1.],[0.,1.],'g')
 # plt.setp(l)
 # l.draw()
-# plt.show()
+plt.show()
 
 
 # def foo(*a):
@@ -59,19 +59,19 @@ ploting("border.out", plt.plot, 15)
 # import webbrowser
 # webbrowser.open_new_tab('http://habrahabr.ru/')
 
-class AA:
-    def foo(self):
-        print "AA"
-class BB:
-    def foo(self):
-        print "BB"
-
-a = {1:AA,2:BB}
-print a
-
-bb = object()
-
-bb.__class__ = a[1]
-bb.foo()
-bb.__class__ = a[2]
-bb.foo()
+# class AA:
+#     def foo(self):
+#         print "AA"
+# class BB:
+#     def foo(self):
+#         print "BB"
+# 
+# a = {1:AA,2:BB}
+# print a
+# 
+# bb = object()
+# 
+# bb.__class__ = a[1]
+# bb.foo()
+# bb.__class__ = a[2]
+# bb.foo()

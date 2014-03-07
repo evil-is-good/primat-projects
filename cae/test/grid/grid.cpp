@@ -125,7 +125,7 @@ void convert_to_dealii_format(CDT &cdt, dealii::Triangulation<2> &triangulation)
                 index_point[i].point_already_exist = true;
             };
 
-        u8 mat_id = 0;//fit->is_in_domain() ? 0 : 1;
+        u8 mat_id = fit->is_in_domain() ? 0 : 1;
 
         auto add_cell = [&cell_in_grid, &index_point, mat_id] (arr<st, 4> &&indx) 
         {
@@ -880,8 +880,8 @@ void create_grid_using_cgal_2 (CDT &cdt,
     add_border_to_domain (outer_border);
     add_constreins ();
 
-    CGAL::refine_Delaunay_mesh_2(cdt, Criteria( 0.125, 0.1 ));
-    // CGAL::refine_Delaunay_mesh_2(cdt, Criteria(/* 0.125, 0.1 */));
+    // CGAL::refine_Delaunay_mesh_2(cdt, Criteria( 0.125, 0.1 ));
+    CGAL::refine_Delaunay_mesh_2(cdt, Criteria(/* 0.125, 0.1 */));
     printf("2.1.2\n");
 
     extract_border (cdt, border_on_cdt);

@@ -1,0 +1,54 @@
+#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS
+#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS
+
+#include <deal.II/lac/vector.h>
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/dofs/dof_tools.h>
+#include <deal.II/lac/compressed_sparsity_pattern.h>
+
+#include "../../../general/domain/domain.h"
+#include "../../../general/boundary_value/boundary_value.h"
+#include "../system_linear_algebraic_equations/system_linear_algebraic_equations.h"
+#include "../domain_looper/domain_looper.h"
+#include "../black_on_white_substituter/black_on_white_substituter.h"
+
+//! Задача на ячейке
+/*!
+ * Сюда входят дополнительные средства необходимые для решения задачи на
+ * определение ячейковых функций. 
+ */
+namespace OnCell
+{
+    //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке
+    template<u8 dim, u8 num_tasks>
+    void prepare_system_equations (
+            ::OnCell::SystemsLinearAlgebraicEquations<nun_tasks> &se,
+            ::OnCell::BlackOnWhiteSubstituter<dim> &bows,
+            const Domain<dim> &domain)
+    {
+        dealii::CompressedSparsityPattern c_sparsity (
+                domain.dof_handler.n_dofs());
+
+        dealii::DoFTools ::make_sparsity_pattern (
+                domain.dof_handler, c_sparsity);
+
+        ::OnCell::DomainLooper<dim, 0> dl;
+        REPORT dl .loop_domain(
+                domain.dof_handler,
+                bows,
+                c_sparsity);
+
+        c_sparsity.compress ();
+
+        se .matrix_reinit (c_sparsity);
+
+        for (st i = 0; i < num_tasks; ++i)
+        {
+            se.solution[i] .reinit (domain.dof_handler .n_dofs());
+            se.rhsv[i]     .reinit (domain.dof_handler .n_dofs());
+        };
+    };
+};
+
+#endif

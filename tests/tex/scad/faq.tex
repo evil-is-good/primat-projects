@@ -1,0 +1,38 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+
+\begin{document}
+\part*{Часто возникающие проблемы}
+
+% \begin{enumerate}
+\section{Единицы измерения} 
+        Чтобы результаты совпадали с ответами, и с ними было бы проще работать, 
+        задайте единицы измерения. Для этого войдите в меню «Опции $\to$ Единицы измерений». 
+        Задайте единицы входные и выходные как показано на рисунках. 
+        Не забудьте поставить галочки «Использовать по умолчанию» 
+        чтобы каждый раз заново не проделывать эту операцию. \\
+        \begin{center}
+            \includegraphics[width=0.7\linewidth]{em1} \\
+            \includegraphics[width=0.7\linewidth]{em2}
+        \end{center}
+        \section{Рабочие директории}
+        Чтобы scad не ругался на то что не может найти файл 
+        или получить доступ задайте рабочие директории. 
+    Откройте меню «Опции $\to$ Назначение рабочих директорий». 
+        Укажите расположение двух директорий sdata и swork на рабочем столе. 
+        Важно: проделать это надо до того как вы создадите проект 
+        иначе директории заменить не получится и придётся создавать проект заново.\\
+        \begin{center}
+        \includegraphics[width=0.5\linewidth]{wd}
+        \end{center}
+% \end{enumerate}
+
+
+
+\end{document}

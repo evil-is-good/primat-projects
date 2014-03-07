@@ -326,15 +326,55 @@ void d2_color ()
 
 };
 
+void multi_inclusion_test ()
+{
+    CDT cdt;
+
+    cdt.insert(CDT::Point(0.0, 0.0));
+    auto c1 = cdt.insert(CDT::Point(10.0, 0.0));
+    auto c2 = cdt.insert(CDT::Point(0.0, 10.0));
+    cdt.insert(CDT::Point(10.0, 10.0));
+
+    // cdt.insert_constraint(c1, c2);
+
+    std::list<CDT::Point> list_of_seeds;
+    list_of_seeds.push_back(CDT::Point(0.25, 0.25));
+
+    CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+                               Criteria( 0.125, 0.1 ), true);
+    // CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+    //                            Criteria(0.125, 0.1));
+    // CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+    //                            Criteria(), true);
+    // CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+    //                            Criteria());
+
+    {
+        auto f = fopen("area.out", "w");
+    // CGAL::refine_Delaunay_mesh_2(cdt, Criteria(0.125, 0));
+    for(auto it = cdt.finite_faces_begin(); it != cdt.finite_faces_end(); ++it) 
+    {
+        CDT::Triangle trg = cdt.triangle(it);
+        printf("t (%f %f) (%f %f) (%f %f)\n", 
+                trg[0].x(), trg[0].y(), trg[1].x(), trg[1].y(), trg[2].x(), trg[2].y());
+        fprintf(f, "%f %f %f|%f %f %f|%s\n", 
+                trg[0].x(), trg[1].x(), trg[2].x(),
+                trg[0].y(), trg[1].y(), trg[2].y(),
+                0 ? "#ff0000" : "#0000ff");
+    };
+    fclose(f);
+    };
+};
+
 int main ()
 {        
-    C3t3::Triangulation t;
-    t.insert(CDT3::Point(0,0,0));
-    t.insert(CDT3::Point(1,0,0));
-    t.insert(CDT3::Point(0,1,0));
-    t.insert(CDT3::Point(0,0,1));
-    t.insert(CDT3::Point(2,2,2));
-    t.insert(CDT3::Point(-1,0,1));
+    // C3t3::Triangulation t;
+    // t.insert(CDT3::Point(0,0,0));
+    // t.insert(CDT3::Point(1,0,0));
+    // t.insert(CDT3::Point(0,1,0));
+    // t.insert(CDT3::Point(0,0,1));
+    // t.insert(CDT3::Point(2,2,2));
+    // t.insert(CDT3::Point(-1,0,1));
     // C3t3 c3t3 = t;
     // c3t3.insert(CDT3::Point(0,0,0));
     // Mesh_domain domain(t);
@@ -363,9 +403,9 @@ int main ()
     // outf.close();
     // puts("sdfsdf");
 
-    d2_color();
+    // d2_color();
     // printf("%d\n", CDT::EDGE);
-
+    multi_inclusion_test ();
 
 return 0;
 }

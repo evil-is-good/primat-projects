@@ -216,16 +216,95 @@ class A6<1, 2>
 // A6<1, b>::A6(){};
 
 // template<>
-int A6<1, 2>::foo(){};
+// int A6<1, 2>::foo(){};
 
 // template<>
 // class A8<2>{};
 
+class A7
+{
+    public:
+        void foo() {a = 1;};
+        int a;
+        int b;
+};
+
+template <int n>
+class B7 : public A7
+{
+    public:
+        int b[n];
+};
+
+class A9
+{
+    public:
+        int i;
+};
+
+namespace OLOLO
+{
+    class A9 : public ::A9
+    {
+        public:
+            int j;
+    };
+};
+
+class A10
+{
+    public:
+        virtual void foo() = 0;
+};
+
+class B10 : public A10
+{
+    public:
+        typedef int I;
+        void bar(I i) {i++;};
+        virtual void foo() override {puts("B");};
+};
+
+class C10 : public B10
+{
+    public:
+        typedef A9 I;
+        // virtual void foo() override {puts("C");};
+};
+
+void foo10(A10 &a)
+{
+    a.foo();
+};
+
 int main ()
 {
-    A5 a5;
-    A6<1,2> a6;
-    a6.foo();
+    A7 a7;
+    B7<1> b7;
+    a7.a = 10;
+    a7.b = 11;
+    a7.foo();
+    b7.a = 10;
+    b7.b[0] = 11;
+    b7.b[100] = 12;
+    b7.foo();
+    B10 b10;
+    C10 c10;
+    foo10(b10);
+    foo10(c10);
+    int i10 = 10;
+    A9 a9;
+    b10.bar(i10);
+    arr<vec<st>, 2> arr1;
+    arr1[0].push_back(0.0);
+    arr1[1].push_back(1.0);
+    arr1[1].push_back(2.0);
+    arr<vec<st>, 2> arr2(arr1);
+    printf("%ld %ld %ld\n", arr2[0][0], arr2[1][0], arr2[1][1]);
+
+    // A5 a5;
+    // A6<1,2> a6;
+    // a6.foo();
     // printf("%ld\n", 10_plus(20_plus(30)));
     // int a = 10;
     // printf("%d\n", a);

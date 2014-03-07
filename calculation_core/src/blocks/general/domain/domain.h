@@ -24,15 +24,19 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe.h>
 
+//! Область решения
 template <u8 dim>
 struct Domain
 {
+    //! Инициализация степеней свободы
     void dof_init (const dealii::FiniteElement<dim> &fe) 
     {
         dof_handler .initialize (grid, fe);
     };
 
+    //! Сетка
     dealii::Triangulation <dim> grid;
+    //! Степени свободы
     dealii::DoFHandler    <dim> dof_handler;
 };
 

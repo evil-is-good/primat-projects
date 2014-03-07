@@ -35,9 +35,9 @@ def make_A(E, nu):
     A[2, 0] = - nu / E
     A[2, 1] = - nu / E
 
-    A[3, 3] = (1 + nu) / E
-    A[4, 4] = (1 + nu) / E
-    A[5, 5] = (1 + nu) / E
+    A[3, 3] = E / (1 + nu)
+    A[4, 4] = E / (1 + nu)
+    A[5, 5] = E / (1 + nu)
 
     # G = E / (2.0 * (1 + nu))
 
@@ -132,9 +132,13 @@ def static(OMEGA, omega, YOUNG, POISSON, young, poisson, phi):
     I = scipy.eye(6, 6)
 
     B = [make_B(A0, a[k], G0, G[k], phi[k]) for k in range(n)]
+    print D(phi[0])
+    print B[0]
     # print B[0][1, 2]
-    B[0][1, 0] = 0.0
-    B[0][1, 2] = 0.0
+    # B[0][1, 0] = 0.0
+    # B[0][1, 2] = 0.0
+    # B[0][0, 1] = 0.0
+    # B[0][2, 1] = 0.0
 
     # print D(phi[0])
     # print B[0]
@@ -150,54 +154,59 @@ def static(OMEGA, omega, YOUNG, POISSON, young, poisson, phi):
 
     # A = E.T * (OMEGA * A0 + sum([omega[k] * B[k].T * a[k] * B[k] for k in range(n)])) * E
     A = E.T * (OMEGA * scipy.matrix(A0) + sum([omega[k] * B[k].T * scipy.matrix(a[k]) * B[k] for k in range(n)])) * E
+    scipy.savetxt("BaB", B[0].T * scipy.matrix(a[0]) * B[0])
+    scipy.savetxt("OBaB", OMEGA * scipy.matrix(A0) + omega[k] * B[0].T * scipy.matrix(a[0]) * B[0])
+    scipy.savetxt("Ares",E.T * (OMEGA * scipy.matrix(A0) + omega[k] * B[0].T * scipy.matrix(a[0]) * B[0]) * E)
+    scipy.savetxt("A",A)
 
     return A
 
-# delta = 0.005
-#
-# V = 1.0
-# V0 = (1.0 - delta)**2.0
-# Va = V - V0
-#
-# OMEGA = V0 / V
-#
-# omega = [(1.0 * delta) / V, ((1.0 - delta) * delta) / V]
-# # omega = [(1.0 * delta) / V, ((1.0) * delta) / V]
-#
-# phi = [0.0, math.pi / 2.0]
-#
-# A = static(OMEGA, omega, 40.0, 0.35, 393.0, 0.4, phi)
+delta = 0.005
 
 V = 1.0
-V0 = 1.0 * 0.5
+V0 = (1.0 - delta)**2.0
 Va = V - V0
 
 OMEGA = V0 / V
 
-omega = [Va / V]
-print "omega", omega
+omega = [(1.0 * delta) / V, ((1.0 - delta) * delta) / V]
+# omega = [(1.0 * delta) / V, ((1.0) * delta) / V]
 
-phi = [0]
-# phi = [math.pi /2.0]
+phi = [0.0, math.pi / 2.0]
 
-# E0 = 40.0
-E0 = 1.0
-# E1 = 393.0
-E1 = 10.0
+A = static(OMEGA, omega, 40.0, 0.35, 393.0, 0.4, phi)
 
-A = static(OMEGA, omega, E0, 0.4, E1, 0.4, phi)
-
-
-# print A
-# scipy.array_repr(A, precision = 2)
+# V = 1.0
+# V0 = 1.0 * 0.5
+# Va = V - V0
+# 
+# OMEGA = V0 / V
+# 
+# omega = [Va / V]
+# print "omega", omega
+# 
+# phi = [0]
+# # phi = [math.pi /2.0]
+# 
+# # E0 = 40.0
+# E0 = 1.0
+# # E1 = 393.0
+# E1 = 9.0
+# 
+# A = static(OMEGA, omega, E0, 0.4, E1, 0.4, phi)
+# 
+# 
+# # print A
+# # scipy.array_repr(A, precision = 2)
 print 1.0 / A[0,0], 1.0 / A[1, 1], 1.0 / A[2, 2]
-print (E0 + E1) / 2.0, (2.0*E0*E1) / (E1 + E0)
-
-# print D(0.0)
-# print D(math.pi/2.0)
-#
-# scipy.savetxt("D0", D(0))
-# scipy.savetxt("Dpi2", D(math.pi/2.0))
-# for i in range(0, 3, 2):
-#     for j in range(3):
-#         print i,j
+# print (E0 + E1) / 2.0, (2.0*E0*E1) / (E1 + E0)
+print OMEGA * 40.0 + sum([o * 393.0 for o in omega])
+# 
+# # print D(0.0)
+# # print D(math.pi/2.0)
+# #
+# # scipy.savetxt("D0", D(0))
+# # scipy.savetxt("Dpi2", D(math.pi/2.0))
+# # for i in range(0, 3, 2):
+# #     for j in range(3):
+# #         print i,j
