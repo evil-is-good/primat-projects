@@ -23,6 +23,7 @@ class SourceScalar : public SourceInterface<dim>
     public:
     typedef std::function<dbl (const dealii::Point<dim>&)> Func;
 
+    SourceScalar (const dealii::FiniteElement<dim> &fe);
     SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe);
 
     virtual void update_on_cell (
@@ -43,16 +44,20 @@ class SourceScalar : public SourceInterface<dim>
 };
 
 template <u8 dim>
-SourceScalar<dim>::SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe) :
-    f(func),
+SourceScalar<dim>::SourceScalar (const dealii::FiniteElement<dim> &fe) :
     quadrature_formula (2),
     fe_values (fe, quadrature_formula,
             dealii::update_values | dealii::update_quadrature_points | 
             dealii::update_JxW_values),
     dofs_per_cell (fe.dofs_per_cell),
     num_quad_points (quadrature_formula.size())
-{
+{};
 
+template <u8 dim>
+SourceScalar<dim>::SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe) :
+    SourceScalar(fe)
+{
+    f = func;
 };
 
 template <u8 dim>

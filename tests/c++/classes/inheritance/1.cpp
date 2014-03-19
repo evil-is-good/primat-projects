@@ -221,19 +221,34 @@ class A6<1, 2>
 // template<>
 // class A8<2>{};
 
+template <int n>
 class A7
 {
     public:
+        A7() : b(0) {};
+        A7(int i) : a(i), A7(){};
         void foo() {a = 1;};
         int a;
         int b;
+    private:
+        int c;
+    protected:
+        int d;
 };
 
+// template<>
+// class A7<10>
+// {
+// };
+
 template <int n>
-class B7 : public A7
+class B7 : public A7<n>
 {
     public:
+        B7(int i) : A7<n>(i) {};
         int b[n];
+        int e;
+        // void bar() {a = 30;};
 };
 
 class A9
@@ -279,28 +294,34 @@ void foo10(A10 &a)
 
 int main ()
 {
-    A7 a7;
-    B7<1> b7;
+    A7<1> a7;
+    B7<1> b7(73);
     a7.a = 10;
     a7.b = 11;
     a7.foo();
-    b7.a = 10;
+    // b7.a = 10;
     b7.b[0] = 11;
     b7.b[100] = 12;
-    b7.foo();
-    B10 b10;
-    C10 c10;
-    foo10(b10);
-    foo10(c10);
-    int i10 = 10;
-    A9 a9;
-    b10.bar(i10);
-    arr<vec<st>, 2> arr1;
-    arr1[0].push_back(0.0);
-    arr1[1].push_back(1.0);
-    arr1[1].push_back(2.0);
-    arr<vec<st>, 2> arr2(arr1);
-    printf("%ld %ld %ld\n", arr2[0][0], arr2[1][0], arr2[1][1]);
+    // b7.foo();
+    // b7.bar();
+    printf("%d\n", b7.a);
+
+
+
+
+    // B10 b10;
+    // C10 c10;
+    // foo10(b10);
+    // foo10(c10);
+    // int i10 = 10;
+    // A9 a9;
+    // b10.bar(i10);
+    // arr<vec<st>, 2> arr1;
+    // arr1[0].push_back(0.0);
+    // arr1[1].push_back(1.0);
+    // arr1[1].push_back(2.0);
+    // arr<vec<st>, 2> arr2(arr1);
+    // printf("%ld %ld %ld\n", arr2[0][0], arr2[1][0], arr2[1][1]);
 
     // A5 a5;
     // A6<1,2> a6;

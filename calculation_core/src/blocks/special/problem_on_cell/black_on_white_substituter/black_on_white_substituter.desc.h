@@ -4,8 +4,15 @@
 
 #include <projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
 
-namespace prmt
+namespace OnCell
 {
+    //! Замена черного индекса точки на соответствующий белый
+    /*!
+     * Черный индекс - это индекс "виртуальной" точки, эта точка лежит на
+     * границе на которую нахлёстывается другая граница, поэтому она фактически
+     * заменяется другой точкой. \n
+     * Белый индекс - индекс точки которая заменяет "виртуальную" точку.
+    */
     class BlackOnWhiteSubstituter
     {
         public:
@@ -15,11 +22,11 @@ namespace prmt
 
             //METHODS
         public:
-            st   subst    (cst index) const;
-            bool is_black (cst index) const;
+            st   subst    (cst index) const; //!< Если index черный, то заменяет его на белый, иначе оставляет тот же
+            bool is_black (cst index) const; //!< Проверить черный index или нет
 
         private:
-            void add_white_and_black (cst w, cst b);
+            void add_white_and_black (cst w, cst b); //!< Добавить пару связанных точек
 
             //FIELDS
         public:

@@ -13,7 +13,7 @@ ConfigurationName := release
 
 #================================================================DIRECTORIES===#
 
-ProjectDir := /home/primat/projects/tests/new_struct
+ProjectDir := /home/test/pingpong/new_struct
 
 #==================================================INCDIRS (Format: IncDir*)===#
 
@@ -32,8 +32,8 @@ Udir =
 
 #===========================================SUPPORTING DIRS (Format SupDir*)===#
 
-SupDirHome   = /home/primat
-SupDirDealII = /home/primat/deal.II
+SupDirHome   = /home/test
+SupDirDealII = /home/test/deal.II
 
 #======================================================================FILES===#
 
@@ -54,7 +54,7 @@ StaticLibs :=
 
 DebugFlagsC   := -O0 -gstabs+ -pipe -std=c++11
 
-ReleaseFlagsC := -std=c++11 -O0 -pipe -fopenmp -frounding-math
+ReleaseFlagsC := -std=c++0x -O0 -pipe -fopenmp -frounding-math
 
 DebugFlagL    := -gstabs+
 

@@ -98,11 +98,11 @@ namespace GTools
 
         cst n_edge_on_border = curve.size() / 4;
         // printf("type %d\n", n_edge_on_border);
-        type_edge.resize(curve.size());
+        piace_id.resize(curve.size());
 
         FOR(i, 0, 4)
             FOR(j, 0 + n_edge_on_border * i, n_edge_on_border + n_edge_on_border * i)
-            type_edge[j] = type_border[i];
+            piace_id[j] = side_id[i];
     };
 
 };

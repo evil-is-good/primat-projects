@@ -2,7 +2,7 @@
 
 #define BLACK_ON_WHITE_SUBSTITUTER_IMPL_2
 
-namespace prmt
+namespace OnCell
 {
     BlackOnWhiteSubstituter::BlackOnWhiteSubstituter()
         :

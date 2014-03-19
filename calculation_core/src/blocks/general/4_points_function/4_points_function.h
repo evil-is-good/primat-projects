@@ -2,7 +2,7 @@
 #define points_function_def 1
 
 #include <cmath>
-#include <../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include "../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 
 //! Скалярная функция, построенныя по 4 известным точкам
 template <u8 dim>

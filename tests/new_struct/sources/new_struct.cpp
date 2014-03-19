@@ -13,6 +13,12 @@
 #include "../../../calculation_core/src/blocks/general/geometric_tools/geometric_tools.h"
 #include "../../../calculation_core/src/blocks/special/heat_conduction_problem_tools/heat_conduction_problem_tools.h"
 
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/domain_looper/domain_looper.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/black_on_white_substituter/black_on_white_substituter.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/source/scalar/source_scalar.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/prepare_system_equations/prepare_system_equations.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/system_linear_algebraic_equations/system_linear_algebraic_equations.h"
+
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
@@ -120,67 +126,116 @@ int main()
     enum {x, y};
     debputs();
 
-    Domain<2> domain;
     {
-        vec<prmt::Point<2>> boundary_of_segments;
-        vec<st> types_boundary_segments;
-        arr<st, 4> types_boundary = {0, 0, 0, 0};
-        cst num_segments = 2;
-        prmt::Point<2> p1(0.0, 0.0);
-        prmt::Point<2> p2(1.0, 1.0);
-    debputs();
-        GTools::give_rectangle_with_border_condition (
-                boundary_of_segments, types_boundary_segments, 
-                types_boundary, num_segments, p1, p2);
-    debputs();
-        make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
-        domain.grid.refine_global(1);
+        Domain<2> domain;
+        {
+            vec<prmt::Point<2>> boundary_of_segments;
+            vec<st> types_boundary_segments;
+            arr<st, 4> types_boundary = {0, 0, 0, 0};
+            cst num_segments = 2;
+            prmt::Point<2> p1(0.0, 0.0);
+            prmt::Point<2> p2(1.0, 1.0);
+            debputs();
+            GTools::give_rectangle_with_border_condition (
+                    boundary_of_segments, types_boundary_segments, 
+                    types_boundary, num_segments, p1, p2);
+            debputs();
+            make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
+            domain.grid.refine_global(1);
+        };
+        debputs();
+        dealii::FE_Q<2> fe(1);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+        {
+            arr<arr<vec<dbl>, 2>, 2> coef;
+            coef[x][x] .push_back (1.0);
+            coef[y][y] .push_back (1.0);
+            coef[x][y] .push_back (0.0);
+            coef[y][x] .push_back (0.0);
+            HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+        };
+
+        auto func = [] (dealii::Point<2>) {return -2.0;};
+        SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+
+        Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+
+        vec<BoundaryValueScalar<2>> bound (1);
+        bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
+        bound[0].boundary_id   = 0;
+        bound[0].boundary_type = TBV::Dirichlet;
+
+        for (auto b : bound)
+            ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+
+        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+        HCPTools ::print_heat_conductions<2> (
+                slae.solution, element_matrix.C, domain, "heat_conductions");
+        HCPTools ::print_heat_gradient<2> (
+                slae.solution, element_matrix.C, domain, "heat_gradient");
     };
-    debputs();
-    dealii::FE_Q<2> fe(1);
-    domain.dof_init (fe);
 
-    SystemsLinearAlgebraicEquations slae;
-    ATools ::trivial_prepare_system_equations (slae, domain);
+    // {
+    //     Domain<2> domain;
+    //     {
+    //         vec<prmt::Point<2>> outer(4);
+    //         vec<prmt::Point<2>> inner(4);
 
-    LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
-    {
-        arr<arr<vec<dbl>, 2>, 2> coef;
-        coef[x][x] .push_back (1.0);
-        coef[y][y] .push_back (1.0);
-        coef[x][y] .push_back (0.0);
-        coef[y][x] .push_back (0.0);
-        HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
-    };
+    //         outer[0].x() = 0.0; outer[0].y() = 0.0;
+    //         outer[1].x() = 1.0; outer[1].y() = 0.0;
+    //         outer[2].x() = 1.0; outer[2].y() = 1.0;
+    //         outer[3].x() = 0.0; outer[3].y() = 1.0;
 
-    auto func = [] (dealii::Point<2>) {return -2.0;};
-    SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+    //         inner[0].x() = 0.25; inner[0].y() = 0.25;
+    //         inner[1].x() = 0.75; inner[1].y() = 0.25;
+    //         inner[2].x() = 0.75; inner[2].y() = 0.75;
+    //         inner[3].x() = 0.25; inner[3].y() = 0.75;
 
-    Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
-    Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+    //         set_grid (domain.grid, outer, inner);
+    //     };
+    //     dealii::FE_Q<2> fe(1);
+    //     domain.dof_init (fe);
 
-    vec<BoundaryValueScalar<2>> bound (1);
-    bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
-    bound[0].boundary_id   = 0;
-    bound[0].boundary_type = TBV::Dirichlet;
+    //     OnCell::SystemsLinearAlgebraicEquations slae;
+    //     OnCell::BlackOnWhiteSubstituter bows;
 
-    for (auto b : bound)
-        ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+    //     LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+    //     {
+    //         arr<arr<vec<dbl>, 2>, 2> coef;
+    //         coef[x][x] .push_back (1.0);
+    //         coef[y][y] .push_back (1.0);
+    //         coef[x][y] .push_back (0.0);
+    //         coef[y][x] .push_back (0.0);
+    //         coef[x][x] .push_back (2.0);
+    //         coef[y][y] .push_back (2.0);
+    //         coef[x][y] .push_back (0.0);
+    //         coef[y][x] .push_back (0.0);
+    //         HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+    //     };
+    //     OnCell::prepare_system_equations (slae, bows, domain);
 
-    dealii::SolverControl solver_control (10000, 1e-12);
-    dealii::SolverCG<> solver (solver_control);
-    solver.solve (
-            slae.matrix,
-            slae.solution,
-            slae.rhsv
-            ,dealii::PreconditionIdentity()
-            );
-
-    HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
-    HCPTools ::print_heat_conductions<2> (
-            slae.solution, element_matrix.C, domain, "heat_conductions");
-    HCPTools ::print_heat_gradient<2> (
-            slae.solution, element_matrix.C, domain, "heat_gradient");
+    //     arr<vec<dbl>, 2> coef;
+    //     coef[0] .push_back(1.0);
+    //     coef[1] .push_back(0.0);
+    //     dealii::FE_Q<2> fe(1);
+    //     OnCell::SourceScalar<2> element_rhsv(coef, fe);
+    // };
+    
     
     {
     arr<prmt::Point<2>, 4> points1 = {
