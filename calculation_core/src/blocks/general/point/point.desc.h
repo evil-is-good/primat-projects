@@ -21,8 +21,8 @@
 #define FEMENIST_POINT_DESC
 
 // #include <projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
-#include <projects/prmt_sintactic_addition/types.h>
-#include <projects/prmt_sintactic_addition/constructions.h>
+#include "../../../../../prmt_sintactic_addition/types.h"
+#include "../../../../../prmt_sintactic_addition/constructions.h"
 //#include </home/primat/projects/common/common_without_report.h>
 #include <deal.II/base/point.h>
 #include <math.h>

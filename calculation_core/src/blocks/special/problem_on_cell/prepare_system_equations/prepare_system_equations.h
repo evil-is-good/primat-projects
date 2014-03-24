@@ -1,5 +1,5 @@
-#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS
-#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS
+#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS_ON_CELL
+#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS_ON_CELL
 
 #include <deal.II/lac/vector.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -11,7 +11,8 @@
 #include "../../../general/boundary_value/boundary_value.h"
 #include "../system_linear_algebraic_equations/system_linear_algebraic_equations.h"
 #include "../domain_looper/domain_looper.h"
-#include "../black_on_white_substituter/black_on_white_substituter.h"
+// #include "../../../../../../deal/main/domain_looper/sources/domain_looper.h"
+// #include "../black_on_white_substituter/black_on_white_substituter.h"
 
 //! Задача на ячейке
 /*!
@@ -23,8 +24,9 @@ namespace OnCell
     //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке
     template<u8 dim, u8 num_tasks>
     void prepare_system_equations (
-            ::OnCell::SystemsLinearAlgebraicEquations<nun_tasks> &se,
-            ::OnCell::BlackOnWhiteSubstituter<dim> &bows,
+            ::OnCell::SystemsLinearAlgebraicEquations<num_tasks> &se,
+            ::OnCell::BlackOnWhiteSubstituter &bows,
+            // BlackOnWhiteSubstituter &bows,
             const Domain<dim> &domain)
     {
         dealii::CompressedSparsityPattern c_sparsity (
@@ -34,7 +36,8 @@ namespace OnCell
                 domain.dof_handler, c_sparsity);
 
         ::OnCell::DomainLooper<dim, 0> dl;
-        REPORT dl .loop_domain(
+        // DomainLooper<dim, 0> dl;
+        dl .loop_domain(
                 domain.dof_handler,
                 bows,
                 c_sparsity);

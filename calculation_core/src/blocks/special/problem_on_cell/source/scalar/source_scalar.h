@@ -37,21 +37,44 @@ namespace OnCell
   \f]
 */
     template <u8 dim>
-        class SourceScalar : public ::SourceScalar<dim>
+        class SourceScalar : public ::SourceInterface<dim>
     {
         public:
+
+            SourceScalar (const dealii::FiniteElement<dim> &fe);
             SourceScalar (const arr<vec<dbl>, dim> &coefficient, const dealii::FiniteElement<dim> &fe);
+
+            virtual void update_on_cell (
+                    typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
 
             virtual dbl operator() (cst i) override;
 
+            virtual u8 get_dofs_per_cell () override;
+
+
             arr<vec<dbl>, dim> coef;
+            dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
+            dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
+            cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
+            cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
+            u8                         material_id = 0; //!< Идентефикатор материала ячейки.
     };
+
+    template <u8 dim>
+        SourceScalar<dim>::SourceScalar (const dealii::FiniteElement<dim> &fe) :
+            quadrature_formula (2),
+            fe_values (fe, quadrature_formula,
+                    dealii::update_gradients | dealii::update_quadrature_points | 
+                    dealii::update_JxW_values),
+            dofs_per_cell (fe.dofs_per_cell),
+            num_quad_points (quadrature_formula.size())
+    {};
 
     template <u8 dim>
         SourceScalar<dim>::SourceScalar (
                 const arr<vec<dbl>, dim> &coefficient,
                 const dealii::FiniteElement<dim> &fe) :
-            ::SourceScalar<dim>(fe)
+            SourceScalar<dim>(fe)
     {
         for (st i = 0; i < dim; ++i)
         {
@@ -64,6 +87,14 @@ namespace OnCell
     };
 
     template <u8 dim>
+        void SourceScalar<dim>::update_on_cell (
+                typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
+        {
+            fe_values .reinit (cell);
+            material_id = cell->material_id();
+        };
+
+    template <u8 dim>
         dbl SourceScalar<dim>::operator () (cst i)
         {
             const uint8_t num_quad_points = this->quadrature_formula.size();
@@ -74,14 +105,28 @@ namespace OnCell
             {
                 for(st ort = 0; ort < dim; ++ort)
                 {
+        // res +=  
+        //     fe_values.shape_value (i, q_point) *
+        //     fe_values.JxW(q_point);
+                        // fe_values.shape_grad (0, 0);// *
                     res += 
-                        -this->fe_values.shape_grad (i, q_point)[ort] *
+                        -(this->fe_values.shape_grad (i, q_point)[ort]) *
                         coef[ort][this->material_id] *
                         this->fe_values.JxW(q_point);
+                // res +=  
+                //     fe_values.shape_grad (i, q_point)[0] *
+                //     fe_values.shape_grad (i, q_point)[0] *
+                //     fe_values.JxW(q_point);
                 };
             };
 
             return res;
+        };
+
+    template <u8 dim>
+        u8 SourceScalar<dim>::get_dofs_per_cell ()
+        {
+            return dofs_per_cell;
         };
 };
 

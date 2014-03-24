@@ -13,20 +13,28 @@
 #include "../../../calculation_core/src/blocks/general/geometric_tools/geometric_tools.h"
 #include "../../../calculation_core/src/blocks/special/heat_conduction_problem_tools/heat_conduction_problem_tools.h"
 
-#include "../../../calculation_core/src/blocks/special/problem_on_cell/domain_looper/domain_looper.h"
-#include "../../../calculation_core/src/blocks/special/problem_on_cell/black_on_white_substituter/black_on_white_substituter.h"
+// #include "../../../calculation_core/src/blocks/special/problem_on_cell/domain_looper/domain_looper.h"
+// #include "../../../calculation_core/src/blocks/special/problem_on_cell/black_on_white_substituter/black_on_white_substituter.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/source/scalar/source_scalar.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/prepare_system_equations/prepare_system_equations.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/system_linear_algebraic_equations/system_linear_algebraic_equations.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/assembler/assembler.h"
 
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
+#include <deal.II/grid/grid_out.h>
 
 extern void make_grid(
         dealii::Triangulation< 2 >&,
         vec<prmt::Point<2>>,
         vec<st>);
+
+extern void set_grid(
+        dealii::Triangulation< 2 >&,
+        vec<prmt::Point<2>>,
+        vec<prmt::Point<2>>);
 
 void debputs()
 {
@@ -121,98 +129,184 @@ dealii::Point<dim, double> get_grad (
     return grad;
 };
 
+template <size_t num_points>
+void set_tria(dealii::Triangulation< 2 > &triangulation, 
+        const double points[num_points], 
+        const size_t material_id[num_points - 1][num_points - 1])
+{
+
+    const size_t num_cells = num_points - 1;
+
+    std::vector< dealii::Point< 2 > > v (num_points * num_points);
+
+    FOR_I (0, num_points)
+        FOR_J (0, num_points)
+        {
+            v[i * num_points + j] = dealii::Point< 2 >(points[j], points[i]);
+        };
+
+    std::vector< dealii::CellData< 2 > > c (
+            num_cells * num_cells, dealii::CellData< 2 >());
+
+    FOR_I (0, num_cells)
+        FOR_J (0, num_cells)
+        {
+            c[i * num_cells + j].vertices[0] = i * num_points + j + 0;
+            c[i * num_cells + j].vertices[1] = i * num_points + j + 1;
+            c[i * num_cells + j].vertices[2] = i * num_points + j + num_points;
+            c[i * num_cells + j].vertices[3] = i * num_points + j + num_points + 1;
+
+            c[i * num_cells + j].material_id = material_id[i][j];
+        };
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+};
+
+// template<size_t dim>
+// std::array<double, 3> solved (dealii::Triangulation<dim> &triangulation,
+//         const double coef_1, const double coef_2)
+// {
+//     std::array<std::vector<double>, 3> coef;
+// 
+//     coef[0] .resize (2);
+//     coef[1] .resize (2);
+//     coef[2] .resize (2);
+// 
+//     coef[0][0] = coef_1; coef[0][1] = coef_2;
+//     coef[1][0] = coef_1; coef[1][1] = coef_2;
+//     coef[2][0] = 0.0;    coef[2][1] = 0.0;
+// 
+//     class ::HeatConductionProblemOnCell<dim> problem (triangulation, coef);
+// 
+//     REPORT problem .solved ();
+// 
+//     problem .print_result ("res_");
+// 
+//     dbl max_s = 0.0;
+//     for (auto i : problem.solution[0])
+//         i
+// 
+// //    printf("%f %f %f\n", problem.meta_coefficient[0],
+// //                         problem.meta_coefficient[1],
+// //                         problem.meta_coefficient[2]);
+// 
+// 
+// //    {
+// //       dealii::Vector<double> 
+// //           grad(problem.system_equations.x.size());
+// //       {
+// //           typename dealii::DoFHandler<2>::active_cell_iterator cell =
+// //               problem.domain.dof_handler.begin_active();
+// //
+// //           typename dealii::DoFHandler<2>::active_cell_iterator endc =
+// //               problem.domain.dof_handler.end();
+// //
+// //           std::vector<uint8_t> 
+// //               divider(problem.system_equations.x.size());
+// //
+// //           for (; cell != endc; ++cell)
+// //           {
+// //               double tau = 0.0
+// //               FOR_I(0, 4)
+// //               {
+// ////                   for (size_t q_point = 0; q_point < 4; ++q_point)
+// ////                   {
+// ////                       FOR_J(0, 2)
+// ////                       {
+// ////                           tau += -fe_values.shape_grad (index_i, q_point)[i] *
+// ////                               this->coefficient[i][material_id] *
+// ////                               fe_values.JxW(q_point);
+// ////                       };
+// ////                   };
+// //                   grad(cell->vertex_dof_index(i,0)) +=
+// //                       get_grad<dim>(cell, problem.solution[0], i)[0];
+// //
+// //                   divider[cell->vertex_dof_index(i,0)] += 1;
+// //               // printf("I %d %f\n", cell->vertex_dof_index(i,0),
+// //               //         get_grad<dim>(cell, problem.solution[0], i)[0]);
+// //               };
+// //               FOR_I(0, 4)
+// //                   if (cell->vertex_dof_index(i,0) == 35)
+// //                   {
+// //                       printf("%d %d %d %d %f\n", 
+// //                               cell->vertex_dof_index(0,0),
+// //                               cell->vertex_dof_index(1,0),
+// //                               cell->vertex_dof_index(2,0),
+// //                               cell->vertex_dof_index(3,0),
+// //                               get_grad<dim>(cell, problem.solution[0], i)[0]);
+// //                       break;
+// //                   };
+// //           };
+// //           FOR_I(0, divider.size())
+// //           {
+// //               grad(i) /= divider[i];
+// //               // printf("A %d %f\n", i,
+// //               //         grad(i));
+// //               // grad(i)[1] /= divider[i];
+// //           };
+// //       };
+// //       {
+// //           dealii::DataOut<dim> data_out;
+// //           data_out.attach_dof_handler (problem.domain.dof_handler);
+// //
+// //          char suffix[3] = {'x', 'y', 'z'};
+// //
+// //          for (uint8_t i = 0; i < 1; ++i)
+// //          {
+// //             data_out.add_data_vector (grad, "grad");
+// //             data_out.build_patches ();
+// //
+// //              std::string file_name = "grad_x";
+// //              file_name += suffix[i];//i;//boost::lexical_cast<char> (i);
+// //              file_name += ".gpd";
+// //
+// //              std::ofstream output (file_name.data());
+// //              data_out.write_gnuplot (output);
+// //          };
+// //       };
+// //    };
+// 
+// 
+//     std::array<double, 3> meta;
+//     meta[1] = max_s;
+//     meta[0] = problem.meta_coefficient[0];
+//     // meta[1] = problem.meta_coefficient[1];
+//     meta[2] = problem.meta_coefficient[2];
+// 
+//     printf("meta %lf %lf %lf\n", meta[0], meta[1], meta[2]);
+// 
+//     return meta;
+// 
+// };
+
 int main()
 {
     enum {x, y};
     debputs();
 
-    {
-        Domain<2> domain;
-        {
-            vec<prmt::Point<2>> boundary_of_segments;
-            vec<st> types_boundary_segments;
-            arr<st, 4> types_boundary = {0, 0, 0, 0};
-            cst num_segments = 2;
-            prmt::Point<2> p1(0.0, 0.0);
-            prmt::Point<2> p2(1.0, 1.0);
-            debputs();
-            GTools::give_rectangle_with_border_condition (
-                    boundary_of_segments, types_boundary_segments, 
-                    types_boundary, num_segments, p1, p2);
-            debputs();
-            make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
-            domain.grid.refine_global(1);
-        };
-        debputs();
-        dealii::FE_Q<2> fe(1);
-        domain.dof_init (fe);
-
-        SystemsLinearAlgebraicEquations slae;
-        ATools ::trivial_prepare_system_equations (slae, domain);
-
-        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
-        {
-            arr<arr<vec<dbl>, 2>, 2> coef;
-            coef[x][x] .push_back (1.0);
-            coef[y][y] .push_back (1.0);
-            coef[x][y] .push_back (0.0);
-            coef[y][x] .push_back (0.0);
-            HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
-        };
-
-        auto func = [] (dealii::Point<2>) {return -2.0;};
-        SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
-
-        Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
-        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
-
-        vec<BoundaryValueScalar<2>> bound (1);
-        bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
-        bound[0].boundary_id   = 0;
-        bound[0].boundary_type = TBV::Dirichlet;
-
-        for (auto b : bound)
-            ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
-
-        dealii::SolverControl solver_control (10000, 1e-12);
-        dealii::SolverCG<> solver (solver_control);
-        solver.solve (
-                slae.matrix,
-                slae.solution,
-                slae.rhsv
-                ,dealii::PreconditionIdentity()
-                );
-
-        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
-        HCPTools ::print_heat_conductions<2> (
-                slae.solution, element_matrix.C, domain, "heat_conductions");
-        HCPTools ::print_heat_gradient<2> (
-                slae.solution, element_matrix.C, domain, "heat_gradient");
-    };
-
     // {
     //     Domain<2> domain;
     //     {
-    //         vec<prmt::Point<2>> outer(4);
-    //         vec<prmt::Point<2>> inner(4);
-
-    //         outer[0].x() = 0.0; outer[0].y() = 0.0;
-    //         outer[1].x() = 1.0; outer[1].y() = 0.0;
-    //         outer[2].x() = 1.0; outer[2].y() = 1.0;
-    //         outer[3].x() = 0.0; outer[3].y() = 1.0;
-
-    //         inner[0].x() = 0.25; inner[0].y() = 0.25;
-    //         inner[1].x() = 0.75; inner[1].y() = 0.25;
-    //         inner[2].x() = 0.75; inner[2].y() = 0.75;
-    //         inner[3].x() = 0.25; inner[3].y() = 0.75;
-
-    //         set_grid (domain.grid, outer, inner);
+    //         vec<prmt::Point<2>> boundary_of_segments;
+    //         vec<st> types_boundary_segments;
+    //         arr<st, 4> types_boundary = {0, 0, 0, 0};
+    //         cst num_segments = 2;
+    //         prmt::Point<2> p1(0.0, 0.0);
+    //         prmt::Point<2> p2(1.0, 1.0);
+    //         debputs();
+    //         GTools::give_rectangle_with_border_condition (
+    //                 boundary_of_segments, types_boundary_segments, 
+    //                 types_boundary, num_segments, p1, p2);
+    //         debputs();
+    //         make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
+    //         domain.grid.refine_global(1);
     //     };
+    //     debputs();
     //     dealii::FE_Q<2> fe(1);
     //     domain.dof_init (fe);
 
-    //     OnCell::SystemsLinearAlgebraicEquations slae;
-    //     OnCell::BlackOnWhiteSubstituter bows;
+    //     SystemsLinearAlgebraicEquations slae;
+    //     ATools ::trivial_prepare_system_equations (slae, domain);
 
     //     LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
     //     {
@@ -221,376 +315,546 @@ int main()
     //         coef[y][y] .push_back (1.0);
     //         coef[x][y] .push_back (0.0);
     //         coef[y][x] .push_back (0.0);
-    //         coef[x][x] .push_back (2.0);
-    //         coef[y][y] .push_back (2.0);
-    //         coef[x][y] .push_back (0.0);
-    //         coef[y][x] .push_back (0.0);
     //         HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
     //     };
-    //     OnCell::prepare_system_equations (slae, bows, domain);
 
-    //     arr<vec<dbl>, 2> coef;
-    //     coef[0] .push_back(1.0);
-    //     coef[1] .push_back(0.0);
-    //     dealii::FE_Q<2> fe(1);
-    //     OnCell::SourceScalar<2> element_rhsv(coef, fe);
+    //     auto func = [] (dealii::Point<2>) {return -2.0;};
+    //     SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+
+    //     Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+    //     Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+
+    //     vec<BoundaryValueScalar<2>> bound (1);
+    //     bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
+    //     bound[0].boundary_id   = 0;
+    //     bound[0].boundary_type = TBV::Dirichlet;
+
+    //     for (auto b : bound)
+    //         ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+
+    //     dealii::SolverControl solver_control (10000, 1e-12);
+    //     dealii::SolverCG<> solver (solver_control);
+    //     solver.solve (
+    //             slae.matrix,
+    //             slae.solution,
+    //             slae.rhsv
+    //             ,dealii::PreconditionIdentity()
+    //             );
+
+    //     HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+    //     HCPTools ::print_heat_conductions<2> (
+    //             slae.solution, element_matrix.C, domain, "heat_conductions");
+    //     HCPTools ::print_heat_gradient<2> (
+    //             slae.solution, element_matrix.C, domain, "heat_gradient");
+    // };
+
+    {
+        Domain<2> domain;
+        {
+            // vec<prmt::Point<2>> outer(4);
+            // vec<prmt::Point<2>> inner(4);
+
+            // outer[0].x() = 0.0; outer[0].y() = 0.0;
+            // outer[1].x() = 1.0; outer[1].y() = 0.0;
+            // outer[2].x() = 1.0; outer[2].y() = 1.0;
+            // outer[3].x() = 0.0; outer[3].y() = 1.0;
+
+            // inner[0].x() = 0.25; inner[0].y() = 0.25;
+            // inner[1].x() = 0.75; inner[1].y() = 0.25;
+            // inner[2].x() = 0.75; inner[2].y() = 0.75;
+            // inner[3].x() = 0.25; inner[3].y() = 0.75;
+
+            // // inner[0].x() = 0.0; inner[0].y() = 0.0;
+            // // inner[1].x() = 0.5; inner[1].y() = 0.0;
+            // // inner[2].x() = 0.5; inner[2].y() = 1.0;
+            // // inner[3].x() = 0.0; inner[3].y() = 1.0;
+
+            // set_grid (domain.grid, outer, inner);
+
+            const size_t material_id[4][4] =
+            {
+                {0, 0, 0, 0},
+                {0, 1, 1, 0},
+                {0, 1, 1, 0},
+                {0, 0, 0, 0}
+            };
+            const double dot[5] = 
+            {
+                (0.0),
+                (0.25),
+                (0.5),
+                (0.75),
+                (1.0)
+            };
+            ::set_tria <5> (domain.grid, dot, material_id);
+            // domain.grid .refine_global (1);
+            {
+                std::ofstream out ("grid-igor.eps");
+                dealii::GridOut grid_out;
+                grid_out.write_eps (domain.grid, out);
+            };
+        };
+        dealii::FE_Q<2> fe(1);
+        domain.dof_init (fe);
+
+        OnCell::SystemsLinearAlgebraicEquations<2> slae;
+        OnCell::BlackOnWhiteSubstituter bows;
+        // BlackOnWhiteSubstituter bows;
+
+        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+        // {
+            arr<arr<vec<dbl>, 2>, 2> coef;
+            coef[x][x] .push_back (1.0);
+            coef[y][y] .push_back (1.0);
+            coef[x][y] .push_back (0.0);
+            coef[y][x] .push_back (0.0);
+            coef[x][x] .push_back (2.0);
+            coef[y][y] .push_back (2.0);
+            coef[x][y] .push_back (0.0);
+            coef[y][x] .push_back (0.0);
+            HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+        // };
+        OnCell::prepare_system_equations (slae, bows, domain);
+
+        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+        FILE *F;
+        F = fopen("matrix.gpd", "w");
+        for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+            if (slae.matrix.el(i,j))
+        {
+            fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+        };
+        fclose(F);
+
+        FOR(i, 0, 2)
+        {
+            arr<vec<dbl>, 2> coef_for_rhs;
+            FOR(j, 0, 2)
+            {
+                FOR(k, 0, element_matrix.C.size())
+                {
+                    coef_for_rhs[j] .push_back (element_matrix.C[i][j][k]);
+                };
+            };
+            OnCell::SourceScalar<2> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
+            // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
+            OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
+            // for (auto a : slae.rhsv[i])
+            //     printf("%f\n", a);
+            {
+                dealii::DataOut<2> data_out;
+                data_out.attach_dof_handler (domain.dof_handler);
+                data_out.add_data_vector (slae.rhsv[0], "xb");
+                data_out.add_data_vector (slae.rhsv[1], "yb");
+                data_out.build_patches ();
+
+                auto name = "b.gpd";
+
+                std::ofstream output (name);
+                data_out.write_gnuplot (output);
+            };
+
+            dealii::SolverControl solver_control (10000, 1e-12);
+            dealii::SolverCG<> solver (solver_control);
+            solver.solve (
+                    slae.matrix,
+                    slae.solution[i],
+                    slae.rhsv[i]
+                    ,dealii::PreconditionIdentity()
+                    );
+            FOR(j, 0, slae.solution[i].size())
+                slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+        };
+
+        arr<str, 2> vr = {"temperature_x", "temperature_y"};
+        FOR(i, 0, 2)
+            HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
+
+        auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
+                domain.dof_handler, slae.solution, slae.rhsv, coef);
+        printf("%f %f %f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+    };
+
+    // {
+    //         const size_t material_id[4][4] =
+    //         {
+    //             {0, 0, 0, 0},
+    //             {0, 1, 1, 0},
+    //             {0, 1, 1, 0},
+    //             {0, 0, 0, 0}
+    //         };
+    //         const double dot[5] = 
+    //         {
+    //             (0.0),
+    //             (0.25),
+    //             (0.5),
+    //             (0.75),
+    //             (1.0)
+    //         };
+    //     dealii::Triangulation<2> tria;
+    //     ::set_tria <5> (tria, dot, material_id);
+    //     tria .refine_global (1);
+
+    //     auto res = ::solved<2>(tria, coef_1, coef_2);
+    //     printf("%f %f %f\n", res[0], res[1], res[2]);
     // };
     
     
-    {
-    arr<prmt::Point<2>, 4> points1 = {
-        prmt::Point<2>(0.0, 0.0),
-        prmt::Point<2>(2.0, 0.0),
-        prmt::Point<2>(1.5, 1.5),
-        prmt::Point<2>(0.0, 2.0)};
-    arr<dbl, 4> values1 = {
-        points1[0].x()*points1[0].x(),
-        points1[1].x()*points1[1].x(),
-        points1[2].x()*points1[2].x(),
-        points1[3].x()*points1[3].x()};
-
-    arr<prmt::Point<2>, 4> points2 = {
-        prmt::Point<2>(2.0, 0.0),
-        prmt::Point<2>(4.0, 3.0),
-        prmt::Point<2>(3.0, 4.0),
-        prmt::Point<2>(1.5, 1.5)};
-    arr<dbl, 4> values2 = {
-        points2[0].x()*points2[0].x(),
-        points2[1].x()*points2[1].x(),
-        points2[2].x()*points2[2].x(),
-        points2[3].x()*points2[3].x()};
-    // printf("%lf %lf %lf %lf\n", 
-    //         values[0],
-    //         values[1],
-    //         values[2],
-    //         values[3]);
-
-    Scalar4PointsFunc<2> f1(points1, values1);
-
-    // points[0] = prmt::Point<2>(1.0, 0.0);
-    // points[1] = prmt::Point<2>(2.0, 0.0);
-    // points[2] = prmt::Point<2>(3.0, 1.0);
-    // points[3] = prmt::Point<2>(2.0, 1.0);
-
-    // values[0] = points[0].x()*points[0].x();
-    // values[1] = points[1].x()*points[1].x();
-    // values[2] = points[2].x()*points[2].x();
-    // values[3] = points[3].x()*points[3].x();
-    // printf("%lf %lf %lf %lf\n", 
-    //         values[0],
-    //         values[1],
-    //         values[2],
-    //         values[3]);
-
-    Scalar4PointsFunc<2> f2(points2, values2);
-
-    auto ip = prmt::Point<2>(1.5, 1.5);
-
-    // printf("%lf\n", f1(0.0, 0.0));
-    // printf("%lf\n", f1(ip));
-    // printf("%lf\n", f1.dx(ip));
-    // printf("%lf\n", f2(ip));
-    // printf("%lf\n", f2.dx(ip));
-
-
-    arr<arr<prmt::Point<2>, 4>, 4> octagon;
-    arr<arr<dbl, 4>, 4> values;
-    dbl angle_delta = 3.14159265359 / 4.0;
-    dbl angle = 0.0;
-    dbl R = 1.0; R /= 10.0;
-    dbl sx = 2.0;
-    dbl sy = 0.0;
-
-    for (auto& piace : octagon)
-    // for (st i = 0; i < 4; ++i)
-    {
-        piace[0].x() = R * cos(angle) + sx;
-        piace[0].y() = R * sin(angle) + sy;
-        angle += angle_delta;
-
-        piace[1].x() = R * cos(angle) + sx;
-        piace[1].y() = R * sin(angle) + sy;
-        angle += angle_delta;
-
-        piace[2].x() = R * cos(angle) + sx;
-        piace[2].y() = R * sin(angle) + sy;
-
-        piace[3].x() = 0.0 + sx;
-        piace[3].y() = 0.0 + sy;
-    };
-    octagon[0][0].x() += R / 1.0;
-    octagon[3][2].x() += R / 1.0;
-    octagon[0][0].y() += R / 2.0;
-    octagon[3][2].y() += R / 2.0;
-
-    // octagon[3][1].x() -= R / 2.0;
-
-    // octagon[0][0] = prmt::Point<2>(-2.0*R + sx, -1.0*R + sy);
-    // octagon[0][1] = prmt::Point<2>(-1.0*R + sx, -1.0*R + sy);
-    // octagon[0][2] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
-    // octagon[0][3] = prmt::Point<2>(-2.0*R + sx, 0.0*R + sy);
-
-    // octagon[1][0] = prmt::Point<2>(-1.0*R + sx, -1.0*R + sy);
-    // octagon[1][1] = prmt::Point<2>(2.0*R + sx, -1.0*R + sy);
-    // octagon[1][2] = prmt::Point<2>(2.0*R + sx, 0.0*R + sy);
-    // octagon[1][3] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
-
-    // octagon[2][0] = prmt::Point<2>(-2.0*R + sx, 0.0*R + sy);
-    // octagon[2][1] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
-    // octagon[2][2] = prmt::Point<2>(1.0*R + sx, 1.0*R + sy);
-    // octagon[2][3] = prmt::Point<2>(-2.0*R + sx, 1.0*R + sy);
-
-    // octagon[3][0] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
-    // octagon[3][1] = prmt::Point<2>(2.0*R + sx, 0.0*R + sy);
-    // octagon[3][2] = prmt::Point<2>(2.0*R + sx, 1.0*R + sy);
-    // octagon[3][3] = prmt::Point<2>(1.0*R + sx, 1.0*R + sy);
-
-
-    dbl Rx = 1.0; Rx /= 4.0;
-    dbl Ry = 1.0 / 4.0; Ry /= 4.0;
-
-    octagon[0][0] = prmt::Point<2>(-2.0*Rx + sx, 0.0*Ry + sy);
-    octagon[0][1] = prmt::Point<2>(-1.0*Rx + sx, -1.0*Ry + sy);
-    octagon[0][2] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
-    octagon[0][3] = prmt::Point<2>(-1.0*Rx + sx, 1.0*Ry + sy);
-
-    octagon[1][0] = prmt::Point<2>(-1.0*Rx + sx, -1.0*Ry + sy);
-    octagon[1][1] = prmt::Point<2>(-0.5*Rx + sx, -2.0*Ry + sy);
-    octagon[1][2] = prmt::Point<2>(1.0*Rx + sx, -1.0*Ry + sy);
-    octagon[1][3] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
-
-    octagon[2][0] = prmt::Point<2>(1.0*Rx + sx, -1.0*Ry + sy);
-    octagon[2][1] = prmt::Point<2>(2.0*Rx + sx, 0.0*Ry + sy);
-    octagon[2][2] = prmt::Point<2>(1.0*Rx + sx, 1.0*Ry + sy);
-    octagon[2][3] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
-
-    octagon[3][0] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
-    octagon[3][1] = prmt::Point<2>(1.0*Rx + sx, 1.0*Ry + sy);
-    octagon[3][2] = prmt::Point<2>(-0.5*Rx + sx, 2.0*Ry + sy);
-    octagon[3][3] = prmt::Point<2>(-1.0*Rx + sx, 1.0*Ry + sy);
-
-    // octagon[2][2].y() -= R / 1.0;
-    // octagon[3][2].x() += R / 1.0;
-
-    for (st i = 0; i < 4; ++i)
-    {
-        for (st j = 0; j < 4; ++j)
-        {
-            values[i][j] = 
-                octagon[i][j].x() * octagon[i][j].x() * octagon[i][j].x() + 2.0
-                // + octagon[i][j].y() * octagon[i][j].y()
-                ;
-        };
-    };
-
-    arr<Scalar4PointsFunc<2>, 4> foo = {
-        Scalar4PointsFunc<2>(octagon[0], values[0]),
-        Scalar4PointsFunc<2>(octagon[1], values[1]),
-        Scalar4PointsFunc<2>(octagon[2], values[2]),
-        Scalar4PointsFunc<2>(octagon[3], values[3])
-    };
-
-    FILE* F;
-    F = fopen("test_iso.gpd", "w");
-    for (st i = 0; i < 4; ++i)
-    {
-        for (st j = 0; j < 4; ++j)
-        {
-            fprintf(F, "%lf %lf %lf %lf %lf\n",
-                    octagon[i][j].x(), octagon[i][j].y(), values[i][j],
-                    foo[i](octagon[i][j]), foo[i].dx(octagon[i][j]));
-        };
-    };
-    fclose(F);
-
-    // prmt::Point<2> cp(0.0 + sx, 0.0 + sy);
-    prmt::Point<2> cp(-1.0*Rx + sx, -1.0*Ry + sy);
-
-    printf("%lf %lf\n", 
-            (foo[0].dx(cp) +
-            foo[1].dx(cp) +
-            foo[2].dx(cp) +
-            foo[3].dx(cp)) / 4.0,
-            // sx*2.0
-            3.0*sx*sx
-            );
-
-    printf("%lf %lf\n", 
-            foo[1](-1.0*Rx + sx, -1.0*Ry + sy),
-            sx*sx*sx+2.0
-            );
-};
-
-// {
-//     FILE* F;
-//     F = fopen("test_iso_2.gpd", "w");
-//     dbl R = 1.0;
-//     dbl sx = 1.0;
+//     {
+//     arr<prmt::Point<2>, 4> points1 = {
+//         prmt::Point<2>(0.0, 0.0),
+//         prmt::Point<2>(2.0, 0.0),
+//         prmt::Point<2>(1.5, 1.5),
+//         prmt::Point<2>(0.0, 2.0)};
+//     arr<dbl, 4> values1 = {
+//         points1[0].x()*points1[0].x(),
+//         points1[1].x()*points1[1].x(),
+//         points1[2].x()*points1[2].x(),
+//         points1[3].x()*points1[3].x()};
+// 
+//     arr<prmt::Point<2>, 4> points2 = {
+//         prmt::Point<2>(2.0, 0.0),
+//         prmt::Point<2>(4.0, 3.0),
+//         prmt::Point<2>(3.0, 4.0),
+//         prmt::Point<2>(1.5, 1.5)};
+//     arr<dbl, 4> values2 = {
+//         points2[0].x()*points2[0].x(),
+//         points2[1].x()*points2[1].x(),
+//         points2[2].x()*points2[2].x(),
+//         points2[3].x()*points2[3].x()};
+//     // printf("%lf %lf %lf %lf\n", 
+//     //         values[0],
+//     //         values[1],
+//     //         values[2],
+//     //         values[3]);
+// 
+//     Scalar4PointsFunc<2> f1(points1, values1);
+// 
+//     // points[0] = prmt::Point<2>(1.0, 0.0);
+//     // points[1] = prmt::Point<2>(2.0, 0.0);
+//     // points[2] = prmt::Point<2>(3.0, 1.0);
+//     // points[3] = prmt::Point<2>(2.0, 1.0);
+// 
+//     // values[0] = points[0].x()*points[0].x();
+//     // values[1] = points[1].x()*points[1].x();
+//     // values[2] = points[2].x()*points[2].x();
+//     // values[3] = points[3].x()*points[3].x();
+//     // printf("%lf %lf %lf %lf\n", 
+//     //         values[0],
+//     //         values[1],
+//     //         values[2],
+//     //         values[3]);
+// 
+//     Scalar4PointsFunc<2> f2(points2, values2);
+// 
+//     auto ip = prmt::Point<2>(1.5, 1.5);
+// 
+//     // printf("%lf\n", f1(0.0, 0.0));
+//     // printf("%lf\n", f1(ip));
+//     // printf("%lf\n", f1.dx(ip));
+//     // printf("%lf\n", f2(ip));
+//     // printf("%lf\n", f2.dx(ip));
+// 
+// 
+//     arr<arr<prmt::Point<2>, 4>, 4> octagon;
+//     arr<arr<dbl, 4>, 4> values;
+//     dbl angle_delta = 3.14159265359 / 4.0;
+//     dbl angle = 0.0;
+//     dbl R = 1.0; R /= 10.0;
+//     dbl sx = 2.0;
 //     dbl sy = 0.0;
-//     dbl N = 10;
-//     vec<dbl> angls(N);
-//     for (st i = 0; i < N; ++i)
+// 
+//     for (auto& piace : octagon)
+//     // for (st i = 0; i < 4; ++i)
 //     {
-//         angls[i] = (2.0 * 3.14159265359 / N) * i;
+//         piace[0].x() = R * cos(angle) + sx;
+//         piace[0].y() = R * sin(angle) + sy;
+//         angle += angle_delta;
+// 
+//         piace[1].x() = R * cos(angle) + sx;
+//         piace[1].y() = R * sin(angle) + sy;
+//         angle += angle_delta;
+// 
+//         piace[2].x() = R * cos(angle) + sx;
+//         piace[2].y() = R * sin(angle) + sy;
+// 
+//         piace[3].x() = 0.0 + sx;
+//         piace[3].y() = 0.0 + sy;
 //     };
-//     for (st i = 0; i < N - 3; ++i)
+//     octagon[0][0].x() += R / 1.0;
+//     octagon[3][2].x() += R / 1.0;
+//     octagon[0][0].y() += R / 2.0;
+//     octagon[3][2].y() += R / 2.0;
+// 
+//     // octagon[3][1].x() -= R / 2.0;
+// 
+//     // octagon[0][0] = prmt::Point<2>(-2.0*R + sx, -1.0*R + sy);
+//     // octagon[0][1] = prmt::Point<2>(-1.0*R + sx, -1.0*R + sy);
+//     // octagon[0][2] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
+//     // octagon[0][3] = prmt::Point<2>(-2.0*R + sx, 0.0*R + sy);
+// 
+//     // octagon[1][0] = prmt::Point<2>(-1.0*R + sx, -1.0*R + sy);
+//     // octagon[1][1] = prmt::Point<2>(2.0*R + sx, -1.0*R + sy);
+//     // octagon[1][2] = prmt::Point<2>(2.0*R + sx, 0.0*R + sy);
+//     // octagon[1][3] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
+// 
+//     // octagon[2][0] = prmt::Point<2>(-2.0*R + sx, 0.0*R + sy);
+//     // octagon[2][1] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
+//     // octagon[2][2] = prmt::Point<2>(1.0*R + sx, 1.0*R + sy);
+//     // octagon[2][3] = prmt::Point<2>(-2.0*R + sx, 1.0*R + sy);
+// 
+//     // octagon[3][0] = prmt::Point<2>(0.0*R + sx, 0.0*R + sy);
+//     // octagon[3][1] = prmt::Point<2>(2.0*R + sx, 0.0*R + sy);
+//     // octagon[3][2] = prmt::Point<2>(2.0*R + sx, 1.0*R + sy);
+//     // octagon[3][3] = prmt::Point<2>(1.0*R + sx, 1.0*R + sy);
+// 
+// 
+//     dbl Rx = 1.0; Rx /= 4.0;
+//     dbl Ry = 1.0 / 4.0; Ry /= 4.0;
+// 
+//     octagon[0][0] = prmt::Point<2>(-2.0*Rx + sx, 0.0*Ry + sy);
+//     octagon[0][1] = prmt::Point<2>(-1.0*Rx + sx, -1.0*Ry + sy);
+//     octagon[0][2] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
+//     octagon[0][3] = prmt::Point<2>(-1.0*Rx + sx, 1.0*Ry + sy);
+// 
+//     octagon[1][0] = prmt::Point<2>(-1.0*Rx + sx, -1.0*Ry + sy);
+//     octagon[1][1] = prmt::Point<2>(-0.5*Rx + sx, -2.0*Ry + sy);
+//     octagon[1][2] = prmt::Point<2>(1.0*Rx + sx, -1.0*Ry + sy);
+//     octagon[1][3] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
+// 
+//     octagon[2][0] = prmt::Point<2>(1.0*Rx + sx, -1.0*Ry + sy);
+//     octagon[2][1] = prmt::Point<2>(2.0*Rx + sx, 0.0*Ry + sy);
+//     octagon[2][2] = prmt::Point<2>(1.0*Rx + sx, 1.0*Ry + sy);
+//     octagon[2][3] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
+// 
+//     octagon[3][0] = prmt::Point<2>(0.0*Rx + sx, 0.0*Ry + sy);
+//     octagon[3][1] = prmt::Point<2>(1.0*Rx + sx, 1.0*Ry + sy);
+//     octagon[3][2] = prmt::Point<2>(-0.5*Rx + sx, 2.0*Ry + sy);
+//     octagon[3][3] = prmt::Point<2>(-1.0*Rx + sx, 1.0*Ry + sy);
+// 
+//     // octagon[2][2].y() -= R / 1.0;
+//     // octagon[3][2].x() += R / 1.0;
+// 
+//     for (st i = 0; i < 4; ++i)
 //     {
-//         for (st j = i + 1; j < N - 2; ++j)
+//         for (st j = 0; j < 4; ++j)
 //         {
-//             for (st k = j + 1; k < N - 1; ++k)
-//             {
-//                 for (st l = k + 1; l < N; ++l)
-//                 {
-//     arr<prmt::Point<2>, 4> p = {
-//         prmt::Point<2>(R * cos(angls[i]) + sx, R * sin(angls[i]) + sy),
-//         prmt::Point<2>(R * cos(angls[j]) + sx, R * sin(angls[j]) + sy),
-//         prmt::Point<2>(R * cos(angls[k]) + sx, R * sin(angls[k]) + sy),
-//         prmt::Point<2>(R * cos(angls[l]) + sx, R * sin(angls[l]) + sy)};
-//     arr<dbl, 4> v = {
-//         p[0].x()*p[0].x(),
-//         p[1].x()*p[1].x(),
-//         p[2].x()*p[2].x(),
-//         p[3].x()*p[3].x()};
-//     Scalar4PointsFunc<2> foo(p, v);
-//     fprintf(F, "%ld%ld%ld%ld %f %f %f %f %f %f %f %f %f %f %f %f\n",
-//             i, j, k, l, 
-//             p[0].x()*p[0].x(),
-//             p[1].x()*p[1].x(),
-//             p[2].x()*p[2].x(),
-//             p[3].x()*p[3].x(),
-//             foo(p[0]),
-//             foo(p[1]),
-//             foo(p[2]),
-//             foo(p[3]),
-//             (foo(p[0]) - p[0].x()*p[0].x()),
-//             (foo(p[1]) - p[1].x()*p[1].x()),
-//             (foo(p[2]) - p[2].x()*p[2].x()),
-//             (foo(p[3]) - p[3].x()*p[3].x()));
-//                     
-//                 };
-//             };
+//             values[i][j] = 
+//                 octagon[i][j].x() * octagon[i][j].x() * octagon[i][j].x() + 2.0
+//                 // + octagon[i][j].y() * octagon[i][j].y()
+//                 ;
+//         };
+//     };
+// 
+//     arr<Scalar4PointsFunc<2>, 4> foo = {
+//         Scalar4PointsFunc<2>(octagon[0], values[0]),
+//         Scalar4PointsFunc<2>(octagon[1], values[1]),
+//         Scalar4PointsFunc<2>(octagon[2], values[2]),
+//         Scalar4PointsFunc<2>(octagon[3], values[3])
+//     };
+// 
+//     FILE* F;
+//     F = fopen("test_iso.gpd", "w");
+//     for (st i = 0; i < 4; ++i)
+//     {
+//         for (st j = 0; j < 4; ++j)
+//         {
+//             fprintf(F, "%lf %lf %lf %lf %lf\n",
+//                     octagon[i][j].x(), octagon[i][j].y(), values[i][j],
+//                     foo[i](octagon[i][j]), foo[i].dx(octagon[i][j]));
 //         };
 //     };
 //     fclose(F);
+// 
+//     // prmt::Point<2> cp(0.0 + sx, 0.0 + sy);
+//     prmt::Point<2> cp(-1.0*Rx + sx, -1.0*Ry + sy);
+// 
+//     printf("%lf %lf\n", 
+//             (foo[0].dx(cp) +
+//             foo[1].dx(cp) +
+//             foo[2].dx(cp) +
+//             foo[3].dx(cp)) / 4.0,
+//             // sx*2.0
+//             3.0*sx*sx
+//             );
+// 
+//     printf("%lf %lf\n", 
+//             foo[1](-1.0*Rx + sx, -1.0*Ry + sy),
+//             sx*sx*sx+2.0
+//             );
 // };
-{
-    arr<prmt::Point<2>, 4> p = {
-        // prmt::Point<2>(0.0, 0.1),
-        // prmt::Point<2>(0.0125, 0.0875),
-        // prmt::Point<2>(0.040104, 0.096892),
-        // prmt::Point<2>(0.031250, 0.109109)
-        prmt::Point<2>(0.0, 0.0),
-        prmt::Point<2>(2.0, 0.0),
-        prmt::Point<2>(2.0, 2.0),
-        prmt::Point<2>(1.0, 2.0)
-    };
-    arr<dbl, 4> v = {
-        p[0].x() * p[0].x(),
-        p[1].x() * p[1].x(),
-        p[2].x() * p[2].x(),
-        p[3].x() * p[3].x()
-        // 0.0, 0.000161, 0.000912, 0.001574
-    };
-    Scalar4PointsFunc<2> foo(p, v);
-    Beeline foo1(p, v);
-    printf("\n");
-    // printf("AAA f=%f v=%f dif=%f s=%f r=%f Cs=%f Cr=%f\n", 
-    //         foo(p[2]), 
-    //         v[2], 
-    //         foo(p[2]) - v[2], 
-    //         foo.s(p[0].x(), p[0].y()),
-    //         foo.r(p[0].x(), p[0].y()),
-    //         foo.s.C(p[0].x(), p[0].y()),
-    //         foo.r.C(p[0].x(), p[0].y()));
-    cst n = 3;
-    // printf("AAA f=%f v=%f dif=%f s=%f r=%f %f\n", 
-    //         foo(p[n]), 
-    //         v[n], 
-    //         foo(p[n]) - v[n], 
-    //         foo.s(p[n].x(), p[n].y())[0],
-    //         foo.r(p[n].x(), p[n].y())[1], std::sqrt(-4.0));
-    // printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
-    //         foo.s(p[0].x(), p[0].y())[0],
-    //         foo.r(p[0].x(), p[0].y())[1],
-    //         foo.s(p[0].x(), p[0].y())[1],
-    //         foo.r(p[0].x(), p[0].y())[0],
-    //         foo.s(p[1].x(), p[1].y())[0],
-    //         foo.r(p[1].x(), p[1].y())[1],
-    //         foo.s(p[1].x(), p[1].y())[1],
-    //         foo.r(p[1].x(), p[1].y())[0],
-    //         foo.s(p[2].x(), p[2].y())[0],
-    //         foo.r(p[2].x(), p[2].y())[1],
-    //         foo.s(p[2].x(), p[2].y())[1],
-    //         foo.r(p[2].x(), p[2].y())[0],
-    //         foo.s(p[3].x(), p[3].y())[0],
-    //         foo.r(p[3].x(), p[3].y())[1],
-    //         foo.s(p[3].x(), p[3].y())[1],
-    //         foo.r(p[3].x(), p[3].y())[0]
-    //         );
-    // dbl midl_x = (0.0 + 0.0125 + 0.040104 + 0.031250) / 4.0;
-    // dbl midl_y = (0.1 + 0.0875 + 0.096892 + 0.109109) / 4.0;
-    // Scalar4PointsFunc<2>::LinFunc(1.0, 2.0, 3.0);
-    // puts("!!!!!!!!");
-    // printf("%f\n", foo.r(p[0].x(), p[0].y())[1]);
-    FILE* F;
-    F = fopen("test_iso_dy.gpd", "w");
-    st NN = 20;
-    dbl summ = 0.0;
-    for (st i = 0; i < NN+1; ++i)
-    {
-        for (st j = 0; j < NN+1; ++j)
-        {
-            dbl x = (p[1].x() - p[0].x()) / NN * i + p[0].x();
-            dbl y = (p[3].y() - p[0].y()) / NN * j + p[0].y();
-            fprintf(F, "%f %f %f %f %f %f %f %f\n", 
-                    x,
-                    y,
-                    foo(x, y),
-                    foo.dy(x, y),
-                    foo1(x, y),
-                    foo1.dy(x, y),
-                    x*x,
-                    2*x);
-            summ += foo.dy(x, y);
-        };
-    };
-    printf("summ %f\n", summ / ((NN+1)*(NN+1)));
-    fclose(F);
-    // dbl midl_x = (p[0].x() + p[1].x() + p[2].x() + p[3].x()) / 4.0;  
-    // dbl midl_y = (p[0].y() + p[1].y() + p[2].y() + p[3].y()) / 4.0;  
-    // printf("%f %f %f %f %f\n", midl_x, midl_y, foo.dy(midl_x, midl_y), foo.dy(0.0, 0.0),
-    //         foo(0.0, 0.05));
-    // puts("!!!!!!!!");
-    // for (st i = 0; i < 11; ++i)
-    // {
-    //     dbl x = 0.0;
-    //     dbl y = -0.02 + i*0.01;
-    //     dbl s = foo.s(x,y)[0];
-    //     dbl r = foo.r(x,y)[1];
-    //     dbl f = foo(x,y);
-    //     printf("%f %f %f %f\n", y, s, r, f);
-    //     // foo(x, y);
-    // };
-    // // foo(0.0, 0.0)
-    // // foo(0.0, 0.05);
-};
-{
-    arr<prmt::Point<2>, 4> p = {
-        prmt::Point<2>(0.0, 0.0),
-        prmt::Point<2>(2.0, 0.0),
-        prmt::Point<2>(2.0, 2.0),
-        prmt::Point<2>(1.0, 2.0)
-    };
-    arr<dbl, 4> v = {
-        p[0].x() * p[0].x(),
-        p[1].x() * p[1].x(),
-        p[2].x() * p[2].x(),
-        p[3].x() * p[3].x()
-    };
-    Scalar4PointsFunc<2> foo1(p, v);
-    Beeline foo2(p, v);
-    printf("%f %f\n", foo1.dy(1.0, 1.0), foo2.dy(1.0, 1.0));
-};
+// 
+// // {
+// //     FILE* F;
+// //     F = fopen("test_iso_2.gpd", "w");
+// //     dbl R = 1.0;
+// //     dbl sx = 1.0;
+// //     dbl sy = 0.0;
+// //     dbl N = 10;
+// //     vec<dbl> angls(N);
+// //     for (st i = 0; i < N; ++i)
+// //     {
+// //         angls[i] = (2.0 * 3.14159265359 / N) * i;
+// //     };
+// //     for (st i = 0; i < N - 3; ++i)
+// //     {
+// //         for (st j = i + 1; j < N - 2; ++j)
+// //         {
+// //             for (st k = j + 1; k < N - 1; ++k)
+// //             {
+// //                 for (st l = k + 1; l < N; ++l)
+// //                 {
+// //     arr<prmt::Point<2>, 4> p = {
+// //         prmt::Point<2>(R * cos(angls[i]) + sx, R * sin(angls[i]) + sy),
+// //         prmt::Point<2>(R * cos(angls[j]) + sx, R * sin(angls[j]) + sy),
+// //         prmt::Point<2>(R * cos(angls[k]) + sx, R * sin(angls[k]) + sy),
+// //         prmt::Point<2>(R * cos(angls[l]) + sx, R * sin(angls[l]) + sy)};
+// //     arr<dbl, 4> v = {
+// //         p[0].x()*p[0].x(),
+// //         p[1].x()*p[1].x(),
+// //         p[2].x()*p[2].x(),
+// //         p[3].x()*p[3].x()};
+// //     Scalar4PointsFunc<2> foo(p, v);
+// //     fprintf(F, "%ld%ld%ld%ld %f %f %f %f %f %f %f %f %f %f %f %f\n",
+// //             i, j, k, l, 
+// //             p[0].x()*p[0].x(),
+// //             p[1].x()*p[1].x(),
+// //             p[2].x()*p[2].x(),
+// //             p[3].x()*p[3].x(),
+// //             foo(p[0]),
+// //             foo(p[1]),
+// //             foo(p[2]),
+// //             foo(p[3]),
+// //             (foo(p[0]) - p[0].x()*p[0].x()),
+// //             (foo(p[1]) - p[1].x()*p[1].x()),
+// //             (foo(p[2]) - p[2].x()*p[2].x()),
+// //             (foo(p[3]) - p[3].x()*p[3].x()));
+// //                     
+// //                 };
+// //             };
+// //         };
+// //     };
+// //     fclose(F);
+// // };
+// {
+//     arr<prmt::Point<2>, 4> p = {
+//         // prmt::Point<2>(0.0, 0.1),
+//         // prmt::Point<2>(0.0125, 0.0875),
+//         // prmt::Point<2>(0.040104, 0.096892),
+//         // prmt::Point<2>(0.031250, 0.109109)
+//         prmt::Point<2>(0.0, 0.0),
+//         prmt::Point<2>(2.0, 0.0),
+//         prmt::Point<2>(2.0, 2.0),
+//         prmt::Point<2>(1.0, 2.0)
+//     };
+//     arr<dbl, 4> v = {
+//         p[0].x() * p[0].x(),
+//         p[1].x() * p[1].x(),
+//         p[2].x() * p[2].x(),
+//         p[3].x() * p[3].x()
+//         // 0.0, 0.000161, 0.000912, 0.001574
+//     };
+//     Scalar4PointsFunc<2> foo(p, v);
+//     Beeline foo1(p, v);
+//     printf("\n");
+//     // printf("AAA f=%f v=%f dif=%f s=%f r=%f Cs=%f Cr=%f\n", 
+//     //         foo(p[2]), 
+//     //         v[2], 
+//     //         foo(p[2]) - v[2], 
+//     //         foo.s(p[0].x(), p[0].y()),
+//     //         foo.r(p[0].x(), p[0].y()),
+//     //         foo.s.C(p[0].x(), p[0].y()),
+//     //         foo.r.C(p[0].x(), p[0].y()));
+//     cst n = 3;
+//     // printf("AAA f=%f v=%f dif=%f s=%f r=%f %f\n", 
+//     //         foo(p[n]), 
+//     //         v[n], 
+//     //         foo(p[n]) - v[n], 
+//     //         foo.s(p[n].x(), p[n].y())[0],
+//     //         foo.r(p[n].x(), p[n].y())[1], std::sqrt(-4.0));
+//     // printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+//     //         foo.s(p[0].x(), p[0].y())[0],
+//     //         foo.r(p[0].x(), p[0].y())[1],
+//     //         foo.s(p[0].x(), p[0].y())[1],
+//     //         foo.r(p[0].x(), p[0].y())[0],
+//     //         foo.s(p[1].x(), p[1].y())[0],
+//     //         foo.r(p[1].x(), p[1].y())[1],
+//     //         foo.s(p[1].x(), p[1].y())[1],
+//     //         foo.r(p[1].x(), p[1].y())[0],
+//     //         foo.s(p[2].x(), p[2].y())[0],
+//     //         foo.r(p[2].x(), p[2].y())[1],
+//     //         foo.s(p[2].x(), p[2].y())[1],
+//     //         foo.r(p[2].x(), p[2].y())[0],
+//     //         foo.s(p[3].x(), p[3].y())[0],
+//     //         foo.r(p[3].x(), p[3].y())[1],
+//     //         foo.s(p[3].x(), p[3].y())[1],
+//     //         foo.r(p[3].x(), p[3].y())[0]
+//     //         );
+//     // dbl midl_x = (0.0 + 0.0125 + 0.040104 + 0.031250) / 4.0;
+//     // dbl midl_y = (0.1 + 0.0875 + 0.096892 + 0.109109) / 4.0;
+//     // Scalar4PointsFunc<2>::LinFunc(1.0, 2.0, 3.0);
+//     // puts("!!!!!!!!");
+//     // printf("%f\n", foo.r(p[0].x(), p[0].y())[1]);
+//     FILE* F;
+//     F = fopen("test_iso_dy.gpd", "w");
+//     st NN = 20;
+//     dbl summ = 0.0;
+//     for (st i = 0; i < NN+1; ++i)
+//     {
+//         for (st j = 0; j < NN+1; ++j)
+//         {
+//             dbl x = (p[1].x() - p[0].x()) / NN * i + p[0].x();
+//             dbl y = (p[3].y() - p[0].y()) / NN * j + p[0].y();
+//             fprintf(F, "%f %f %f %f %f %f %f %f\n", 
+//                     x,
+//                     y,
+//                     foo(x, y),
+//                     foo.dy(x, y),
+//                     foo1(x, y),
+//                     foo1.dy(x, y),
+//                     x*x,
+//                     2*x);
+//             summ += foo.dy(x, y);
+//         };
+//     };
+//     printf("summ %f\n", summ / ((NN+1)*(NN+1)));
+//     fclose(F);
+//     // dbl midl_x = (p[0].x() + p[1].x() + p[2].x() + p[3].x()) / 4.0;  
+//     // dbl midl_y = (p[0].y() + p[1].y() + p[2].y() + p[3].y()) / 4.0;  
+//     // printf("%f %f %f %f %f\n", midl_x, midl_y, foo.dy(midl_x, midl_y), foo.dy(0.0, 0.0),
+//     //         foo(0.0, 0.05));
+//     // puts("!!!!!!!!");
+//     // for (st i = 0; i < 11; ++i)
+//     // {
+//     //     dbl x = 0.0;
+//     //     dbl y = -0.02 + i*0.01;
+//     //     dbl s = foo.s(x,y)[0];
+//     //     dbl r = foo.r(x,y)[1];
+//     //     dbl f = foo(x,y);
+//     //     printf("%f %f %f %f\n", y, s, r, f);
+//     //     // foo(x, y);
+//     // };
+//     // // foo(0.0, 0.0)
+//     // // foo(0.0, 0.05);
+// };
+// {
+//     arr<prmt::Point<2>, 4> p = {
+//         prmt::Point<2>(0.0, 0.0),
+//         prmt::Point<2>(2.0, 0.0),
+//         prmt::Point<2>(2.0, 2.0),
+//         prmt::Point<2>(1.0, 2.0)
+//     };
+//     arr<dbl, 4> v = {
+//         p[0].x() * p[0].x(),
+//         p[1].x() * p[1].x(),
+//         p[2].x() * p[2].x(),
+//         p[3].x() * p[3].x()
+//     };
+//     Scalar4PointsFunc<2> foo1(p, v);
+//     Beeline foo2(p, v);
+//     printf("%f %f\n", foo1.dy(1.0, 1.0), foo2.dy(1.0, 1.0));
+// };
 
     return EXIT_SUCCESS;
 }

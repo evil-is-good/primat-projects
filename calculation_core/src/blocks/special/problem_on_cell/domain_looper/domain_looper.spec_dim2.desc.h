@@ -21,6 +21,8 @@
 
 //#include "./domain_looper.desc.h"
 
+namespace OnCell
+{
 template<bool type_space>
 class DomainLooper<2, type_space>
 {
@@ -118,5 +120,5 @@ class DomainLooper<2, type_space>
 
     OPERATOR_REPORT;
 };
-
+};
 #endif

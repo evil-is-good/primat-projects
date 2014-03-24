@@ -35,7 +35,7 @@ namespace OnCell
             st  size;
 
         public:
-            template<u8 dim, u8 spacedim>
+            template<u8 dim, bool type_space>
                 friend class DomainLooper;
     };
 };

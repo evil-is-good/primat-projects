@@ -12,6 +12,8 @@
 #include <deal.II/hp/dof_handler.h>
 #include <deal.II/base/geometry_info.h>
 
+namespace OnCell
+{
 namespace DOMAIN_LOOPER_TOOLS
 {
 
@@ -83,5 +85,5 @@ class DomainLooper
 
     OPERATOR_REPORT;
 };
-
+};
 #endif

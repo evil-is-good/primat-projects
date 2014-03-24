@@ -328,6 +328,17 @@ prmt::Report HeatConductionProblemOnCell<dim>::solved ()
             fprintf(F,"%f\n", solution[0](i));
         fclose(F);
     };
+    {
+        FILE *F;
+        F = fopen("matrix.gpd", "w");
+        for (st i = 0; i < this->system_equations.x.size(); ++i)
+        for (st j = 0; j < this->system_equations.x.size(); ++j)
+            if (this->system_equations.A.el(i,j))
+        {
+            fprintf(F, "%ld %ld %f\n", i, j, this->system_equations.A(i,j));
+        };
+        fclose(F);
+    };
 //#pragma omp parallel for
 //    for(size_t i = 0; i < dim; ++i)
 //    {

@@ -1403,9 +1403,9 @@ std::array<double, 3> solved (dealii::Triangulation<dim> &triangulation,
 
 
     std::array<double, 3> meta;
-    meta[1] = max_s;
+    // meta[1] = max_s;
     meta[0] = problem.meta_coefficient[0];
-    // meta[1] = problem.meta_coefficient[1];
+    meta[1] = problem.meta_coefficient[1];
     meta[2] = problem.meta_coefficient[2];
 
     printf("meta %lf %lf %lf\n", meta[0], meta[1], meta[2]);
@@ -1431,10 +1431,10 @@ int main(int argc, char *argv[])
 
     const size_t material_id_for_quadrate[4][4] =
     {
-        {0, 0, 0, 0},
-        {0, 1, 1, 0},
-        {0, 1, 1, 0},
-        {0, 0, 0, 0}
+        {1, 1, 0, 0},
+        {1, 1, 0, 0},
+        {1, 1, 0, 0},
+        {1, 1, 0, 0}
     };
 
     const size_t material_id_for_cross[5][5] =
@@ -1457,7 +1457,7 @@ int main(int argc, char *argv[])
     };
 
     time_t time_1 = time(NULL);
-    FOR_J(4, 5)
+    FOR_J(1, 2)
     {
 
     // cdbl coef_2 = 393.1;
@@ -1487,9 +1487,9 @@ int main(int argc, char *argv[])
                        const double dot[5] = 
                        {
                            (0.0),
-                           (1.0 / 3.0),
+                           (0.25),
                            (0.5),
-                           (2.0 / 3.0),
+                           (0.75),
                            (1.0)
                        };
                         // const double dot[3] = 
@@ -1500,13 +1500,6 @@ int main(int argc, char *argv[])
                         // };
 
 
-                        // ::set_grid(tria);
-                        // {
-                        // std::ofstream out ("grid-igor.eps");
-                        // dealii::GridOut grid_out;
-                        // grid_out.write_eps (tria , out);
-                        // };
-
                        // ::set_tria <3> (tria, dot, material_id_for_s);
                        ::set_tria <5> (tria, dot, material_id_for_quadrate);
                        // ::set_tria <4> (tria, dot, material_id_for_line);
@@ -1515,7 +1508,14 @@ int main(int argc, char *argv[])
 ////                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 ////                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
 //                        //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                       tria .refine_global (3);
+                       // tria .refine_global (1);
+
+                        // ::set_grid(tria);
+                        {
+                        std::ofstream out ("grid-igor.eps");
+                        dealii::GridOut grid_out;
+                        grid_out.write_eps (tria , out);
+                        };
 
                         auto res = ::solved<2>(tria, coef_1, coef_2);
 
@@ -1529,14 +1529,15 @@ int main(int argc, char *argv[])
                         //        );
 
                         // i += 4;
-                        {
-                            FILE *F1;
-                            F1 = fopen ("height4.gpd", "a");
-                            // fprintf(F1, "%f %f %f\n", coef_2 / coef_1, res[0], res[1]);
-                            fprintf(F1, "%f %f %f\n", coef_1, res[0], res[1]);
-                            fclose(F1);
-                        };
+                        // {
+                        //     FILE *F1;
+                        //     F1 = fopen ("height4.gpd", "a");
+                        //     // fprintf(F1, "%f %f %f\n", coef_2 / coef_1, res[0], res[1]);
+                        //     fprintf(F1, "%f %f %f\n", coef_1, res[0], res[1]);
+                        //     fclose(F1);
+                        // };
                         // coef_2 += 1.0;
+        printf("%f %f %f\n", res[0], res[1], res[2]);
                         coef_1 += 1.0;
                         // printf("%f\n", res[0]);
                     };
@@ -1904,23 +1905,23 @@ int main(int argc, char *argv[])
 //    };
 
 
-    printf("%ld\n", (time(NULL) - time_1));
-    
+    // printf("%ld\n", (time(NULL) - time_1));
+    // 
 
-    {
-        std::array<double, 3> l1 = {1./3., 1./3., 1./3.}; 
-        std::array<double, 3> l2 = {1., 10., 1.}; 
-        Analit<3> analit(l1, l2);
-        FILE *F;
-        F = fopen ("analit.gpd", "w");
-        double x = 0.0;
-        while (x < 1.001)
-        {
-            fprintf(F, "%f %f\n", x, analit(x));
-            x += 0.1;
-        };
-        fclose(F);
-    };
+    // {
+    //     std::array<double, 3> l1 = {1./3., 1./3., 1./3.}; 
+    //     std::array<double, 3> l2 = {1., 10., 1.}; 
+    //     Analit<3> analit(l1, l2);
+    //     FILE *F;
+    //     F = fopen ("analit.gpd", "w");
+    //     double x = 0.0;
+    //     while (x < 1.001)
+    //     {
+    //         fprintf(F, "%f %f\n", x, analit(x));
+    //         x += 0.1;
+    //     };
+    //     fclose(F);
+    // };
 
 //    std::vector<std::vector<double> > metas;
 //    std::ofstream ofs ("T-qadrate-3.gpd");

@@ -23,6 +23,8 @@
 
 //namespace DOMAIN_LOOPER_TOOLS
 //{
+namespace OnCell
+{
 using namespace DOMAIN_LOOPER_TOOLS;
 
     template<bool type_space>
@@ -322,6 +324,8 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
         {
             // bows.white[count_ratios] = white_angular_dof[i];
             // bows.black[count_ratios] = list_black_angular_dofs[i][j];
+            // bows.white.push_back(white_angular_dof[i]);
+            // bows.black.push_back(list_black_angular_dofs[i][j]);
             bows.add_white_and_black(white_angular_dof[i], list_black_angular_dofs[i][j]);
 
             ++count_ratios;
@@ -340,6 +344,8 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
             {
                 // bows.white[count_ratios] = list_white_dofs[i][k][j];
                 // bows.black[count_ratios] = list_black_dofs[i][k][n];
+                // bows.white.push_back(list_white_dofs[i][k][j]);
+                // bows.black.push_back(list_black_dofs[i][k][n]);
                 bows.add_white_and_black(list_white_dofs[i][k][j], list_black_dofs[i][k][n]);
 
                 ++count_ratios;
@@ -677,5 +683,5 @@ DomainLooper<2, type_space>::~DomainLooper()
 //        };
 //    };
 };
-
+};
 #endif

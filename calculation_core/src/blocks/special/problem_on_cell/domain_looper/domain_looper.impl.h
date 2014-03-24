@@ -2,6 +2,8 @@
 
 #define DOMAIN_LOOPER_IMPL
 
+namespace OnCell
+{
 namespace DOMAIN_LOOPER_TOOLS
 {
     template<uint8_t dim>
@@ -155,7 +157,7 @@ template<uint8_t dim, bool type_space>
 DomainLooper<dim, type_space>::~DomainLooper()
 {
 };
-
+};
 
 
 #endif
