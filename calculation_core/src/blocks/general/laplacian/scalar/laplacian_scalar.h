@@ -2,6 +2,7 @@
 #define LAPLACIAN_SCALAR
  
 #include "../interface/laplacian_interface.h"
+#include "../../additional_tools/types/types.h"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -106,7 +107,7 @@ class LaplacianScalar : public LaplacianInterface<dim>
     virtual u8 get_dofs_per_cell () override;
 
 
-    arr<arr<vec<dbl>,dim>,dim> C; //!< Матрица коэффициентов, например теплопроводности.
+    vec<ATools::SecondOrderTensor> C; //!< Матрица коэффициентов, например теплопроводности.
     dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
     dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
     cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
@@ -144,7 +145,7 @@ dbl LaplacianScalar<dim>::operator () (cst i, cst j)
             FOR (b, 0, dim)
             {
                 // printf("%ld %ld %d\n", i, j, material_id);
-                res += C[a][b][material_id] * 
+                res += C[material_id][a][b] * 
                     fe_values.shape_grad (i, q_point)[a] *
                     fe_values.shape_grad (j, q_point)[b] *
                     fe_values.JxW(q_point);

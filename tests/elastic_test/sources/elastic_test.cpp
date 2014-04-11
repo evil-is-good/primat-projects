@@ -838,7 +838,7 @@ int main(int argc, char *argv[])
 {
     cdbl pi = 3.14159265359;
     cu8 dim = 2;
-    cdbl alpha = atof(argv[1]);
+    // cdbl alpha = atof(argv[1]);
 
     ElasticProblemSup<dim>::TypeCoef coef;
     Femenist::Function<std::array<double, dim>, dim> rhsv;
@@ -852,8 +852,12 @@ int main(int argc, char *argv[])
                 for (size_t l = 0; l < dim; ++l)
                     coef[i][j][k][l] .resize (2);
     
-    lambda = 1.0;
-    mu     = 1.0;
+    cdbl yung = 1.0;
+    cdbl puasson = 0.25;
+    lambda = (puasson * yung) / ((1 + puasson) * (1 - 2 * puasson));
+    mu     = yung / (2 * (1 + puasson));
+    // lambda = 1.0;
+    // mu     = 1.0;
 
     coef[0][0][0][0][0] = lambda + 2 * mu;
     coef[1][1][1][1][0] = lambda + 2 * mu;
@@ -887,486 +891,555 @@ int main(int argc, char *argv[])
 
     cdbl max_refine = 2;
 
-    FOR(i, 4, 5)
     {
-        switch (i)
+        dealii::Triangulation<dim> tria;
         {
-            case 0:
-                {
-                    FOR(j, 1, max_refine)
-                    {
-                    dealii::Triangulation<dim> tria;
+            std::vector< dealii::Point< 2 > > v (4);
 
-                    cdbl angle = 0.0;
+            v[0] = dealii::Point<dim>(0.0, 0.0);
+            v[1] = dealii::Point<dim>(1.0, 0.0);
+            v[2] = dealii::Point<dim>(1.0, 1.0);
+            v[3] = dealii::Point<dim>(0.0, 1.0);
 
-                    // ::set_without_angle<2> (tria, angle, j);
-                    ::set_without_angle<2> (tria, angle, 4);
-                    
-                    vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
+            std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
 
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};},
-                            0,
-                            // Dirichlet));
-                            Neumann));
+            c[0].vertices[0] = 0; 
+            c[0].vertices[1] = 1; 
+            c[0].vertices[2] = 2;
+            c[0].vertices[3] = 3;
+            c[0].material_id = 0; 
 
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{-1.0, 0.0};},
-                            1,
-                            // Dirichlet));
-                            Neumann));
+            dealii::SubCellData b;
 
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{1.0, 0.0};},
-                            2,
-                            // Dirichlet));
-                            Neumann));
+            b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
+            b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
+            b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
+            b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
 
-                    bound .push_back (boundary_value(
-                            [alpha] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{alpha, 0.0};},
-                            3,
-                            // Dirichlet));
-                            Neumann));
+            dealii::GridReordering<2> ::reorder_cells (c);
+            tria .create_triangulation_compatibility (v, c, b);
 
-                    bound .push_back (boundary_value(
-                            [alpha] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{-alpha, 0.0};},
-                            4,
-                            // Dirichlet));
-                            Neumann));
+            tria .refine_global (3);
+        };
 
-                    class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+        vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
 
-                    REPORT problem .solved ();
+        bound .push_back (boundary_value(
+                    [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 1.0};},
+                    0,
+                    // Dirichlet));
+              Neumann));
 
-                    // str name = str("angle/") + std::to_string(j) + "_";
-                    str name = str("a") + std::to_string(j) + "_";
+        bound .push_back (boundary_value(
+                    [] (const dealii::Point<2> &p) {
+                    return arr<dbl, 2>{0.0, -1.0};},
+                    1,
+                    // Dirichlet));
+              Neumann));
 
-                    problem .print_result (name);
+        bound .push_back (boundary_value(
+                    [] (const dealii::Point<2> &p) {
+                    return arr<dbl, 2>{0.0, 0.0};},
+                    2,
+                    // Dirichlet));
+              Neumann));
 
-                    // for (size_t i = 0; i < 9; ++i)
-                    // {
-                    //     uint8_t im = i / (dim + 1);
-                    //     uint8_t in = i % (dim + 1);
+        class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
 
-                    //     for (size_t j = 0; j < 9; ++j)
-                    //     {
-                    //         uint8_t jm = j / (dim + 1);
-                    //         uint8_t jn = j % (dim + 1);
+        REPORT problem .solved ();
 
-                    //         if (coef[im][in][jm][jn][0] > 0.0000001)
-                    //             printf("\x1B[31m%f\x1B[0m   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //         else
-                    //             printf("%f   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //     };
-                    //     for (size_t i = 0; i < 2; ++i)
-                    //         printf("\n");
-                    // };
+        // str name = str("angle/") + std::to_string(j) + "_";
+        // str name = str("a") + std::to_string(j) + "_";
+        str name = str("test");
 
-                    arr<dealii::Vector<dbl>, 2> stress;
-                    arr<dealii::Vector<dbl>, 2> deform;
-                    calc_stress_and_deform (problem, coef, stress, deform);
-                    print_stress (problem, coef, name, stress);
-                    };
+        problem .print_result (name);
 
-                    break;
-                };
-            case 1:
-                {
-                    FOR(j, 1, max_refine)
-                    {
-                    dealii::Triangulation<dim> tria;
+        arr<dealii::Vector<dbl>, 2> stress;
+        arr<dealii::Vector<dbl>, 2> deform;
+        calc_stress_and_deform (problem, coef, stress, deform);
+        print_stress (problem, coef, name, stress);
+    };
 
-                    cdbl angle = 0.0;
-
-                    ::set_without_piece<2> (tria, angle, j);
-                    
-                    vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            0,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -1.0};},
-                            1,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 1.0};},
-                            2,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, alpha * cos(angle)};},
-                            3,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
-                            4,
-                            // Dirichlet));
-                            Neumann));
-
-                    class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
-
-                    REPORT problem .solved ();
-
-                    str name = str("piece/") + std::to_string(j) + "_";
-
-                    problem .print_result (name);
-
-                    arr<dealii::Vector<dbl>, 2> stress;
-                    arr<dealii::Vector<dbl>, 2> deform;
-                    calc_stress_and_deform (problem, coef, stress, deform);
-                    print_stress (problem, coef, name, stress);
-                    };
-
-                    break;
-                };
-            case 2:
-                {
-                    FOR(j, 1, max_refine)
-                    {
-                    dealii::Triangulation<dim> tria;
-
-                    cdbl angle = 0.0;
-
-                    ::set_with_hole<2> (tria, angle, j, 1.0);
-                    
-                    vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            0,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -1.0};},
-                            1,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 1.0};},
-                            2,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, alpha * cos(angle)};},
-                            3,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
-                            4,
-                            // Dirichlet));
-                            Neumann));
-
-                    class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
-
-                    REPORT problem .solved ();
-
-                    str name = str("hole/") + std::to_string(j) + "_";
-
-                    problem .print_result (name);
-
-                    arr<dealii::Vector<dbl>, 2> stress;
-                    arr<dealii::Vector<dbl>, 2> deform;
-                    calc_stress_and_deform (problem, coef, stress, deform);
-                    print_stress (problem, coef, name, stress);
-                    };
-
-                    break;
-                };
-            case 3:
-                {
-                    for(dbl len = 0.1; len < 2.0; len += 0.1)
-                    {
-                    FOR(j, 1, max_refine)
-                    {
-                    dealii::Triangulation<dim> tria;
-
-                    cdbl angle = 0.0;
-
-                    ::set_with_hole<2> (tria, angle, j, len);
-
-                    vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            0,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -1.0};},
-                            1,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 1.0};},
-                            2,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, alpha * cos(angle)};},
-                            3,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha, angle] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
-                            4,
-                            // Dirichlet));
-                            Neumann));
-
-                    class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
-
-                    REPORT problem .solved ();
-
-                    // str name = str("angle/") + std::to_string(j) + "_";
-                    str name = str("a") + std::to_string(j) + "_";
-
-                    problem .print_result (name);
-
-                    // for (size_t i = 0; i < 9; ++i)
-                    // {
-                    //     uint8_t im = i / (dim + 1);
-                    //     uint8_t in = i % (dim + 1);
-
-                    //     for (size_t j = 0; j < 9; ++j)
-                    //     {
-                    //         uint8_t jm = j / (dim + 1);
-                    //         uint8_t jn = j % (dim + 1);
-
-                    //         if (coef[im][in][jm][jn][0] > 0.0000001)
-                    //             printf("\x1B[31m%f\x1B[0m   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //         else
-                    //             printf("%f   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //     };
-                    //     for (size_t i = 0; i < 2; ++i)
-                    //         printf("\n");
-                    // };
-
-                    // arr<dealii::Vector<dbl>, 2> stress;
-                    // arr<dealii::Vector<dbl>, 2> deform;
-                    // calc_stress_and_deform (problem, coef, stress, deform);
-                    // print_stress (problem, coef, name, stress);
-                    // 
-                    // dbl U = 0.0;
-                    // for (auto i : {0,1})
-                    //     FOR(j, 0, stress[i].size())
-                    //         U += (stress[i][j] * deform[i][j]);
-                    // U /= (stress[0].size() * 2);
-
-                    // std::cout << "U = " << std::to_string(U) << std::endl;
-                    // append_in_file("U.gpd",
-                    //         std::to_string(len) + ' ' +
-                    //         std::to_string(j)   + ' ' +
-                    //         std::to_string(U)   + '\n');
-                    };
-                    // append_in_file("U.gpd", str("\n"));
-                    };
-
-                    break;
-                };
-            case 4:
-                {
-                    dealii::Triangulation<dim> tria;
-
+//     FOR(i, 6, 6)
+//     {
+//         switch (i)
+//         {
+//             case 0:
+//                 {
+//                     FOR(j, 1, max_refine)
+//                     {
+//                     dealii::Triangulation<dim> tria;
+// 
 //                     cdbl angle = 0.0;
 // 
-                    vec<prmt::Point<2>> border;
-                    vec<st> type_border;
-                    // give_rectangle(border, 2,
-                    //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
-                    give_rectangle_with_border_condition(
-                            border,
-                            type_border,
-                            arr<st, 4>{1,3,2,4},
-                            1,
-                            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
-                    for (auto i : type_border)
-                        printf("type %d\n", i);
-//                         vec<prmt::LoopCondition<2>> loop_border;
-//                         // give_rectangle_for_loop_borders(border, loop_border, 8,
-//                         //         prmt::Point<2>(0., 0.), prmt::Point<2>(1., 1.));
-                    vec<prmt::Point<2>> inclusion;
-                    give_rectangle(inclusion, 1,
-                            prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
-//                         give_crack<t_rounded_tip, 1>(inclusion, 30);
+//                     // ::set_without_angle<2> (tria, angle, j);
+//                     ::set_without_angle<2> (tria, angle, 4);
+//                     
+//                     vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
 // 
-                    ::set_grid(tria, border, inclusion, type_border);
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};},
+//                             0,
+//                             // Dirichlet));
+//                             Neumann));
 // 
-//                        // ::set_tria <5> (tria, dot, material_id_for_quadrate);
-                        tria .refine_global (2);
-//                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
-//                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                        //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-
-                    // give_simple_sqiuare(tria, 2);
-                        {
-                        std::ofstream out ("grid-igor.eps");
-                        dealii::GridOut grid_out;
-                        grid_out.write_eps (tria , out);
-                        };
-//                         // exit(1);
-//                         auto res = ::solved<2>(
-//                                 tria, yung_1, puasson_1, yung_2, puasson_2,
-//                                 loop_border); // /1.2
-                    
-                    // ::set_with_hole<2> (tria, angle, j);
-                    //     {
-                    //     std::ofstream out ("grid-igor.eps");
-                    //     dealii::GridOut grid_out;
-                    //     grid_out.write_eps (tria , out);
-                    //     };
-                    
-                    // ::set_with_hole<2> (tria, angle, atoi(argv[2]));
-                    vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            0,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{-1.0, 0.0};},
-                            1,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{1.0, 0.0};},
-                            2,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            3,
-                            // Dirichlet));
-                            Neumann));
-
-                    bound .push_back (boundary_value(
-                            [alpha] (const dealii::Point<2> &p) {
-                            return arr<dbl, 2>{0.0, 0.0};},
-                            4,
-                            // Dirichlet));
-                            Neumann));
-
-                    class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
-
-                    REPORT problem .solved ();
-
-                    // str name = str("angle/") + std::to_string(j) + "_";
-                    // str name = str("a") + std::to_string(j) + "_";
-                    str name = str("a");
-
-                    problem .print_result (name);
-                    vec<arr<arr<dbl, 2>, 2>> stress;
-                    vec<arr<arr<dbl, 2>, 2>> deform;
-                    vec<prmt::Point<2>> points;
-                    calc_stress_and_deform_on_element (
-                            problem, coef, stress, deform, points);
-                    // print_stress (problem, coef, name, stress);
-                    create_file("stress.gpd");
-                    FOR (i, 0, stress.size())
-                        append_in_file("stress.gpd", 
-            std::to_string(points[i].x()) +
-            " " +
-            std::to_string(points[i].y()) +
-            " " +
-            std::to_string(stress[i][0][0]) +
-            " " +
-            std::to_string(stress[i][0][1]) +
-            " " +
-            std::to_string(stress[i][1][0]) +
-            " " +
-            std::to_string(stress[i][1][1]) +
-            "\n"); 
-
-                    // for (size_t i = 0; i < 9; ++i)
-                    // {
-                    //     uint8_t im = i / (dim + 1);
-                    //     uint8_t in = i % (dim + 1);
-
-                    //     for (size_t j = 0; j < 9; ++j)
-                    //     {
-                    //         uint8_t jm = j / (dim + 1);
-                    //         uint8_t jn = j % (dim + 1);
-
-                    //         if (coef[im][in][jm][jn][0] > 0.0000001)
-                    //             printf("\x1B[31m%f\x1B[0m   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //         else
-                    //             printf("%f   ", 
-                    //                     coef[im][in][jm][jn][0]);
-                    //     };
-                    //     for (size_t i = 0; i < 2; ++i)
-                    //         printf("\n");
-                    // };
-
-                    // arr<dealii::Vector<dbl>, 2> stress;
-                    // arr<dealii::Vector<dbl>, 2> deform;
-                    // calc_stress_and_deform (problem, coef, stress, deform);
-                    // print_stress (problem, coef, name, stress);
-                    // 
-                    // dbl U = 0.0;
-                    // for (auto i : {0,1})
-                    //     FOR(j, 0, stress[i].size())
-                    //         U += (stress[i][j] * deform[i][j]);
-                    // U /= (stress[0].size() * 2);
-
-                    // std::cout << "U = " << std::to_string(U) << std::endl;
-                    // append_in_file("U.gpd",
-                    //         std::to_string(len) + ' ' +
-                    //         std::to_string(j)   + ' ' +
-                    //         std::to_string(U)   + '\n');
-                    // append_in_file("U.gpd", str("\n"));
-
-                    break;
-                };
-        };
-    };
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{-1.0, 0.0};},
+//                             1,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{1.0, 0.0};},
+//                             2,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{alpha, 0.0};},
+//                             3,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{-alpha, 0.0};},
+//                             4,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+// 
+//                     REPORT problem .solved ();
+// 
+//                     // str name = str("angle/") + std::to_string(j) + "_";
+//                     str name = str("a") + std::to_string(j) + "_";
+// 
+//                     problem .print_result (name);
+// 
+//                     // for (size_t i = 0; i < 9; ++i)
+//                     // {
+//                     //     uint8_t im = i / (dim + 1);
+//                     //     uint8_t in = i % (dim + 1);
+// 
+//                     //     for (size_t j = 0; j < 9; ++j)
+//                     //     {
+//                     //         uint8_t jm = j / (dim + 1);
+//                     //         uint8_t jn = j % (dim + 1);
+// 
+//                     //         if (coef[im][in][jm][jn][0] > 0.0000001)
+//                     //             printf("\x1B[31m%f\x1B[0m   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //         else
+//                     //             printf("%f   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //     };
+//                     //     for (size_t i = 0; i < 2; ++i)
+//                     //         printf("\n");
+//                     // };
+// 
+//                     arr<dealii::Vector<dbl>, 2> stress;
+//                     arr<dealii::Vector<dbl>, 2> deform;
+//                     calc_stress_and_deform (problem, coef, stress, deform);
+//                     print_stress (problem, coef, name, stress);
+//                     };
+// 
+//                     break;
+//                 };
+//             case 1:
+//                 {
+//                     FOR(j, 1, max_refine)
+//                     {
+//                     dealii::Triangulation<dim> tria;
+// 
+//                     cdbl angle = 0.0;
+// 
+//                     ::set_without_piece<2> (tria, angle, j);
+//                     
+//                     vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             0,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -1.0};},
+//                             1,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 1.0};},
+//                             2,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, alpha * cos(angle)};},
+//                             3,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
+//                             4,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+// 
+//                     REPORT problem .solved ();
+// 
+//                     str name = str("piece/") + std::to_string(j) + "_";
+// 
+//                     problem .print_result (name);
+// 
+//                     arr<dealii::Vector<dbl>, 2> stress;
+//                     arr<dealii::Vector<dbl>, 2> deform;
+//                     calc_stress_and_deform (problem, coef, stress, deform);
+//                     print_stress (problem, coef, name, stress);
+//                     };
+// 
+//                     break;
+//                 };
+//             case 2:
+//                 {
+//                     FOR(j, 1, max_refine)
+//                     {
+//                     dealii::Triangulation<dim> tria;
+// 
+//                     cdbl angle = 0.0;
+// 
+//                     ::set_with_hole<2> (tria, angle, j, 1.0);
+//                     
+//                     vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             0,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -1.0};},
+//                             1,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 1.0};},
+//                             2,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, alpha * cos(angle)};},
+//                             3,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
+//                             4,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+// 
+//                     REPORT problem .solved ();
+// 
+//                     str name = str("hole/") + std::to_string(j) + "_";
+// 
+//                     problem .print_result (name);
+// 
+//                     arr<dealii::Vector<dbl>, 2> stress;
+//                     arr<dealii::Vector<dbl>, 2> deform;
+//                     calc_stress_and_deform (problem, coef, stress, deform);
+//                     print_stress (problem, coef, name, stress);
+//                     };
+// 
+//                     break;
+//                 };
+//             case 3:
+//                 {
+//                     for(dbl len = 0.1; len < 2.0; len += 0.1)
+//                     {
+//                     FOR(j, 1, max_refine)
+//                     {
+//                     dealii::Triangulation<dim> tria;
+// 
+//                     cdbl angle = 0.0;
+// 
+//                     ::set_with_hole<2> (tria, angle, j, len);
+// 
+//                     vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             0,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -1.0};},
+//                             1,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 1.0};},
+//                             2,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, alpha * cos(angle)};},
+//                             3,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha, angle] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, -alpha * cos(angle)};},
+//                             4,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+// 
+//                     REPORT problem .solved ();
+// 
+//                     // str name = str("angle/") + std::to_string(j) + "_";
+//                     str name = str("a") + std::to_string(j) + "_";
+// 
+//                     problem .print_result (name);
+// 
+//                     // for (size_t i = 0; i < 9; ++i)
+//                     // {
+//                     //     uint8_t im = i / (dim + 1);
+//                     //     uint8_t in = i % (dim + 1);
+// 
+//                     //     for (size_t j = 0; j < 9; ++j)
+//                     //     {
+//                     //         uint8_t jm = j / (dim + 1);
+//                     //         uint8_t jn = j % (dim + 1);
+// 
+//                     //         if (coef[im][in][jm][jn][0] > 0.0000001)
+//                     //             printf("\x1B[31m%f\x1B[0m   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //         else
+//                     //             printf("%f   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //     };
+//                     //     for (size_t i = 0; i < 2; ++i)
+//                     //         printf("\n");
+//                     // };
+// 
+//                     // arr<dealii::Vector<dbl>, 2> stress;
+//                     // arr<dealii::Vector<dbl>, 2> deform;
+//                     // calc_stress_and_deform (problem, coef, stress, deform);
+//                     // print_stress (problem, coef, name, stress);
+//                     // 
+//                     // dbl U = 0.0;
+//                     // for (auto i : {0,1})
+//                     //     FOR(j, 0, stress[i].size())
+//                     //         U += (stress[i][j] * deform[i][j]);
+//                     // U /= (stress[0].size() * 2);
+// 
+//                     // std::cout << "U = " << std::to_string(U) << std::endl;
+//                     // append_in_file("U.gpd",
+//                     //         std::to_string(len) + ' ' +
+//                     //         std::to_string(j)   + ' ' +
+//                     //         std::to_string(U)   + '\n');
+//                     };
+//                     // append_in_file("U.gpd", str("\n"));
+//                     };
+// 
+//                     break;
+//                 };
+//             case 4:
+//                 {
+//                     dealii::Triangulation<dim> tria;
+// 
+// //                     cdbl angle = 0.0;
+// // 
+//                     vec<prmt::Point<2>> border;
+//                     vec<st> type_border;
+//                     // give_rectangle(border, 2,
+//                     //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+//                     give_rectangle_with_border_condition(
+//                             border,
+//                             type_border,
+//                             arr<st, 4>{1,3,2,4},
+//                             1,
+//                             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+//                     for (auto i : type_border)
+//                         printf("type %d\n", i);
+// //                         vec<prmt::LoopCondition<2>> loop_border;
+// //                         // give_rectangle_for_loop_borders(border, loop_border, 8,
+// //                         //         prmt::Point<2>(0., 0.), prmt::Point<2>(1., 1.));
+//                     vec<prmt::Point<2>> inclusion;
+//                     give_rectangle(inclusion, 1,
+//                             prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
+// //                         give_crack<t_rounded_tip, 1>(inclusion, 30);
+// // 
+//                     ::set_grid(tria, border, inclusion, type_border);
+// // 
+// //                        // ::set_tria <5> (tria, dot, material_id_for_quadrate);
+//                         tria .refine_global (2);
+// //                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
+// //                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
+//                         //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
+// 
+//                     // give_simple_sqiuare(tria, 2);
+//                         {
+//                         std::ofstream out ("grid-igor.eps");
+//                         dealii::GridOut grid_out;
+//                         grid_out.write_eps (tria , out);
+//                         };
+// //                         // exit(1);
+// //                         auto res = ::solved<2>(
+// //                                 tria, yung_1, puasson_1, yung_2, puasson_2,
+// //                                 loop_border); // /1.2
+//                     
+//                     // ::set_with_hole<2> (tria, angle, j);
+//                     //     {
+//                     //     std::ofstream out ("grid-igor.eps");
+//                     //     dealii::GridOut grid_out;
+//                     //     grid_out.write_eps (tria , out);
+//                     //     };
+//                     
+//                     // ::set_with_hole<2> (tria, angle, atoi(argv[2]));
+//                     vec<typename ElasticProblemSup<dim>::BoundaryValues > bound;
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             0,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{-1.0, 0.0};},
+//                             1,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{1.0, 0.0};},
+//                             2,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             3,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     bound .push_back (boundary_value(
+//                             [alpha] (const dealii::Point<2> &p) {
+//                             return arr<dbl, 2>{0.0, 0.0};},
+//                             4,
+//                             // Dirichlet));
+//                             Neumann));
+// 
+//                     class ::ElasticProblem<dim> problem (tria, coef, bound, rhsv);
+// 
+//                     REPORT problem .solved ();
+// 
+//                     // str name = str("angle/") + std::to_string(j) + "_";
+//                     // str name = str("a") + std::to_string(j) + "_";
+//                     str name = str("a");
+// 
+//                     problem .print_result (name);
+//                     vec<arr<arr<dbl, 2>, 2>> stress;
+//                     vec<arr<arr<dbl, 2>, 2>> deform;
+//                     vec<prmt::Point<2>> points;
+//                     calc_stress_and_deform_on_element (
+//                             problem, coef, stress, deform, points);
+//                     // print_stress (problem, coef, name, stress);
+//                     create_file("stress.gpd");
+//                     FOR (i, 0, stress.size())
+//                         append_in_file("stress.gpd", 
+//             std::to_string(points[i].x()) +
+//             " " +
+//             std::to_string(points[i].y()) +
+//             " " +
+//             std::to_string(stress[i][0][0]) +
+//             " " +
+//             std::to_string(stress[i][0][1]) +
+//             " " +
+//             std::to_string(stress[i][1][0]) +
+//             " " +
+//             std::to_string(stress[i][1][1]) +
+//             "\n"); 
+// 
+//                     // for (size_t i = 0; i < 9; ++i)
+//                     // {
+//                     //     uint8_t im = i / (dim + 1);
+//                     //     uint8_t in = i % (dim + 1);
+// 
+//                     //     for (size_t j = 0; j < 9; ++j)
+//                     //     {
+//                     //         uint8_t jm = j / (dim + 1);
+//                     //         uint8_t jn = j % (dim + 1);
+// 
+//                     //         if (coef[im][in][jm][jn][0] > 0.0000001)
+//                     //             printf("\x1B[31m%f\x1B[0m   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //         else
+//                     //             printf("%f   ", 
+//                     //                     coef[im][in][jm][jn][0]);
+//                     //     };
+//                     //     for (size_t i = 0; i < 2; ++i)
+//                     //         printf("\n");
+//                     // };
+// 
+//                     // arr<dealii::Vector<dbl>, 2> stress;
+//                     // arr<dealii::Vector<dbl>, 2> deform;
+//                     // calc_stress_and_deform (problem, coef, stress, deform);
+//                     // print_stress (problem, coef, name, stress);
+//                     // 
+//                     // dbl U = 0.0;
+//                     // for (auto i : {0,1})
+//                     //     FOR(j, 0, stress[i].size())
+//                     //         U += (stress[i][j] * deform[i][j]);
+//                     // U /= (stress[0].size() * 2);
+// 
+//                     // std::cout << "U = " << std::to_string(U) << std::endl;
+//                     // append_in_file("U.gpd",
+//                     //         std::to_string(len) + ' ' +
+//                     //         std::to_string(j)   + ' ' +
+//                     //         std::to_string(U)   + '\n');
+//                     // append_in_file("U.gpd", str("\n"));
+// 
+//                     break;
+//                 };
+//         };
+//     };
 
     // bound .push_back (typename ElasticProblemSup<dim>::BoundaryValues{
     //         .function = ElasticProblemSup<dim>::MyFuncFromDealii::Func(

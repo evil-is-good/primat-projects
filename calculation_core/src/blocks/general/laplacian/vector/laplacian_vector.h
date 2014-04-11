@@ -173,7 +173,7 @@ class LaplacianVector : public LaplacianInterface<dim>
     virtual u8 get_dofs_per_cell () override;
 
 
-    arr<arr<arr<arr<vec<dbl>,dim>,dim>,dim>,dim> C; //!< Тензор коэффициентов, четвёртого порядка, например упругости.
+    vec<ATools::FourthOrderTensor> C; //!< Тензор коэффициентов, четвёртого порядка, например упругости.
     LaplacianScalar<dim>                         laplacian; 
 };
 
@@ -195,14 +195,22 @@ template <u8 dim>
 dbl LaplacianVector<dim>::operator () (cst i, cst j)
 {
     // phi[indx_n] = 
+    // A
     // (phi_x[indx_n % dim], phi_y[indx_n % dim], phi_x[indx_n % dim]);
     // indx_n in [dim*dim]
+
+    if (C.size() != laplacian.C.size())
+    {
+        laplacian.C.resize(C.size());
+    };
+
     cst l = i % dim; 
     cst r = j % dim;
 
-    FOR (a, 0, dim)
-        FOR (b, 0, dim)
-           laplacian.C[a][b] = C[l][a][b][r];
+    FOR (n, 0, laplacian.C.size())
+        FOR (a, 0, dim)
+            FOR (b, 0, dim)
+                laplacian.C[n][a][b] = C[n][l][a][b][r];
 
     return laplacian(i, j);
 };

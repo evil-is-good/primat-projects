@@ -354,18 +354,18 @@ void convert_to_dealii_format(
 
         st type_border = 0;
         bool fl = false;
-        printf("n %ld\n", outer_border.size());
+        // printf("n %ld\n", outer_border.size());
         FOR(j, 0, outer_border.size())
         {
             const arr<dealii::Point<2>, 2> segment = {
                 outer_border[j], outer_border[(j + 1) % 4]};
-            printf("(%f,%f) (%f,%f) (%f,%f) (%f,%f)\n",
-                    segment[0](0), segment[0](1),
-                    segment[1](0), segment[1](1),
-                    vertex_in_grid[index_1](0),
-                    vertex_in_grid[index_1](1),
-                    vertex_in_grid[index_3](0),
-                    vertex_in_grid[index_3](1));
+            // printf("(%f,%f) (%f,%f) (%f,%f) (%f,%f)\n",
+            //         segment[0](0), segment[0](1),
+            //         segment[1](0), segment[1](1),
+            //         vertex_in_grid[index_1](0),
+            //         vertex_in_grid[index_1](1),
+            //         vertex_in_grid[index_3](0),
+            //         vertex_in_grid[index_3](1));
 
             if (
                     point_on_segment(vertex_in_grid[index_1], segment) and
@@ -376,7 +376,7 @@ void convert_to_dealii_format(
                 break;
             };
         };
-        printf("olol %ld %d\n", type_border, fl);
+        // printf("olol %ld %d\n", type_border, fl);
 
 
         edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{

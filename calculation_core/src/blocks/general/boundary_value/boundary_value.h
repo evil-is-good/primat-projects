@@ -64,17 +64,19 @@ class BoundaryValueVector
 
             void operator= (const TypeFunc func)
             {
-                func = func;
+                this->func = func;
             };
 
             virtual void vector_value (const dealii::Point<dim> &p,
                     dealii::Vector<dbl> &values) const override
             {
                 arr<dbl, dim> res = func(p);
-                dealii::Vector<dbl> v(1);
-                v[0] = 0.0;
-                FOR (i, 0, dim)
-                    values = 0.0;//res[i];
+                // dealii::Vector<dbl> v(1);
+                // v[0] = 0.0;
+                for (st i = 0; i < dim; ++i)
+                {
+                    values[i] = res[i];
+                };
             };
 
             TypeFunc func;

@@ -160,6 +160,12 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::solved ()
 
                 REPORT assemble_right_vector_of_system_parallel (
                         assigned_to stress[theta][lambda]);
+
+                // FILE* F;
+                // F = fopen("S.gpd", "a");
+                // for (size_t i = 0; i < stress[theta][lambda].size(); ++i)
+                //     fprintf(F, "%ld %f\n", i, stress[theta][lambda][i]);
+                // fclose(F);
 //                puts("11111111111d");
             };
 
@@ -221,6 +227,11 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::solved ()
 
     problem_of_torsion_rod .solved ();
 
+                FILE* F;
+                F = fopen("Sol.gpd", "w");
+                for (size_t i = 0; i < problem_of_torsion_rod.solution[0].size(); ++i)
+                    fprintf(F, "%ld %.5f\n", i, problem_of_torsion_rod.solution[1][i]);
+                fclose(F);
 
 //    for (
 //            size_t i = 0; 
@@ -1105,6 +1116,16 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::solve_system_equations_parallel (
                                 this->system_equations.A .el (j,i)
                              ) > 1e-10)
                         printf("\x1B[31mWARNING %ld %ld\x1B[0m\n", i, j);
+
+    FILE* F;
+    F = fopen("A1.gpd", "w");
+    for (size_t i = 0; i < this->system_equations.A.m(); ++i)
+        for (size_t j = 0; j < this->system_equations.A.n(); ++j)
+            if (std::abs(this->system_equations.A .el (i, j)) > 1e-6)
+                fprintf(F, "%ld %ld %f\n", i, j, this->system_equations.A .el (i, j));
+            else
+                fprintf(F, "%ld %ld 0.0\n", i, j);
+    fclose(F);
 
     dealii::SolverControl solver_control (100000, 1e-8);
 

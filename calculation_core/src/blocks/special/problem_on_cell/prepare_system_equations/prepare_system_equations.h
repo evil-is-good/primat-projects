@@ -22,7 +22,7 @@
 namespace OnCell
 {
     //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке
-    template<u8 dim, u8 num_tasks>
+    template<bool type_space, u8 dim, u8 num_tasks>
     void prepare_system_equations (
             ::OnCell::SystemsLinearAlgebraicEquations<num_tasks> &se,
             ::OnCell::BlackOnWhiteSubstituter &bows,
@@ -35,12 +35,22 @@ namespace OnCell
         dealii::DoFTools ::make_sparsity_pattern (
                 domain.dof_handler, c_sparsity);
 
-        ::OnCell::DomainLooper<dim, 0> dl;
+        {
+        std::ofstream output ("csp1.gpd");
+        c_sparsity .print_gnuplot (output);
+        };
+
+        ::OnCell::DomainLooper<dim, type_space> dl;
         // DomainLooper<dim, 0> dl;
         dl .loop_domain(
                 domain.dof_handler,
                 bows,
                 c_sparsity);
+
+        {
+        std::ofstream output ("csp2.gpd");
+        c_sparsity .print_gnuplot (output);
+        };
 
         c_sparsity.compress ();
 

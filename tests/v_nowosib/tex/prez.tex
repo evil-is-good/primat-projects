@@ -1,0 +1,349 @@
+
+% Файл proba2.tex 
+
+% 
+
+% Преамбула – в ней содержаться основные сведения о презентации
+
+% 
+
+\documentclass{beamer} 
+\usepackage{beamerthemesplit} 
+
+% % Стили презентации в данном пакете задаются именем Университета, в
+
+%стиле и цветах которого вы хотите оформить презентации
+
+% 
+
+\usetheme{CambridgeUS} 
+
+% Выпишем часть возможных стилей, некоторые из них могут содержать
+
+% дополнительные опции
+
+% default, Bergen, Madrid, AnnArbor,Pittsburg, Rochester, 
+
+% Antiles, Montpellier, Berkley, Berlin 
+
+% 
+
+% Далее пакеты, необходимые вам для создания презентации
+
+\usepackage{amsmath} 
+
+\usepackage[english]{babel} 
+
+% 
+
+% Если у вас есть логотип вашей кафедры, факультета или университета, то
+
+% его можно включить в презентацию. 
+
+% Необходимо наличие графического файла в текущей директории !!!
+
+%\Logo{\includegraphics[width=1cm]{logo.eps}} 
+
+% 
+
+% Далее начинается сама презентация
+
+%
+
+\begin{document} 
+
+% 
+
+% Первый слайд
+
+\frame{ 
+
+\frametitle{First slide} 
+
+Hello World. 
+
+} 
+
+% Все очень просто. 
+
+%Переходы между слайдами задаются командами
+
+% \trans***<overlay specification>[options] 
+
+% Здесь
+
+% <overlay specification> - указание к какой части слайда применить
+
+% переход; 
+
+% [options] – указание длительности и направления перехода
+
+% 
+
+%Вместо *** нужно подставить – dissolve, blindshorizontal, blindsvertical,
+
+% boxin, boxout, glitter, splitverticalin, splitverticalout,wipe, duration и т.д. 
+
+% 
+
+% Кроме этого, можно задавать свои способу перехода – см. документы
+
+% Например
+
+\begin{frame} \transwipe[direction=90] 
+
+% \transdissolve[duration=0.2] 
+
+\frametitle{Second slide} 
+
+It’s my second slide. 
+
+\end{frame}
+
+% 
+
+% Напомним, что переходы видны только при полноэкранном режиме
+
+% работы Adobe Reader. 
+
+% 
+
+% Рассмотрим более сложный слайд с переходами
+
+% 
+
+\begin{frame} 
+
+\frametitle{The quest for $\pi$} 
+
+\begin{itemize} 
+
+\item The following formula computes $8$ correct digits per iteration 
+
+(Ramanujan): \pause 
+
+\item 
+
+\begin{small} 
+
+\begin{equation*} 
+
+\frac{1}{\pi}=\sum_{n=0}^\infty 
+
+\frac{(\frac{1}{4})_n(\frac{2}{4})_n(\frac{3}{4})_n}{n!^3} 
+
+\bigl(2\sqrt{2}(1103+26390n)\bigr)\frac{1}{(99^2)^{2n+1}} 
+
+\end{equation*} 
+
+\end{small} 
+
+\end{itemize} 
+
+\transglitter<1>[direction=315] 
+
+\transboxin<2>[direction=90] 
+
+\end{frame} 
+
+% Как и ранее для различных цветов используется команда \color{цвет}, для
+
+% переходов команда \pause. Стиль перехода задается либо в преамбуле, 
+
+ % либо может быть задан в заголовке слайда и этих стилей огромное
+
+% количество.
+
+% 
+
+% Красивые переходы нужны для того, чтобы переключить внимание
+
+% слушателей, обычно используются для подчеркивания мысли, для
+
+% пробуждения уставших слушателей или для вешания лапши на уши
+
+% некомпетентному начальству. Применять при докладах среди
+
+% специалистов рекомендуется в очень ограниченных дозах, так как для них
+
+% важнее не ваши компьютерные навыки, а содержание презентации. 
+% 
+
+% Более сложный структурированный пример
+
+\frame{ 
+
+\frametitle{Light Scheme} 
+
+\begin{itemize} 
+
+\item A first item \pause 
+
+\item A second item\pause 
+
+\begin{itemize} 
+
+\item A sub item\pause 
+
+\begin{itemize} 
+
+\item \color{blue} A sub sub item 
+
+\item \color{red} Another sub sub item 
+
+\end{itemize} 
+
+\item Back to sub item \pause 
+
+\end{itemize} 
+
+\item Last item \pause 
+
+\end{itemize} 
+
+} 
+
+% 
+
+% Теперь приведем пример с изменением прозрачности текста и
+
+%разбиением слайда на блоки
+
+%
+
+\frame { 
+
+\frametitle{Theorem} 
+
+\begin{block}{First}<1> 
+
+The weak cardinality theorems hold both for recursion and automata 
+
+theory \alert{by coincidence}. 
+
+\end{block} 
+
+\begin{block}{Second Explanation}<1-2> 
+
+The weak cardinality theorems hold both for 
+
+recursion and automata theory, \alert{because they are 
+
+instantiations of\\ single, unifying theorems}. 
+
+\end{block} 
+
+\vskip1em 
+
+\visible<2->{ 
+
+The second explanation is correct.\\ 
+
+The theorems can (almost) be unified using first-order logic. 
+
+} 
+
+} % 
+
+% Пакет Beamer почти идеален для включения анимации в вашу
+
+% презентацию – музыка, кино и другие мультимедиа файлы легко
+
+% присоединяются к вашему файлу. Кроме этого, анимацию можно создать и
+
+%своими руками в TeX’e.
+
+% 
+
+% Анимация – пример “летающего” слайда. Обратите внимание на
+
+% изменение команд в начале и конце слайда ( ранее было \frame{ }) 
+
+% 
+
+\newcount\opaqueness 
+
+\begin{frame} 
+
+\animate<2-10> 
+
+\animatevalue<1-10>{\opaqueness}{100}{0} 
+
+\begin{colormixin}{\the\opaqueness!averagebackgroundcolor} 
+
+\frametitle{Fadeout Frame} 
+
+This text (and all other frame content) will fade out when the 
+
+second slide is shown. This even works with 
+
+{\color{green!90!black}colored} \alert{text}. 
+
+\end{colormixin} 
+
+\end{frame} 
+
+% 
+
+\newcount\opaqueness 
+
+\newdimen\offset 
+
+\begin{frame} 
+
+\frametitle{Flying Theorems (You Really Shouldn't!)} 
+
+\animate<2-14> 
+
+\animatevalue<1-15>{\opaqueness}{100}{0} 
+
+\animatevalue<1-15>{\offset}{0cm}{-5cm} 
+
+\begin{colormixin}{\the\opaqueness!averagebackgroundcolor} 
+
+\hskip\offset 
+
+\begin{minipage}{\textwidth} 
+
+\begin{theorem} 
+
+This theorem flies out. 
+
+\end{theorem} 
+
+\end{minipage} 
+
+\end{colormixin} 
+
+\animatevalue<1-15>{\opaqueness}{0}{100} 
+
+\animatevalue<1-15>{\offset}{-5cm}{0cm} 
+
+\begin{colormixin}{\the\opaqueness!averagebackgroundcolor} \hskip\offset 
+
+\begin{minipage}{\textwidth} 
+
+\begin{theorem} 
+
+This theorem flies in. 
+
+\end{theorem} 
+
+\end{minipage} 
+
+\end{colormixin} 
+
+\end{frame} 
+
+% 
+
+% На этом краткое знакомство с пакетом Beamer заканчивается. 
+
+%
+
+\end{document} 
+
+% 
+
+% Конец файла
+

@@ -1,0 +1,470 @@
+
+\documentclass{beamer} 
+\usepackage{beamerthemesplit} 
+
+\usetheme{Madrid}%Frankfurt} 
+%Boadilla}
+\usecolortheme{default}
+
+\setbeamertemplate{footline}{%
+    \hspace{0.94\paperwidth}%
+    \usebeamerfont{title in head/foot}%
+    \large{\insertframenumber}%
+}
+
+\setbeamertemplate{navigation symbols}{}
+
+% Выпишем часть возможных стилей, некоторые из них могут содержать
+
+% дополнительные опции
+
+% default, Bergen, Madrid, AnnArbor,Pittsburg, Rochester, 
+
+% Antiles, Montpellier, Berkley, Berlin, CambridgeUS
+
+% 
+
+% Далее пакеты, необходимые вам для создания презентации
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{amssymb,amsfonts,amsmath,mathtext}
+\usepackage{cite,enumerate,float,indentfirst}
+\usepackage{graphicx}
+
+%\DeclareSymbolFont{letters}{OT1}{cmr}{m}{n}
+
+\usefonttheme[stillsansserifsmall]{serif}
+%\usefonttheme[onlymath]{serif}
+
+\title{Математическое моделирование упругих макрохарактеристик
+для композитных материалов с включениями в виде прямых периодически распределённых
+параллельных волокон}
+%МАТЕМАТИЧЕСКОЕ МОДЕЛИРОВАНИЕ УПРУГИХ МАКРОХАРАКТЕРИСТИК 
+%ДЛЯ КОМПОЗИТНЫХ МАТЕРИАЛОВ С ВКЛЮЧЕНИЯМИ В ВИДЕ ПРЯМЫХ 
+%ПЕРИОДИЧЕСКИ РАСПРЕДЕЛЁННЫХ ПАРАЛЛЕЛЬНЫХ ВОЛОКОН}
+\author{Г.Л. Горынин, д-р.ф.-м.н}
+\institute{Сургутский Государственный университет \\
+Политехнический институт \\
+Строительное отделение}
+\date{Новосибирск, 2013}
+
+
+\begin{document} 
+
+\maketitle
+
+\frame{ \frametitle{2-периодическая среда} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{cube}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Стационарное уравнение равновесия} 
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\frac{\partial \sigma_{\alpha x}}{\partial x} +
+        \frac{\partial \sigma_{\alpha y}}{\partial y} + 
+        \frac{\partial \sigma_{\alpha z}}{\partial z} + F_{\alpha} = 0,} \\ \\
+        \mathrm{\sigma_{\alpha \beta} = \sum\limits_{\varphi,\psi \in \{x,y\}} 
+        E_{\alpha \beta \varphi \psi} 
+        \frac{\partial u_{\varphi}}{\partial \psi}} \\ \\ 
+        \mathrm{\alpha, \beta \in \{x,y,z\}}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+        \mathrm{[\sigma_{\alpha n}] = 0, [u_{\alpha}] = 0,
+        \alpha \in {x,y,z}}
+\end{equation}
+
+\begin{equation}
+        \mathrm{[\sigma_{\alpha n}] = 
+        [\sigma_{\alpha x}]n_x +
+        [\sigma_{\alpha y}]n_y +
+        [\sigma_{\alpha z}]n_z}
+\end{equation}
+
+} 
+
+\frame{ \frametitle{Стационарное уравнение равновесия в безразмерных величинах} 
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\frac{\partial \sigma_{\alpha x}}{\partial x}\varepsilon +
+        \frac{\partial \sigma_{\alpha y}}{\partial y}\varepsilon + 
+        \frac{\partial \sigma_{\alpha z}}{\partial z}\varepsilon + F_{\alpha} = 0,} \\ \\
+        \mathrm{\sigma_{\alpha \beta} = \sum\limits_{\varphi,\psi \in \{x,y\}} 
+        E_{\alpha \beta \varphi \psi} 
+        \frac{\partial u_{\varphi}}{\partial \psi} \varepsilon} \\ \\ 
+        \mathrm{\alpha, \beta \in \{x,y,z\}}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    \mathrm{x \leftrightarrow \frac{x}{L},
+    y \leftrightarrow \frac{y}{L},
+    z \leftrightarrow \frac{z}{L},
+    u_{\alpha} \leftrightarrow \frac{u_{\alpha}}{u^*},} \\ \\
+    \mathrm{E_{\alpha \beta \varphi \psi} \leftrightarrow  
+    \frac{E_{\alpha \beta \varphi \psi}}{E^*},
+    \sigma_{\alpha \beta} \leftrightarrow \frac{\sigma_{\alpha \beta}}{\sigma^*},
+    F_{\alpha} \leftrightarrow \frac{F_{\alpha}h}{\sigma^*},} \\ \\
+    \mathrm{\sigma^*=\frac{E^*u^*}{h}}
+    \end{array} 
+\end{equation}
+
+\begin{equation*}
+    \mathrm{\varepsilon = \frac{h}{L} \ll 1}
+\end{equation*}
+
+}
+
+\frame{ \frametitle{Одна ячейка} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]{cell}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Верхняя и нижняя оценки Рейсса-Фойгта} 
+
+\begin{equation}
+    \frac{1}{\frac{\Theta^I}{E_{\alpha\beta\varphi\psi}^I} +
+    \frac{\Theta^B}{E_{\alpha\beta\varphi\psi}^B}} \le
+    \widetilde{E}_{\alpha\beta\varphi\psi} \le
+    \Theta^IE_{\alpha\beta\varphi\psi}^I +
+    \Theta^BE_{\alpha\beta\varphi\psi}^B
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+        \Theta^I - \text{доля включения (коэффициент армирования)} \\ \\
+        \Theta^B - \text{доля связующего}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Верхняя и нижняя оценки Хашина-Штрикмана} 
+
+\begin{equation}
+    \begin{array}{c}
+    K^B + \frac{\Theta^I}{1/(K^I-K^B) + \Theta^B/(K^B+G^B)} \le 
+    \widetilde{K}_{xy} \le \\
+    K^I + \frac{\Theta^B}{1/(K^B-K^I) + \Theta^I/(K^I+G^I)}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    G^B + \frac{\Theta^I}{1/(G^I-G^B) + \Theta_B(K^B+2G^B)/(2G^B(K^B+G^B))} \le 
+    \widetilde{G}_{xy} \le \\
+    G^I + \frac{\Theta^B}{1/(G^B-G^I) + \Theta_I(K^I+2G^I)/(2G^I(K^I+G^I))} \le 
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    G^B + \frac{\Theta^I}{1/(G^I-G^B) + \Theta^B/(2G^B))} \le 
+    \widetilde{G}_{xz} \le \\ 
+    G^I + \frac{\Theta^B}{1/(G^B-G^I) + \Theta^I/(2G^I)} 
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^B} \le 
+    \frac{\widetilde{E}_{zz} - \Theta^IE^I - \Theta^BE^B}{4(\nu^I-\nu^B)^2} \le \\ 
+    \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^I} 
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^B} \le 
+    \frac{\widetilde{\nu}_{xz} - \Theta^I\nu^I - \Theta^B\nu^B}
+    {(\nu^I-\nu^B)(1/K^B-1/K^I)} \le \\ 
+    \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^I} 
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Выражения для полидисперсной модели Хашина-Хилла} 
+
+\begin{equation}
+    \begin{array}{c}
+    \widetilde{K}_{xy} = k^B + \frac{G^B}{3} + \\
+    \frac{\Theta^I}{1/[k^I-k^B+1/3(G^I-G^B)]+(1-\Theta^I)/(k^B+4/3G^B)}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    \widetilde{G}_{xz} = 
+    \frac{G^I(1+\Theta^I)+G^B(1-\Theta^I)}
+    {G^I(1-\Theta^I)+G^B(1+\Theta^I)} G^B
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+    \widetilde{E}_{zz} = \Theta^IE^I+\Theta^BE^B+ \\
+    \frac{4\Theta^I\Theta^B(\mu^I-\nu^B)^2G^B}
+    {\Theta^BG^B/(k^I-G^I/3)+\Theta^IG^B/(k^B-G^B/3)+1}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+        \widetilde{\nu}_{xz} = \Theta^I\nu^I + \Theta^B\nu^B + \\
+        \frac
+        {\Theta^I\Theta^B(\nu^I-nu^B)(G^B/(k^B-G^B/3)-G^B/(k^I-G^I/3))}
+        {\Theta^BG^B/(k^I-G^I/3)+\Theta^IG^B/(k^B-G^B/3)+1}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Асимптотическое разложение} 
+
+\begin{equation}
+\mathrm{u_{\alpha}^{(n)} = v_{\alpha}^{(n)} + \sum\limits_{\varphi \in \{x,y,z\}}
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+\left(U_{\beta}^{v_{\varphi}}\right)^{\bar{k}}
+\frac{\partial^k v_{\varphi}^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right)}
+\end{equation}
+
+\begin{equation}
+\mathrm{\sigma_{\alpha\beta}^{(n)} = \sum\limits_{\varphi \in \{x,y,z\}}
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+\left(\tau_{\alpha\beta}^{v_{\varphi}}\right)^{\bar{k}}
+\frac{\partial^k v_{\varphi}^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right)}
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\bar{k}=\{k_x,k_y,k_z\} =
+        k_x\bar{\text{э}}_x+k_y\bar{\text{э}}_y+k_z\bar{\text{э}}_z,} \\
+        \mathrm{|\bar{k}|=k=k_x+k_y+k_z,} \\ 
+        \mathrm{\partial \bar{r}^{\bar{k}}= \partial x^{k_x} \partial y^{k_y} \partial z^{k_z}} \\
+        \mathrm{k_{\alpha} \ge 0, k_{\alpha} \in \mathbb{Z}}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Ячейковая система координат} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{cell_xi}
+    \end{center}
+\end{figure}
+
+\begin{equation}
+    \mathrm{\xi_x,\xi_y \in [0,1]}
+\end{equation}
+
+\begin{equation}
+    \mathrm{x = x_i + \xi_x\varepsilon, \
+    y = y_i + \xi_y\varepsilon, \
+z = z.}
+\end{equation}
+
+}
+
+\frame{ \frametitle{Краевые задачи на ячейке} 
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\frac
+        {\partial 
+        \left(\tau_{\alpha x}^{v_{\mu}}\right)^{\overline{\text{э}}_{\lambda}}}
+        {\partial x} +
+        \frac
+        {\partial
+        \left(\tau_{\alpha y}^{v_{\mu}}\right)^{\overline{\text{э}}_{\lambda}}}
+        {\partial y} = 0} \\ \\
+        \mathrm{\left(\tau_{\alpha \beta}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}=
+        E_{\alpha \beta \eta \lambda} + 
+        \sum\limits_{\varphi,\psi \in \{x,y\}} E_{\alpha \beta \varphi \psi} 
+        \frac{\partial \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\mu}_{\lambda}}}
+        {\partial \xi_{\psi}}} + \\
+        \mathrm{+ \sum\limits_{\psi \in \{x,y\}} E_{\alpha \beta z \psi} 
+        \frac{\partial \left(U_{z}^{v_{\eta}}\right)^{\overline{\mu}_{\lambda}}}
+        {\partial \xi_{\psi}}} \\ 
+        \mathrm{\alpha \in \{x,y\}, \ \eta, \lambda \in \{x,y,z\}}
+    \end{array} 
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\left. \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} 
+        \right|_{\xi_{\gamma} = 0} =
+        \left. \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} 
+        \right|_{\xi_{\gamma} = 1}} \\ \\
+        \mathrm{\left.\left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+        \right|_{\xi_{\gamma} = 0} =
+        \left.\left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+        \right|_{\xi_{\gamma} = 1}} \\ 
+        \mathrm{\gamma \in \{x, y\}}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ %\frametitle{Noname} 
+
+\begin{equation}
+        \mathrm{\left[ \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} \right] = 0,
+        \left[\left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+        \right] = 0}
+\end{equation}
+
+\begin{equation}
+        \mathrm{\left \langle
+        \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+    \right \rangle = 0}
+\end{equation}
+
+\begin{equation}
+    \mathrm{\langle \_ \rangle = \int\limits_0^1\int\limits_0^1\_d\xi_xd\xi_y}
+\end{equation}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} 
+         =
+         \left(U_{\varphi}^{v_{\lambda}}\right)^{\overline{\text{э}}_{\eta}} }
+        \\ \\
+        \mathrm{\left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+         =
+         \left(\tau_{\alpha y}^{v_{\lambda}}\right)^{\overline{\text{э}}_{\eta}}}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Вычисление упругих констант макросреды}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{\widetilde{E}_{\alpha \beta \eta \lambda} =
+        \langle 
+        \left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}
+    \rangle =} \\ \\
+        \mathrm{\langle 
+        E_{\alpha \beta \eta \lambda} 
+        \rangle +
+        \left\langle 
+        \sum\limits_{\varphi,\psi \in \{x,y\}} E_{\alpha \beta \varphi \psi} 
+        \frac{\partial \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\mu}_{\lambda}}}
+        {\partial \xi_{\psi}} \right\rangle +}  \\ \\
+        \mathrm{\left\langle \sum\limits_{\psi \in \{x,y\}} E_{\alpha \beta z \psi} 
+        \frac{\partial \left(U_{z}^{v_{\eta}}\right)^{\overline{\mu}_{\lambda}}}
+        {\partial \xi_{\psi}}  
+    \right\rangle} \\ \\
+        \mathrm{\alpha, \beta, \eta, \lambda \in \{x,y,z\}}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Периодические ячейки с различными формами поперечных сечений
+арматурных волокон} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]{cells}
+    \end{center}
+\end{figure}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{w = b - \sqrt{b^2 - S^I}, b \approx 0.75} \\ \\
+        \mathrm{S^I - \text{Площадь включения}}
+    \end{array} 
+\end{equation}
+
+}
+
+\end{document}
+
+\frame{ \frametitle{Модуль Юнга $E_x$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Ex}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Модуль сдвига $G_{xy}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Mxy}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Модуль сдвига $G_{xz}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Mxz}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{xy}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nxy}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{xz}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nxz}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{zx}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nzx}
+    \end{center}
+\end{figure}
+
+}
+
+\end{document} 

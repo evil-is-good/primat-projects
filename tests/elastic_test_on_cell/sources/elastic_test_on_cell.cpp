@@ -3560,28 +3560,28 @@ std::array<double, 12> solved (dealii::Triangulation<dim> &triangulation,
 //
     uint8_t width_2d_matrix = (dim + 1) * (dim + 1);
 //
-//    for (size_t i = 0; i < width_2d_matrix; ++i)
-//    {
-//        uint8_t im = i / (dim + 1);
-//        uint8_t in = i % (dim + 1);
-//
-//        for (size_t j = 0; j < width_2d_matrix; ++j)
-//        {
-//            uint8_t jm = j / (dim + 1);
-//            uint8_t jn = j % (dim + 1);
-//
-//            if (coef[im][in][jm][jn][1] > 0.0000001)
-//                printf("\x1B[31m%f\x1B[0m   ", 
-//                        coef[im][in][jm][jn][0]);
-//            else
-//                printf("%f   ", 
-//                        coef[im][in][jm][jn][0]);
-//        };
-//        for (size_t i = 0; i < 2; ++i)
-//            printf("\n");
-//    };
-//
-//            printf("\n");
+   for (size_t i = 0; i < width_2d_matrix; ++i)
+   {
+       uint8_t im = i / (dim + 1);
+       uint8_t in = i % (dim + 1);
+
+       for (size_t j = 0; j < width_2d_matrix; ++j)
+       {
+           uint8_t jm = j / (dim + 1);
+           uint8_t jn = j % (dim + 1);
+
+           if (coef[im][in][jm][jn][1] > 0.0000001)
+               printf("\x1B[31m%f\x1B[0m   ", 
+                       coef[im][in][jm][jn][0]);
+           else
+               printf("%f   ", 
+                       coef[im][in][jm][jn][0]);
+       };
+       for (size_t i = 0; i < 2; ++i)
+           printf("\n");
+   };
+
+           printf("\n");
 //
 //    for (size_t i = 0; i < width_2d_matrix; ++i)
 //    {
@@ -3734,6 +3734,28 @@ std::array<double, 12> solved (dealii::Triangulation<dim> &triangulation,
     E = matrix_multiplication(newcoef, S);
     print_tensor<6*6>(E);
 
+   for (size_t i = 0; i < width_2d_matrix; ++i)
+   {
+       uint8_t im = i / (dim + 1);
+       uint8_t in = i % (dim + 1);
+
+       for (size_t j = 0; j < width_2d_matrix; ++j)
+       {
+           uint8_t jm = j / (dim + 1);
+           uint8_t jn = j % (dim + 1);
+
+           if (coef[im][in][jm][jn][1] > 0.0000001)
+               printf("\x1B[31m%f\x1B[0m   ", 
+                       newcoef[im][in][jm][jn][0]);
+           else
+               printf("%f   ", 
+                       newcoef[im][in][jm][jn][0]);
+       };
+       for (size_t i = 0; i < 2; ++i)
+           printf("\n");
+   };
+
+           printf("\n");
 //    turn(newcoef, angl);
 //
 //    print_tensor<6*6>(newcoef);
@@ -4291,7 +4313,7 @@ int main(int argc, char *argv[])
     printf("DDDDDDDDDD=%f %f\n", get_determinant<3>(matrix), det);
     printf("MMMMMMMMMM=%f %f\n", get_minor<3>(matrix, 2, 2), det);
 
-    FOR_J(7, 8)
+    FOR_J(1, 2)
     {
 
     switch (j)
@@ -4307,15 +4329,20 @@ int main(int argc, char *argv[])
         // const double yung_2 = g_yung_2;
         // const double puasson_2 = g_puasson_2;
 
-                    cdbl yung_2 = 40.0;
-                    cdbl yung_1 = 393.0;
-                    cdbl puasson_2 = 0.35;
-                    cdbl puasson_1 = 0.4;
+                    // cdbl yung_2 = 40.0;
+                    // cdbl yung_1 = 393.0;
+                    // cdbl puasson_2 = 0.35;
+                    // cdbl puasson_1 = 0.4;
+
+                    cdbl yung_2 = 2.0;
+                    cdbl yung_1 = 1.0;
+                    cdbl puasson_2 = 0.25;
+                    cdbl puasson_1 = 0.25;
 
                     dbl delta = 0.005;
 
                     double i = 0.98;//108
-                    while (i*i < 1.0)
+                    // while (i*i < 1.0)
                     {
                         glob_i = i;
 
@@ -4325,9 +4352,11 @@ int main(int argc, char *argv[])
                         {
                             (0.0),
                             // (delta/2.0),
-                            (0.5 - i / 2.0),
+                            // (0.5 - i / 2.0),
+                            (0.25),
                             (0.5),
-                            (0.5 + i / 2.0),
+                            (0.75),
+                            // (0.5 + i / 2.0),
                             // (1.0 - delta/2.0),
                             (1.0)
                         };
@@ -4339,7 +4368,7 @@ int main(int argc, char *argv[])
 //                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 //                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
                         //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                        tria .refine_global (3);
+                        tria .refine_global (1);
 
                         {
                         std::ofstream out ("grid-igor.eps");

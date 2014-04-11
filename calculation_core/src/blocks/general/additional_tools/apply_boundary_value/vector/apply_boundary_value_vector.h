@@ -1,5 +1,5 @@
-#ifndef apply_boundary_value_scalar_def
-#define apply_boundary_value_scalar_def 1
+#ifndef apply_boundary_value_vector_def
+#define apply_boundary_value_vector_def 1
 
 #include <deal.II/lac/vector.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -9,24 +9,18 @@
 #include "../../../system_linear_algebraic_equations/system_linear_algebraic_equations.h"
 #include "../../../boundary_value/boundary_value.h"
 
-//! Дополнительный инструментарий
-/*!
- * Additional tools \n
- * Сюда входят инструменты (функции) не вошедшие в другие, специализированные
- * пространства.
- */
 namespace ATools
 {
-    //! Добавление к СЛАУ граничного скалярного условия
+    //! Добавление к СЛАУ векторного граничного условия
     /*!
      * Выполняется в таком виде: \n
-     * ATools ::apply_boundary_value_scalar (boundary_value) .to_slae (slae, domain);
+     * ATools ::apply_boundary_value_vector (boundary_value) .to_slae (slae, domain);
     */
     template<u8 dim>
-    class apply_boundary_value_scalar
+    class apply_boundary_value_vector
     {
         public:
-            apply_boundary_value_scalar (const BoundaryValueScalar<dim> &bv) : 
+            apply_boundary_value_vector (const BoundaryValueVector<dim> &bv) : 
                 boundary_value (bv) {};
 
             void to_slae (SystemsLinearAlgebraicEquations &slae, 
@@ -39,6 +33,7 @@ namespace ATools
                     dealii::VectorTools::interpolate_boundary_values (
                             domain.dof_handler,
                             boundary_value.boundary_id,
+                            // dealii::ConstantFunction<dim>(1.0),
                             boundary_value.function,
                             list_boundary_values);
 
@@ -51,19 +46,22 @@ namespace ATools
                 else if (boundary_value.boundary_type _is TBV::Neumann)
                 {
                     dealii::Vector<dbl> tmp (slae.rhsv.size());
+                    std::set<u8> b_id;
+                    b_id.insert(boundary_value.boundary_id);
 
                     dealii::VectorTools::create_boundary_right_hand_side (
                             domain.dof_handler,
                             dealii::QGauss<dim-1>(2),
                             boundary_value.function,
-                            tmp);
+                            tmp,
+                            b_id);
 
                     slae.rhsv += tmp;
                 };
             };
         private:
-            apply_boundary_value_scalar () {};
-            BoundaryValueScalar<dim> boundary_value;
+            apply_boundary_value_vector () {};
+            BoundaryValueVector<dim> boundary_value;
     };
 };
 

@@ -42,7 +42,7 @@ namespace OnCell
         public:
 
             SourceScalar (const dealii::FiniteElement<dim> &fe);
-            SourceScalar (const arr<vec<dbl>, dim> &coefficient, const dealii::FiniteElement<dim> &fe);
+            SourceScalar (const vec<arr<dbl, dim>> &coefficient, const dealii::FiniteElement<dim> &fe);
 
             virtual void update_on_cell (
                     typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
@@ -52,7 +52,7 @@ namespace OnCell
             virtual u8 get_dofs_per_cell () override;
 
 
-            arr<vec<dbl>, dim> coef;
+            vec<arr<dbl, dim>> coef;
             dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
             dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
             cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
@@ -72,18 +72,18 @@ namespace OnCell
 
     template <u8 dim>
         SourceScalar<dim>::SourceScalar (
-                const arr<vec<dbl>, dim> &coefficient,
+                const vec<arr<dbl, dim>> &coefficient,
                 const dealii::FiniteElement<dim> &fe) :
             SourceScalar<dim>(fe)
     {
-        for (st i = 0; i < dim; ++i)
+        coef .resize (coefficient.size());
+        for (st i = 0; i < coefficient.size(); ++i)
         {
-            for (st j = 0; j < coefficient[i].size(); ++j)
+            for (st j = 0; j < dim; ++j)
             {
-                coef[i] .push_back (coefficient[i][j]);
+                coef[i][j] = coefficient[i][j];
             };
         };
-            // coef(coefficient);
     };
 
     template <u8 dim>
@@ -111,7 +111,7 @@ namespace OnCell
                         // fe_values.shape_grad (0, 0);// *
                     res += 
                         -(this->fe_values.shape_grad (i, q_point)[ort]) *
-                        coef[ort][this->material_id] *
+                        coef[this->material_id][ort] *
                         this->fe_values.JxW(q_point);
                 // res +=  
                 //     fe_values.shape_grad (i, q_point)[0] *

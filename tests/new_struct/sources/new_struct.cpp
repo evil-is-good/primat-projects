@@ -21,10 +21,19 @@
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/assembler/assembler.h"
 
+#include "../../../calculation_core/src/blocks/general/laplacian/vector/laplacian_vector.h"
+#include "../../../calculation_core/src/blocks/general/source/vector/source_vector.h"
+#include "../../../calculation_core/src/blocks/general/additional_tools/apply_boundary_value/vector/apply_boundary_value_vector.h"
+#include "../../../calculation_core/src/blocks/special/elastic_problem_tools/elastic_problem_tools.h"
+
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/source/vector/source_vector.h"
+
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/grid/grid_out.h>
+#include <deal.II/fe/fe_system.h>
+#include <deal.II/grid/grid_reordering.h>
 
 extern void make_grid(
         dealii::Triangulation< 2 >&,
@@ -39,7 +48,7 @@ extern void set_grid(
 void debputs()
 {
     static int n = 0;
-    printf("%d\n", n);
+    printf("DEBUG %d\n", n);
     n++;
 };
 
@@ -279,75 +288,254 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
 // 
 // };
 
+template <u8 dim>
+void solved_heat_problem_on_cell (
+        const dealii::Triangulation<dim> &grid,
+        const vec<ATools::SecondOrderTensor> &coef,
+        OnCell::SystemsLinearAlgebraicEquations<dim> &slae)
+{
+    enum {x, y, z};
+
+    Domain<dim> domain;
+    domain.grid .copy_triangulation(grid);
+    dealii::FE_Q<dim> fe(1);
+    domain.dof_init (fe);
+
+    OnCell::BlackOnWhiteSubstituter bows;
+
+    LaplacianScalar<dim> element_matrix (domain.dof_handler.get_fe());
+
+    element_matrix.C .resize(2);
+    for (st i = 0; i < coef.size(); ++i)
+    {
+        element_matrix.C[i][x][x] = coef[i][x][x];
+        element_matrix.C[i][x][y] = coef[i][x][y];
+        element_matrix.C[i][y][x] = coef[i][y][x];
+        element_matrix.C[i][y][y] = coef[i][y][y];
+    };
+
+    const bool scalar_type = 0;
+    OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
+
+    OnCell::Assembler::assemble_matrix<dim> (slae.matrix, element_matrix, domain.dof_handler, bows);
+    FILE *F;
+    F = fopen("matrix.gpd", "w");
+    for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+            if (slae.matrix.el(i,j))
+            {
+                fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+            };
+    fclose(F);
+
+    FOR(i, 0, dim)
+    {
+        vec<arr<dbl, 2>> coef_for_rhs(2);
+        FOR(j, 0, element_matrix.C.size())
+        {
+            FOR(k, 0, 2)
+            {
+                coef_for_rhs[j][k] = element_matrix.C[j][i][k];
+            };
+        };
+        OnCell::SourceScalar<dim> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
+        OnCell::Assembler::assemble_rhsv<dim> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
+        {
+            dealii::DataOut<dim> data_out;
+            data_out.attach_dof_handler (domain.dof_handler);
+            data_out.add_data_vector (slae.rhsv[0], "xb");
+            data_out.add_data_vector (slae.rhsv[1], "yb");
+            data_out.build_patches ();
+
+            auto name = "b.gpd";
+
+            std::ofstream output (name);
+            data_out.write_gnuplot (output);
+        };
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution[i],
+                slae.rhsv[i]
+                ,dealii::PreconditionIdentity()
+                );
+        FOR(j, 0, slae.solution[i].size())
+            slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+    };
+};
+
+template<size_t size>
+std::array<size_t, 2> to2D(const size_t i)//, const size_t j)
+{
+    std::array<size_t, 2> res;
+
+    switch (size)
+    {
+        case 6*6:
+            {
+                if (i < 3)
+                {
+                    res[0] = i;
+                    res[1] = i;
+                }
+                else
+                {
+                    switch (i)
+                    {
+                        case 3: res[0]=1; res[1]=2; break; 
+                        case 4: res[0]=2; res[1]=0; break; 
+                        case 5: res[0]=0; res[1]=1; break;
+                    };
+                };
+            };
+            break;
+        case 9*9:
+            {
+                    res[0] = i / 3;
+                    res[1] = i % 3;
+            };
+            break;
+    };
+
+    return res;
+};
+
+template<size_t size>
+void print_tensor(const ATools::FourthOrderTensor &tensor)
+{
+    const size_t width = static_cast<size_t>(sqrt(size));
+
+    for (size_t i = 0; i < width; ++i)
+    {
+        auto ind = to2D<size>(i);
+        uint8_t im = ind[0];
+        uint8_t in = ind[1];
+
+        for (size_t j = 0; j < width; ++j)
+        {
+            auto jnd = to2D<size>(j);
+            uint8_t jm = jnd[0];
+            uint8_t jn = jnd[1];
+
+            if (fabs(tensor[im][in][jm][jn]) > 0.0000001)
+                printf("\x1B[31m%f\x1B[0m   ", 
+                        tensor[im][in][jm][jn]);
+            else
+                printf("%f   ", 
+                        tensor[im][in][jm][jn]);
+        };
+        for (size_t i = 0; i < 2; ++i)
+            printf("\n");
+    };
+
+    printf("\n");
+};
+
 int main()
 {
-    enum {x, y};
+    enum {x, y, z};
     debputs();
-
     // {
-    //     Domain<2> domain;
+    //     dealii::Triangulation<2> tria;
+    //     vec<prmt::Point<2>> outer(4);//3,0000000000000004440892098500626161694527
+    //     vec<prmt::Point<2>> inner(4);
+
+    //     outer[0].x() = 0.0; outer[0].y() = 0.0;
+    //     outer[1].x() = 3.0; outer[1].y() = 0.0;
+    //     outer[2].x() = 3.0; outer[2].y() = 3.0;
+    //     outer[3].x() = 0.0; outer[3].y() = 3.0;
+
+    //     inner[0].x() = 2.9; inner[0].y() = 2.7;
+    //     inner[1].x() = 3.0; inner[1].y() = 2.74;
+    //     inner[2].x() = 3.0000000000000003; inner[2].y() = 3.0;
+    //     inner[3].x() = 2.77; inner[3].y() = 3.0;
+    //     set_grid (tria, outer, inner);
     //     {
-    //         vec<prmt::Point<2>> boundary_of_segments;
-    //         vec<st> types_boundary_segments;
-    //         arr<st, 4> types_boundary = {0, 0, 0, 0};
-    //         cst num_segments = 2;
-    //         prmt::Point<2> p1(0.0, 0.0);
-    //         prmt::Point<2> p2(1.0, 1.0);
-    //         debputs();
-    //         GTools::give_rectangle_with_border_condition (
-    //                 boundary_of_segments, types_boundary_segments, 
-    //                 types_boundary, num_segments, p1, p2);
-    //         debputs();
-    //         make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
-    //         domain.grid.refine_global(1);
+    //         std::ofstream out ("grid-igor.eps");
+    //         dealii::GridOut grid_out;
+    //         grid_out.write_eps (tria, out);
     //     };
-    //     debputs();
-    //     dealii::FE_Q<2> fe(1);
-    //     domain.dof_init (fe);
-
-    //     SystemsLinearAlgebraicEquations slae;
-    //     ATools ::trivial_prepare_system_equations (slae, domain);
-
-    //     LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
-    //     {
-    //         arr<arr<vec<dbl>, 2>, 2> coef;
-    //         coef[x][x] .push_back (1.0);
-    //         coef[y][y] .push_back (1.0);
-    //         coef[x][y] .push_back (0.0);
-    //         coef[y][x] .push_back (0.0);
-    //         HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
-    //     };
-
-    //     auto func = [] (dealii::Point<2>) {return -2.0;};
-    //     SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
-
-    //     Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
-    //     Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
-
-    //     vec<BoundaryValueScalar<2>> bound (1);
-    //     bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
-    //     bound[0].boundary_id   = 0;
-    //     bound[0].boundary_type = TBV::Dirichlet;
-
-    //     for (auto b : bound)
-    //         ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
-
-    //     dealii::SolverControl solver_control (10000, 1e-12);
-    //     dealii::SolverCG<> solver (solver_control);
-    //     solver.solve (
-    //             slae.matrix,
-    //             slae.solution,
-    //             slae.rhsv
-    //             ,dealii::PreconditionIdentity()
-    //             );
-
-    //     HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
-    //     HCPTools ::print_heat_conductions<2> (
-    //             slae.solution, element_matrix.C, domain, "heat_conductions");
-    //     HCPTools ::print_heat_gradient<2> (
-    //             slae.solution, element_matrix.C, domain, "heat_gradient");
     // };
 
+    // printf("TRUE? %d\n", 9.0000000000000006 == 9.0000000000000008);
+    // puts("TRUE? 0.000000000000000");
+    // printf("TRUE? %.50f\n", 3.0);
+    // printf("TRUE? %.50f\n", 3.000000000000007);
+    // printf("TRUE? %.50f\n", 3.0000000000000007);
+    // printf("TRUE? %.50f\n", 3.0000000000000007);
+    // printf("TRUE? %.50f\n", (3.0000000000000007 - 3.0));
+
+    //HEAT_CONDUCTION_PROBLEM
+    if (false)
+    {
+        Domain<2> domain;
+        {
+            vec<prmt::Point<2>> boundary_of_segments;
+            vec<st> types_boundary_segments;
+            arr<st, 4> types_boundary = {0, 0, 0, 0};
+            cst num_segments = 2;
+            prmt::Point<2> p1(0.0, 0.0);
+            prmt::Point<2> p2(1.0, 1.0);
+            debputs();
+            GTools::give_rectangle_with_border_condition (
+                    boundary_of_segments, types_boundary_segments, 
+                    types_boundary, num_segments, p1, p2);
+            debputs();
+            make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
+            domain.grid.refine_global(1);
+        };
+        debputs();
+        dealii::FE_Q<2> fe(1);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+        {
+            element_matrix.C .resize(1);
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
+            // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+        };
+
+        auto func = [] (dealii::Point<2>) {return -2.0;};
+        SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+
+        Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+
+        vec<BoundaryValueScalar<2>> bound (1);
+        bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
+        bound[0].boundary_id   = 0;
+        bound[0].boundary_type = TBV::Dirichlet;
+
+        for (auto b : bound)
+            ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+
+        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+        // HCPTools ::print_heat_conductions<2> (
+        //         slae.solution, element_matrix.C, domain, "heat_conductions");
+        // HCPTools ::print_heat_gradient<2> (
+        //         slae.solution, element_matrix.C, domain, "heat_gradient");
+    };
+
+
+    //HEAT_CONDUCTION_PROBLEM_ON_CELL
+    if (false)
     {
         Domain<2> domain;
         {
@@ -403,38 +591,39 @@ int main()
 
         LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
         // {
-            arr<arr<vec<dbl>, 2>, 2> coef;
-            coef[x][x] .push_back (1.0);
-            coef[y][y] .push_back (1.0);
-            coef[x][y] .push_back (0.0);
-            coef[y][x] .push_back (0.0);
-            coef[x][x] .push_back (2.0);
-            coef[y][y] .push_back (2.0);
-            coef[x][y] .push_back (0.0);
-            coef[y][x] .push_back (0.0);
-            HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+            element_matrix.C .resize(2);
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
+            element_matrix.C[1][x][x] = 2.0;
+            element_matrix.C[1][x][y] = 0.0;
+            element_matrix.C[1][y][x] = 0.0;
+            element_matrix.C[1][y][y] = 2.0;
+            // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
         // };
-        OnCell::prepare_system_equations (slae, bows, domain);
+        const bool scalar_type = 0;
+        OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
 
         OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
         FILE *F;
         F = fopen("matrix.gpd", "w");
         for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
-        for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
-            if (slae.matrix.el(i,j))
-        {
-            fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
-        };
+            for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+                if (slae.matrix.el(i,j))
+                {
+                    fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+                };
         fclose(F);
 
         FOR(i, 0, 2)
         {
-            arr<vec<dbl>, 2> coef_for_rhs;
-            FOR(j, 0, 2)
+            vec<arr<dbl, 2>> coef_for_rhs(2);
+            FOR(j, 0, element_matrix.C.size())
             {
-                FOR(k, 0, element_matrix.C.size())
+                FOR(k, 0, 2)
                 {
-                    coef_for_rhs[j] .push_back (element_matrix.C[i][j][k]);
+                    coef_for_rhs[j][k] = element_matrix.C[j][i][k];
                 };
             };
             OnCell::SourceScalar<2> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
@@ -466,39 +655,344 @@ int main()
             FOR(j, 0, slae.solution[i].size())
                 slae.solution[i][j] = slae.solution[i][bows.subst (j)];
         };
+        {
+            FILE* F;
+            F = fopen("Sol.gpd", "w");
+            for (size_t i = 0; i < slae.solution[0].size(); ++i)
+                fprintf(F, "%ld %.10f\n", i, slae.solution[0](i));
+            fclose(F);
+        };
 
         arr<str, 2> vr = {"temperature_x", "temperature_y"};
         FOR(i, 0, 2)
             HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
 
         auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
-                domain.dof_handler, slae.solution, slae.rhsv, coef);
+                domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
         printf("%f %f %f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
     };
 
-    // {
-    //         const size_t material_id[4][4] =
-    //         {
-    //             {0, 0, 0, 0},
-    //             {0, 1, 1, 0},
-    //             {0, 1, 1, 0},
-    //             {0, 0, 0, 0}
-    //         };
-    //         const double dot[5] = 
-    //         {
-    //             (0.0),
-    //             (0.25),
-    //             (0.5),
-    //             (0.75),
-    //             (1.0)
-    //         };
-    //     dealii::Triangulation<2> tria;
-    //     ::set_tria <5> (tria, dot, material_id);
-    //     tria .refine_global (1);
+    //ELASSTIC_PROBLEM
+    if (false)
+    {
+        Domain<2> domain;
+        {
+            // vec<prmt::Point<2>> boundary_of_segments;
+            // vec<st> types_boundary_segments;
+            // arr<st, 4> types_boundary = {0, 2, 2, 2};
+            // cst num_segments = 1;
+            // prmt::Point<2> p1(0.0, 0.0);
+            // prmt::Point<2> p2(1.0, 1.0);
+            // GTools::give_rectangle_with_border_condition (
+            //         boundary_of_segments, types_boundary_segments, 
+            //         types_boundary, num_segments, p1, p2);
+            // for (st i = 0; i < types_boundary_segments.size(); ++i)
+            // {
+            //     printf("OOOO (%f, %f) (%f, %f) %ld\n", 
+            //             boundary_of_segments[i].x(),
+            //             boundary_of_segments[i].y(),
+            //             boundary_of_segments[i+1].x(),
+            //             boundary_of_segments[i+1].y(),
+            //             types_boundary_segments[i]);
+            // };
+            // make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
 
-    //     auto res = ::solved<2>(tria, coef_1, coef_2);
-    //     printf("%f %f %f\n", res[0], res[1], res[2]);
-    // };
+            std::vector< dealii::Point< 2 > > v (4);
+
+            v[0] = dealii::Point<2>(0.0, 0.0);
+            v[1] = dealii::Point<2>(1.0, 0.0);
+            v[2] = dealii::Point<2>(1.0, 10.0);
+            v[3] = dealii::Point<2>(0.0, 10.0);
+
+            std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
+
+            c[0].vertices[0] = 0; 
+            c[0].vertices[1] = 1; 
+            c[0].vertices[2] = 2;
+            c[0].vertices[3] = 3;
+            c[0].material_id = 0; 
+
+            dealii::SubCellData b;
+
+            b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
+            b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
+            b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
+            b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
+
+            dealii::GridReordering<2> ::reorder_cells (c);
+            domain.grid .create_triangulation_compatibility (v, c, b);
+
+            domain.grid.refine_global(3);
+        };
+    debputs();
+        dealii::FESystem<2,2> fe 
+            (dealii::FE_Q<2,2>(1), 2);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (1);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+
+        const dbl abld = 
+            element_matrix.C[0][x][x][x][x] +
+            // element_matrix.C[0][x][x][x][y] +
+            element_matrix.C[0][y][x][x][x];
+            // element_matrix.C[0][y][x][x][y];
+        printf("AAAAAA %f\n", abld);
+        arr<std::function<dbl (const dealii::Point<2>&)>, 2> func {
+        // [=] (const dealii::Point<2>) {return -2.0*abld;},
+        [] (const dealii::Point<2>) {return 0.0;},
+        [] (const dealii::Point<2>) {return 0.0;}
+        };
+        // auto func = [] (dealii::Point<2>) {return arr<dbl, 2>{-2.0, 0.0};};
+        SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
+    debputs();
+
+            Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+    debputs();
+        Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+    debputs();
+
+        vec<BoundaryValueVector<2>> bound (3);
+        bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
+        bound[0].boundary_id   = 0;
+        bound[0].boundary_type = TBV::Dirichlet;
+        // bound[0].boundary_type = TBV::Neumann;
+        bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{1.0, 0.0};};
+        bound[1].boundary_id   = 1;
+        // bound[1].boundary_type = TBV::Dirichlet;
+        bound[1].boundary_type = TBV::Neumann;
+        bound[2].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
+        bound[2].boundary_id   = 2;
+        bound[2].boundary_type = TBV::Neumann;
+    debputs();
+
+        for (auto b : bound)
+            ATools ::apply_boundary_value_vector<2> (b) .to_slae (slae, domain);
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+
+        EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move");
+    debputs();
+    };
+
+    // ELASSTIC_PROBLEM_ON_CELL
+    if (true)
+    {
+        Domain<2> domain;
+        {
+            const size_t material_id[4][4] =
+            {
+                {0, 0, 0, 0},
+                {0, 1, 1, 0},
+                {0, 1, 1, 0},
+                {0, 0, 0, 0}
+            };
+            const double dot[5] = 
+            {
+                (0.0),
+                (0.25),
+                (0.5),
+                (0.75),
+                (1.0)
+            };
+            ::set_tria <5> (domain.grid, dot, material_id);
+            domain.grid .refine_global (1);
+            {
+                std::ofstream out ("grid-igor.eps");
+                dealii::GridOut grid_out;
+                grid_out.write_eps (domain.grid, out);
+            };
+        };
+        dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+        domain.dof_init (fe);
+
+        OnCell::SystemsLinearAlgebraicEquations<4> slae;
+        OnCell::BlackOnWhiteSubstituter bows;
+
+        LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (2);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+        EPTools ::set_isotropic_elascity{yung : 2.0, puasson : 0.25}(element_matrix.C[1]);
+
+        u8 dim = 2;
+   // for (size_t i = 0; i < 9; ++i)
+   // {
+   //     uint8_t im = i / (dim + 1);
+   //     uint8_t in = i % (dim + 1);
+
+   //     for (size_t j = 0; j < 9; ++j)
+   //     {
+   //         uint8_t jm = j / (dim + 1);
+   //         uint8_t jn = j % (dim + 1);
+
+   //         if (element_matrix.C[0][im][in][jm][jn] > 0.0000001)
+   //             printf("\x1B[31m%f\x1B[0m   ", 
+   //                     element_matrix.C[0][im][in][jm][jn]);
+   //         else
+   //             printf("%f   ", 
+   //                     element_matrix.C[0][im][in][jm][jn]);
+   //     };
+   //     for (size_t i = 0; i < 2; ++i)
+   //         printf("\n");
+   // };
+   //         printf("\n");
+   // for (size_t i = 0; i < 9; ++i)
+   // {
+   //     uint8_t im = i / (dim + 1);
+   //     uint8_t in = i % (dim + 1);
+
+   //     for (size_t j = 0; j < 9; ++j)
+   //     {
+   //         uint8_t jm = j / (dim + 1);
+   //         uint8_t jn = j % (dim + 1);
+
+   //         if (element_matrix.C[1][im][in][jm][jn] > 0.0000001)
+   //             printf("\x1B[31m%f\x1B[0m   ", 
+   //                     element_matrix.C[1][im][in][jm][jn]);
+   //         else
+   //             printf("%f   ", 
+   //                     element_matrix.C[1][im][in][jm][jn]);
+   //     };
+   //     for (size_t i = 0; i < 2; ++i)
+   //         printf("\n");
+   // };
+
+        const bool vector_type = 1;
+        OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+
+        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+        FILE* F;
+        F = fopen("A.gpd", "w");
+        for (size_t i = 0; i < slae.matrix.m(); ++i)
+            for (size_t j = 0; j < slae.matrix.n(); ++j)
+                if (std::abs(slae.matrix .el (i, j)) > 1e-6)
+                    fprintf(F, "%ld %ld %f\n", i, j, slae.matrix .el (i, j));
+                else
+                    fprintf(F, "%ld %ld 0.0\n", i, j);
+
+        fclose(F);
+        
+        arr<u8, 4> theta  = {x, y, z, x};
+        arr<u8, 4> lambda = {x, y, z, y};
+
+    // for (auto theta : {x, y, z})
+    //     for (auto lambda : {x, y, z})
+// #pragma omp parallel for
+        for (st n = 0; n < 4; ++n)
+        {
+            vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+
+            for (auto i : {x, y})
+                for (auto j : {x, y})
+                    for(st k = 0; k < element_matrix.C.size(); ++k)
+                    {
+                        coef_for_rhs[k][i][j] = 
+                            element_matrix.C[k][i][j][theta[n]][lambda[n]];
+                    };
+
+            slae.solution[n] = 0;
+            slae.rhsv[n] = 0;
+
+            OnCell::SourceVector<2> element_rhsv (
+                    coef_for_rhs, domain.dof_handler.get_fe());
+            OnCell::Assembler::assemble_rhsv<2> (
+                    slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+
+            dealii::SolverControl solver_control (10000, 1e-12);
+            dealii::SolverCG<> solver (solver_control);
+            solver.solve (
+                    slae.matrix,
+                    slae.solution[n],
+                    slae.rhsv[n]
+                    ,dealii::PreconditionIdentity()
+                    );
+            FOR(i, 0, slae.solution[n].size())
+                slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+        };
+        // {
+        //     FILE* F;
+        //     F = fopen("S.gpd", "a");
+        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
+        //         fprintf(F, "%ld %f\n", i, slae.rhsv[3](i));
+        //     fclose(F);
+        // };
+        // {
+        //     FILE* F;
+        //     F = fopen("S.gpd", "a");
+        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
+        //         fprintf(F, "%ld %f\n", i, slae.rhsv[1](i));
+        //     fclose(F);
+        // };
+        // {
+        //     FILE* F;
+        //     F = fopen("S.gpd", "a");
+        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
+        //         fprintf(F, "%ld %f\n", i, slae.rhsv[2](i));
+        //     fclose(F);
+        // };
+
+        OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+        vec<ATools::SecondOrderTensor> coef_for_potr(2);
+        for (st i = 0; i < 2; ++i)
+        {
+            coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+            coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+            coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+            coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+        };
+        solved_heat_problem_on_cell<2> (
+                domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+        {
+            FILE* F;
+            F = fopen("Sol.gpd", "w");
+            for (size_t i = 0; i < problem_of_torsion_rod_slae.solution[0].size(); ++i)
+                fprintf(F, "%ld %.5f\n", i, problem_of_torsion_rod_slae.solution[1](i));
+            fclose(F);
+        };
+
+        arr<str, 4> vr = {"move_xx", "move_yy", "move_zz", "move_xy"};
+        for (st i = 0; i < 4; ++i)
+        {
+            EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+        };
+
+        auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
+                domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+
+   for (size_t i = 0; i < 9; ++i)
+   {
+       uint8_t im = i / (dim + 1);
+       uint8_t in = i % (dim + 1);
+
+       for (size_t j = 0; j < 9; ++j)
+       {
+           uint8_t jm = j / (dim + 1);
+           uint8_t jn = j % (dim + 1);
+
+           if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+               printf("\x1B[31m%f\x1B[0m   ", 
+                       meta_coef[im][in][jm][jn]);
+           else
+               printf("%f   ", 
+                       meta_coef[im][in][jm][jn]);
+       };
+       for (size_t i = 0; i < 2; ++i)
+           printf("\n");
+   };
+        // print_tensor<6*6>(meta_coef);
+    };
+
     
     
 //     {
