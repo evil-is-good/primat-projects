@@ -433,6 +433,407 @@ void print_tensor(const ATools::FourthOrderTensor &tensor)
     printf("\n");
 };
 
+void set_hexagon_grid_pure(dealii::Triangulation< 2 > &triangulation, 
+        const double len_edge,
+        const double radius)
+{
+    double Ro = len_edge;
+    double ro = radius;
+    double Ri = Ro * (sqrt(3.0) / 2.0);
+    double ri = ro * (sqrt(3.0) / 2.0);
+
+    printf("Radius %f %f\n", ro, ri);
+
+    double a[7] = {0.0, Ri-ri, Ri, Ri+ri, 2.0*Ri, ri, 2.0*Ri - ri};
+    double b[15] = {
+        0.0, ro/2.0, ro, Ro/2, Ro, 1.5*Ro - ro, 1.5*Ro - ro / 2.0,
+        1.5*Ro, 1.5*Ro + ro / 2.0, 1.5*Ro + ro, 2.0*Ro, 2.5*Ro, 3.0*Ro-ro,
+        3.0*Ro-ro/2.0, 3.0*Ro};
+
+
+    std::vector<dealii::Point< 2 > > v (30); //30
+
+//    v[0][0]  = a[0]; v[0][1]  = b[0];
+//    v[1][0]  = a[1]; v[1][1]  = b[0];
+//    v[2][0]  = a[1]; v[2][1]  = b[1];
+//    v[3][0]  = a[0]; v[3][1]  = b[1];
+//    v[4][0]  = a[4]; v[4][1]  = b[3];
+//    v[5][0]  = a[2]; v[5][1]  = b[4];
+//    v[6][0]  = a[2]; v[6][1]  = b[10];
+//    v[7][0]  = a[0]; v[7][1]  = b[11];
+//    v[8][0]  = a[4]; v[8][1]  = b[11];
+//    v[9][0]  = a[0]; v[9][1]  = b[14];
+//    v[10][0] = a[2]; v[10][1] = b[14];
+//    v[11][0] = a[4]; v[11][1] = b[14];
+    
+
+    v[0][0]  = a[0]; v[0][1]  = b[0];
+    v[1][0]  = a[1]; v[1][1]  = b[0];
+    v[2][0]  = a[2]; v[2][1]  = b[0];
+    v[3][0]  = a[3]; v[3][1]  = b[0];
+    v[4][0]  = a[4]; v[4][1]  = b[0];
+
+    v[5][0]  = a[1]; v[5][1]  = b[1];
+    v[6][0]  = a[3]; v[6][1]  = b[1];
+
+    v[7][0]  = a[2]; v[7][1]  = b[2];
+
+    v[8][0]  = a[0]; v[8][1]  = b[3];
+    v[9][0]  = a[4]; v[9][1]  = b[3];
+
+    v[10][0] = a[2]; v[10][1] = b[4];
+
+    v[11][0] = a[0]; v[11][1] = b[5];
+    v[12][0] = a[4]; v[12][1] = b[5];
+
+    v[13][0] = a[5]; v[13][1] = b[6];
+    v[14][0] = a[6]; v[14][1] = b[6];
+
+    v[15][0] = a[5]; v[15][1] = b[8];
+    v[16][0] = a[6]; v[16][1] = b[8];
+
+    v[17][0] = a[0]; v[17][1] = b[9];
+    v[18][0] = a[4]; v[18][1] = b[9];
+
+    v[19][0] = a[2]; v[19][1] = b[10];
+
+    v[20][0] = a[0]; v[20][1] = b[11];
+    v[21][0] = a[4]; v[21][1] = b[11];
+
+//    v[23][0] = a[4]; v[23][1] = b[8];
+
+    v[22][0] = a[2]; v[22][1] = b[12];
+
+    v[23][0] = a[1]; v[23][1] = b[13];
+    v[24][0] = a[3]; v[24][1] = b[13];
+
+    v[25][0] = a[0]; v[25][1] = b[14];
+    v[26][0] = a[1]; v[26][1] = b[14];
+    v[27][0] = a[2]; v[27][1] = b[14];
+    v[28][0] = a[3]; v[28][1] = b[14];
+    v[29][0] = a[4]; v[29][1] = b[14];
+//
+////    v[31][0] = a[4]; v[31][1] = b[8];  // 13
+
+    std::vector< dealii::CellData< 2 > > c (20, dealii::CellData<2>()); //20
+
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 5;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+//
+//    c[1].vertices[0] = 5;
+//    c[1].vertices[1] = 1;
+//    c[1].vertices[2] = 2;
+//    c[1].vertices[3] = 4;
+//    c[1].material_id = 0;
+//
+//    c[2].vertices[0] = 3;
+//    c[2].vertices[1] = 5;
+//    c[2].vertices[2] = 6;
+//    c[2].vertices[3] = 7;
+//    c[2].material_id = 0;
+//
+//    c[3].vertices[0] = 5;
+//    c[3].vertices[1] = 4;
+//    c[3].vertices[2] = 8;
+//    c[3].vertices[3] = 6;
+//    c[3].material_id = 0;
+//
+//    c[4].vertices[0] = 7;
+//    c[4].vertices[1] = 6;
+//    c[4].vertices[2] = 10;
+//    c[4].vertices[3] = 9;
+//    c[4].material_id = 0;
+//
+//    c[5].vertices[0] = 6;
+//    c[5].vertices[1] = 8;
+//    c[5].vertices[2] = 11;
+//    c[5].vertices[3] = 10;
+//    c[5].material_id = 0;
+
+//    printf("%d %d %d %d\n",
+//    c[0].vertices[0],
+//    c[0].vertices[1],
+//    c[0].vertices[2],
+//    c[0].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[1].vertices[0],
+//    c[1].vertices[1],
+//    c[1].vertices[2],
+//    c[1].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[2].vertices[0],
+//    c[2].vertices[1],
+//    c[2].vertices[2],
+//    c[2].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[3].vertices[0],
+//    c[3].vertices[1],
+//    c[3].vertices[2],
+//    c[3].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[4].vertices[0],
+//    c[4].vertices[1],
+//    c[4].vertices[2],
+//    c[4].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[5].vertices[0],
+//    c[5].vertices[1],
+//    c[5].vertices[2],
+//    c[5].vertices[3]);
+//
+////    dealii::GridReordering<2,2>::invert_all_cells_of_negative_grid 
+////        (v, c);
+//    dealii::GridReordering<2>::reorder_cells(c);
+//
+//    puts("/////////////////////////////////");
+//
+//    printf("%d %d %d %d\n",
+//    c[0].vertices[0],
+//    c[0].vertices[1],
+//    c[0].vertices[2],
+//    c[0].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[1].vertices[0],
+//    c[1].vertices[1],
+//    c[1].vertices[2],
+//    c[1].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[2].vertices[0],
+//    c[2].vertices[1],
+//    c[2].vertices[2],
+//    c[2].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[3].vertices[0],
+//    c[3].vertices[1],
+//    c[3].vertices[2],
+//    c[3].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[4].vertices[0],
+//    c[4].vertices[1],
+//    c[4].vertices[2],
+//    c[4].vertices[3]);
+//
+//    printf("%d %d %d %d\n",
+//    c[5].vertices[0],
+//    c[5].vertices[1],
+//    c[5].vertices[2],
+//    c[5].vertices[3]);
+
+
+
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 2;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+
+    c[0].vertices[0] = 1;
+    c[0].vertices[1] = 5;
+    c[0].vertices[2] = 8;
+    c[0].vertices[3] = 0;
+    c[0].material_id = 0;
+
+    c[1].vertices[0] = 1;
+    c[1].vertices[1] = 2;
+    c[1].vertices[2] = 7;
+    c[1].vertices[3] = 5;
+    c[1].material_id = 1;
+
+    c[2].vertices[0] = 2;
+    c[2].vertices[1] = 3;
+    c[2].vertices[2] = 6;
+    c[2].vertices[3] = 7;
+    c[2].material_id = 1;
+
+    c[3].vertices[0] = 3;
+    c[3].vertices[1] = 4;
+    c[3].vertices[2] = 9;
+    c[3].vertices[3] = 6;
+    c[3].material_id = 0;
+
+    c[4].vertices[0] = 8;
+    c[4].vertices[1] = 5;
+    c[4].vertices[2] = 7;
+    c[4].vertices[3] = 10;
+    c[4].material_id = 0;
+
+    c[5].vertices[0] = 7;
+    c[5].vertices[1] = 6;
+    c[5].vertices[2] = 9;
+    c[5].vertices[3] = 10;
+    c[5].material_id = 0;
+
+    c[6].vertices[0] = 8;
+    c[6].vertices[1] = 10;
+    c[6].vertices[2] = 13;
+    c[6].vertices[3] = 11;
+    c[6].material_id = 0;
+
+    c[7].vertices[0] = 10;
+    c[7].vertices[1] = 9;
+    c[7].vertices[2] = 12;
+    c[7].vertices[3] = 14;
+    c[7].material_id = 0;
+
+    c[8].vertices[0] = 11;
+    c[8].vertices[1] = 13;
+    c[8].vertices[2] = 15;
+    c[8].vertices[3] = 17;
+    c[8].material_id = 1;
+
+    c[9].vertices[0] = 13;
+    c[9].vertices[1] = 10;
+    c[9].vertices[2] = 19;
+    c[9].vertices[3] = 15;
+    c[9].material_id = 0;
+
+    c[10].vertices[0] = 10;
+    c[10].vertices[1] = 14;
+    c[10].vertices[2] = 16;
+    c[10].vertices[3] = 19;
+    c[10].material_id = 0;
+
+    c[11].vertices[0] = 14;
+    c[11].vertices[1] = 12;
+    c[11].vertices[2] = 18;
+    c[11].vertices[3] = 16;
+    c[11].material_id = 1;
+
+    c[12].vertices[0] = 17;
+    c[12].vertices[1] = 15;
+    c[12].vertices[2] = 19;
+    c[12].vertices[3] = 20;
+    c[12].material_id = 0;
+
+//    c[13].vertices[0] = 15;
+//    c[13].vertices[1] = 17;
+//    c[13].vertices[2] = 31; //// 31
+//    c[13].vertices[3] = 19;
+//    c[13].material_id = 1;
+
+    c[13].vertices[0] = 16;
+    c[13].vertices[1] = 18;
+    c[13].vertices[2] = 21;
+    c[13].vertices[3] = 19;
+    c[13].material_id = 0;
+
+    c[14].vertices[0] = 20;
+    c[14].vertices[1] = 19;
+    c[14].vertices[2] = 22;
+    c[14].vertices[3] = 23;
+    c[14].material_id = 0;
+
+    c[15].vertices[0] = 19;
+    c[15].vertices[1] = 21;
+    c[15].vertices[2] = 24;
+    c[15].vertices[3] = 22;
+    c[15].material_id = 0;
+
+    c[16].vertices[0] = 20;
+    c[16].vertices[1] = 23;
+    c[16].vertices[2] = 26;
+    c[16].vertices[3] = 25;
+    c[16].material_id = 0;
+
+    c[17].vertices[0] = 23;
+    c[17].vertices[1] = 22;
+    c[17].vertices[2] = 27;
+    c[17].vertices[3] = 26;
+    c[17].material_id = 1;
+
+    c[18].vertices[0] = 22;
+    c[18].vertices[1] = 24;
+    c[18].vertices[2] = 28;
+    c[18].vertices[3] = 27;
+    c[18].material_id = 1;
+
+    c[19].vertices[0] = 24;
+    c[19].vertices[1] = 21;
+    c[19].vertices[2] = 29;
+    c[19].vertices[3] = 28;
+    c[19].material_id = 0;
+
+    printf("%d %d %d %d\n",
+    c[0].vertices[0],
+    c[0].vertices[1],
+    c[0].vertices[2],
+    c[0].vertices[3]
+    );
+    dealii::GridReordering<2>::reorder_cells(c);
+    printf("%d %d %d %d\n",
+    c[0].vertices[0],
+    c[0].vertices[1],
+    c[0].vertices[2],
+    c[0].vertices[3]
+    );
+    triangulation .create_triangulation_compatibility (v, c, dealii::SubCellData());
+//    triangulation .refine_global (n_ref);
+
+    std::ofstream out ("grid-2.eps");
+    dealii::GridOut grid_out;
+    grid_out.write_eps (triangulation , out);
+};
+
+ATools::FourthOrderTensor unphysical_to_physicaly (
+        ATools::FourthOrderTensor &unphys)
+{
+    enum {x, y, z};
+    ATools::FourthOrderTensor res;
+
+    double A = 
+        unphys[x][x][x][x] * unphys[y][y][y][y] * unphys[z][z][z][z] - 
+        unphys[y][y][z][z] * unphys[z][z][y][y] * unphys[x][x][x][x] +
+        unphys[x][x][y][y] * unphys[y][y][z][z] * unphys[z][z][x][x] - 
+        unphys[y][y][x][x] * unphys[x][x][y][y] * unphys[z][z][z][z] - 
+        unphys[y][y][y][y] * unphys[x][x][z][z] * unphys[z][z][x][x] +
+        unphys[y][y][x][x] * unphys[x][x][z][z] * unphys[z][z][y][y]; 
+
+//    printf("%f %f %f A = %f\n", 
+//            unphys[x][x][x][x][0], 
+//            unphys[y][y][y][y][0], 
+//            unphys[z][z][z][z][0], 
+//            A);
+
+    for (uint8_t i = 0; i < 3; ++i)
+    {
+        int no_1 = (i + 1) % 3;
+        int no_2 = (i + 2) % 3;
+
+        for (uint8_t j = 0; j < 3; ++j)
+        {
+            int k = (j == no_1) ? no_2 : no_1;
+
+            if (i == j)
+                res[i][i][j][j] = A;
+            else
+                res[i][i][j][j] = 
+                    (unphys[i][i][j][j] * unphys[k][k][k][k] -
+                     unphys[i][i][k][k] * unphys[j][j][k][k]);
+
+            res[i][i][j][j] /= 
+                (unphys[no_1][no_1][no_1][no_1] * 
+                 unphys[no_2][no_2][no_2][no_2] - 
+                 unphys[no_1][no_1][no_2][no_2] * 
+                 unphys[no_2][no_2][no_1][no_1]);
+        };
+    };
+        
+    return res;
+
+};
+
 int main()
 {
     enum {x, y, z};
@@ -789,208 +1190,151 @@ int main()
     // ELASSTIC_PROBLEM_ON_CELL
     if (true)
     {
-        Domain<2> domain;
-        {
-            const size_t material_id[4][4] =
-            {
-                {0, 0, 0, 0},
-                {0, 1, 1, 0},
-                {0, 1, 1, 0},
-                {0, 0, 0, 0}
-            };
-            const double dot[5] = 
-            {
-                (0.0),
-                (0.25),
-                (0.5),
-                (0.75),
-                (1.0)
-            };
-            ::set_tria <5> (domain.grid, dot, material_id);
-            domain.grid .refine_global (1);
-            {
-                std::ofstream out ("grid-igor.eps");
-                dealii::GridOut grid_out;
-                grid_out.write_eps (domain.grid, out);
-            };
-        };
-        dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
-        domain.dof_init (fe);
-
-        OnCell::SystemsLinearAlgebraicEquations<4> slae;
-        OnCell::BlackOnWhiteSubstituter bows;
-
-        LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
-        element_matrix.C .resize (2);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 2.0, puasson : 0.25}(element_matrix.C[1]);
-
-        u8 dim = 2;
-   // for (size_t i = 0; i < 9; ++i)
-   // {
-   //     uint8_t im = i / (dim + 1);
-   //     uint8_t in = i % (dim + 1);
-
-   //     for (size_t j = 0; j < 9; ++j)
-   //     {
-   //         uint8_t jm = j / (dim + 1);
-   //         uint8_t jn = j % (dim + 1);
-
-   //         if (element_matrix.C[0][im][in][jm][jn] > 0.0000001)
-   //             printf("\x1B[31m%f\x1B[0m   ", 
-   //                     element_matrix.C[0][im][in][jm][jn]);
-   //         else
-   //             printf("%f   ", 
-   //                     element_matrix.C[0][im][in][jm][jn]);
-   //     };
-   //     for (size_t i = 0; i < 2; ++i)
-   //         printf("\n");
-   // };
-   //         printf("\n");
-   // for (size_t i = 0; i < 9; ++i)
-   // {
-   //     uint8_t im = i / (dim + 1);
-   //     uint8_t in = i % (dim + 1);
-
-   //     for (size_t j = 0; j < 9; ++j)
-   //     {
-   //         uint8_t jm = j / (dim + 1);
-   //         uint8_t jn = j % (dim + 1);
-
-   //         if (element_matrix.C[1][im][in][jm][jn] > 0.0000001)
-   //             printf("\x1B[31m%f\x1B[0m   ", 
-   //                     element_matrix.C[1][im][in][jm][jn]);
-   //         else
-   //             printf("%f   ", 
-   //                     element_matrix.C[1][im][in][jm][jn]);
-   //     };
-   //     for (size_t i = 0; i < 2; ++i)
-   //         printf("\n");
-   // };
-
-        const bool vector_type = 1;
-        OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
-
-        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
         FILE* F;
-        F = fopen("A.gpd", "w");
-        for (size_t i = 0; i < slae.matrix.m(); ++i)
-            for (size_t j = 0; j < slae.matrix.n(); ++j)
-                if (std::abs(slae.matrix .el (i, j)) > 1e-6)
-                    fprintf(F, "%ld %ld %f\n", i, j, slae.matrix .el (i, j));
-                else
-                    fprintf(F, "%ld %ld 0.0\n", i, j);
-
-        fclose(F);
-        
-        arr<u8, 4> theta  = {x, y, z, x};
-        arr<u8, 4> lambda = {x, y, z, y};
-
-    // for (auto theta : {x, y, z})
-    //     for (auto lambda : {x, y, z})
-// #pragma omp parallel for
-        for (st n = 0; n < 4; ++n)
+        F = fopen("hex.gpd", "a");
+        // F = fopen("ter.gpd", "a");
+        dbl size = 0.01;
+        while (size < 0.999)
         {
-            vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+            Domain<2> domain;
+            {
+                const size_t material_id[4][4] =
+                {
+                    {0, 0, 0, 0},
+                    {0, 1, 1, 0},
+                    {0, 1, 1, 0},
+                    {0, 0, 0, 0}
+                };
+                const double dot[5] = 
+                {
+                    (0.0),
+                    (0.5 - size / 2.0),
+                    (0.5),
+                    (0.5 + size / 2.0),
+                    (1.0)
+                };
+                // ::set_tria <5> (domain.grid, dot, material_id);
+                ::set_hexagon_grid_pure (domain.grid, 1.0, size);
+                domain.grid .refine_global (3);
+                {
+                    std::ofstream out ("grid-igor.eps");
+                    dealii::GridOut grid_out;
+                    grid_out.write_eps (domain.grid, out);
+                };
+            };
+            dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+            domain.dof_init (fe);
 
-            for (auto i : {x, y})
-                for (auto j : {x, y})
-                    for(st k = 0; k < element_matrix.C.size(); ++k)
-                    {
-                        coef_for_rhs[k][i][j] = 
-                            element_matrix.C[k][i][j][theta[n]][lambda[n]];
-                    };
+            OnCell::SystemsLinearAlgebraicEquations<4> slae;
+            OnCell::BlackOnWhiteSubstituter bows;
 
-            slae.solution[n] = 0;
-            slae.rhsv[n] = 0;
+            LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+            element_matrix.C .resize (2);
+            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.34}(element_matrix.C[0]);
+            EPTools ::set_isotropic_elascity{yung : 5.0, puasson : 0.3}(element_matrix.C[1]);
 
-            OnCell::SourceVector<2> element_rhsv (
-                    coef_for_rhs, domain.dof_handler.get_fe());
-            OnCell::Assembler::assemble_rhsv<2> (
-                    slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+            u8 dim = 2;
 
-            dealii::SolverControl solver_control (10000, 1e-12);
-            dealii::SolverCG<> solver (solver_control);
-            solver.solve (
-                    slae.matrix,
-                    slae.solution[n],
-                    slae.rhsv[n]
-                    ,dealii::PreconditionIdentity()
+            const bool vector_type = 1;
+            OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+
+            OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+            arr<u8, 4> theta  = {x, y, z, x};
+            arr<u8, 4> lambda = {x, y, z, y};
+
+#pragma omp parallel for
+            for (st n = 0; n < 4; ++n)
+            {
+                vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+
+                for (auto i : {x, y})
+                    for (auto j : {x, y})
+                        for(st k = 0; k < element_matrix.C.size(); ++k)
+                        {
+                            coef_for_rhs[k][i][j] = 
+                                element_matrix.C[k][i][j][theta[n]][lambda[n]];
+                        };
+
+                slae.solution[n] = 0;
+                slae.rhsv[n] = 0;
+
+                OnCell::SourceVector<2> element_rhsv (
+                        coef_for_rhs, domain.dof_handler.get_fe());
+                OnCell::Assembler::assemble_rhsv<2> (
+                        slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+
+                dealii::SolverControl solver_control (10000, 1e-12);
+                dealii::SolverCG<> solver (solver_control);
+                solver.solve (
+                        slae.matrix,
+                        slae.solution[n],
+                        slae.rhsv[n]
+                        ,dealii::PreconditionIdentity()
+                        );
+                FOR(i, 0, slae.solution[n].size())
+                    slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+            };
+
+            OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+            vec<ATools::SecondOrderTensor> coef_for_potr(2);
+            for (st i = 0; i < 2; ++i)
+            {
+                coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+                coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+                coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+                coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+            };
+            solved_heat_problem_on_cell<2> (
+                    domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+
+            arr<str, 4> vr = {"move_xx", "move_yy", "move_zz", "move_xy"};
+            for (st i = 0; i < 4; ++i)
+            {
+                EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+            };
+
+            auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
+                    domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+
+            for (size_t i = 0; i < 9; ++i)
+            {
+                uint8_t im = i / (dim + 1);
+                uint8_t in = i % (dim + 1);
+
+                for (size_t j = 0; j < 9; ++j)
+                {
+                    uint8_t jm = j / (dim + 1);
+                    uint8_t jn = j % (dim + 1);
+
+                    if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                        printf("\x1B[31m%f\x1B[0m   ", 
+                                meta_coef[im][in][jm][jn]);
+                    else
+                        printf("%f   ", 
+                                meta_coef[im][in][jm][jn]);
+                };
+                for (size_t i = 0; i < 2; ++i)
+                    printf("\n");
+            };
+            // print_tensor<6*6>(meta_coef);
+            auto newcoef = unphysical_to_physicaly (meta_coef);
+            fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+                    newcoef[0][0][0][0],
+                    newcoef[0][0][1][1],
+                    newcoef[0][0][2][2],
+                    newcoef[1][1][0][0],
+                    newcoef[1][1][1][1],
+                    newcoef[1][1][2][2],
+                    newcoef[2][2][0][0],
+                    newcoef[2][2][1][1],
+                    newcoef[2][2][2][2],
+                    meta_coef[0][1][0][1],
+                    meta_coef[0][2][0][2]
                     );
-            FOR(i, 0, slae.solution[n].size())
-                slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+            size += 0.01;
         };
-        // {
-        //     FILE* F;
-        //     F = fopen("S.gpd", "a");
-        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
-        //         fprintf(F, "%ld %f\n", i, slae.rhsv[3](i));
-        //     fclose(F);
-        // };
-        // {
-        //     FILE* F;
-        //     F = fopen("S.gpd", "a");
-        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
-        //         fprintf(F, "%ld %f\n", i, slae.rhsv[1](i));
-        //     fclose(F);
-        // };
-        // {
-        //     FILE* F;
-        //     F = fopen("S.gpd", "a");
-        //     for (size_t i = 0; i < slae.rhsv[0].size(); ++i)
-        //         fprintf(F, "%ld %f\n", i, slae.rhsv[2](i));
-        //     fclose(F);
-        // };
-
-        OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
-        vec<ATools::SecondOrderTensor> coef_for_potr(2);
-        for (st i = 0; i < 2; ++i)
-        {
-            coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
-            coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
-            coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
-            coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
-        };
-        solved_heat_problem_on_cell<2> (
-                domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
-        {
-            FILE* F;
-            F = fopen("Sol.gpd", "w");
-            for (size_t i = 0; i < problem_of_torsion_rod_slae.solution[0].size(); ++i)
-                fprintf(F, "%ld %.5f\n", i, problem_of_torsion_rod_slae.solution[1](i));
-            fclose(F);
-        };
-
-        arr<str, 4> vr = {"move_xx", "move_yy", "move_zz", "move_xy"};
-        for (st i = 0; i < 4; ++i)
-        {
-            EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
-        };
-
-        auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
-                domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
-
-   for (size_t i = 0; i < 9; ++i)
-   {
-       uint8_t im = i / (dim + 1);
-       uint8_t in = i % (dim + 1);
-
-       for (size_t j = 0; j < 9; ++j)
-       {
-           uint8_t jm = j / (dim + 1);
-           uint8_t jn = j % (dim + 1);
-
-           if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
-               printf("\x1B[31m%f\x1B[0m   ", 
-                       meta_coef[im][in][jm][jn]);
-           else
-               printf("%f   ", 
-                       meta_coef[im][in][jm][jn]);
-       };
-       for (size_t i = 0; i < 2; ++i)
-           printf("\n");
-   };
-        // print_tensor<6*6>(meta_coef);
+        fclose(F);
     };
 
     
