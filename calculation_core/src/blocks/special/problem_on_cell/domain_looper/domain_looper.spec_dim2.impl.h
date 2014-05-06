@@ -104,7 +104,7 @@ add_white (const typename
 
     if (not this_white_is_exists)
     {
-        for (uint8_t i = 0; i < type_space + 1; ++i) 
+        for (st i = 0; i < type_space + 1; ++i) 
         {
             list_white_dofs[side][i] .push_back (
                 cell ->vertex_dof_index (index_of_vertex, i));
@@ -134,7 +134,7 @@ add_black (const typename
 
     if (not this_black_is_exists)
     {
-        for (uint8_t i = 0; i < type_space + 1; ++i) 
+        for (st i = 0; i < type_space + 1; ++i) 
         {
 //            list_black_dofs[side][i][black_count[side]] =
 //                cell ->vertex_dof_index (index_of_vertex, i);
@@ -227,7 +227,7 @@ add_white_angle (const typename
         dealii::DoFHandler<dim>::active_cell_iterator &cell, 
         const uint8_t index_of_vertex)
 {
-    for (uint8_t i = 0; i < type_space + 1; ++i) 
+    for (st i = 0; i < type_space + 1; ++i) 
         white_angular_dof[i] = cell ->vertex_dof_index (index_of_vertex, i);
 };
 
@@ -249,7 +249,7 @@ add_black_angle (const typename
     };
 //    printf("//////////////////////////////////////olololo_1\n");
     if (not this_black_is_exists)
-        for (uint8_t i = 0; i < type_space + 1; ++i) 
+        for (st i = 0; i < type_space + 1; ++i) 
             list_black_angular_dofs[i][black_angular_count] =
                 cell-> vertex_dof_index (index_of_vertex, i);
 };
@@ -263,10 +263,10 @@ add_black_angle_neigbors (const typename
 //    printf("////////////////////////////olololo_2 %ld\n", black_angular_count);
     if (not this_black_is_exists)
     {
-        for (uint8_t i = 0; i < type_space + 1; ++i) 
-            for (uint8_t j = 0; j < dealii::GeometryInfo<dim>::vertices_per_cell; ++j)
+        for (st i = 0; i < type_space + 1; ++i) 
+            for (st j = 0; j < dealii::GeometryInfo<dim>::vertices_per_cell; ++j)
                 if (j != index_of_vertex)
-                    for (uint8_t k = 0; k < type_space + 1; ++k) 
+                    for (st k = 0; k < type_space + 1; ++k) 
                         list_black_angular_neighbors[i][black_angular_count] .push_back (
                                 cell -> vertex_dof_index (j, k));
 
@@ -319,8 +319,8 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
 //////////////
     count_ratios = 0;
 
-    for (uint8_t i = 0; i < type_space + 1; ++i)
-        for (uint8_t j = 0; j < num_angles - 1; ++j)
+    for (st i = 0; i < type_space + 1; ++i)
+        for (st j = 0; j < num_angles - 1; ++j)
         {
             // bows.white[count_ratios] = white_angular_dof[i];
             // bows.black[count_ratios] = list_black_angular_dofs[i][j];
@@ -331,7 +331,7 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
             ++count_ratios;
         };
 
-    for (uint8_t i = 0; i < dim; ++i)
+    for (st i = 0; i < dim; ++i)
         for (size_t j = 0; j < list_white_coor[i].size(); ++j)
         {
             size_t n = 0;
@@ -340,7 +340,7 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
                         MIN_DISTANCE)
                     n = k;
 
-            for (uint8_t k = 0; k < type_space + 1; ++k)
+            for (st k = 0; k < type_space + 1; ++k)
             {
                 // bows.white[count_ratios] = list_white_dofs[i][k][j];
                 // bows.black[count_ratios] = list_black_dofs[i][k][n];
@@ -363,16 +363,16 @@ void DomainLooper<2, type_space>::
 add_nodes_in_csp (const OnCell::BlackOnWhiteSubstituter &bows, 
         dealii::CompressedSparsityPattern &csp)
 {
-    for (uint8_t i = 0; i < type_space + 1; ++i)
-        for (uint8_t j = 0; j < (num_angles - 1); ++j) 
-            for (uint8_t k = 0; k < list_black_angular_neighbors[i][j].size(); ++k)
+    for (st i = 0; i < type_space + 1; ++i)
+        for (st j = 0; j < (num_angles - 1); ++j) 
+            for (st k = 0; k < list_black_angular_neighbors[i][j].size(); ++k)
                 list_black_angular_neighbors[i][j][k] = 
                     bows .subst (list_black_angular_neighbors[i][j][k]);
 
-    for (uint8_t i = 0; i < dim; ++i)
-        for (uint8_t j = 0; j < type_space + 1; ++j)
-            for (uint8_t k = 0; k < list_black_dofs[i][j].size() ; ++k)
-                for (uint8_t l = 0; l < list_blacks_neighbors[i][j][k].size(); ++l)
+    for (st i = 0; i < dim; ++i)
+        for (st j = 0; j < type_space + 1; ++j)
+            for (st k = 0; k < list_black_dofs[i][j].size() ; ++k)
+                for (st l = 0; l < list_blacks_neighbors[i][j][k].size(); ++l)
                     list_blacks_neighbors[i][j][k][l] = 
                         bows .subst (list_blacks_neighbors[i][j][k][l]);
 
@@ -440,10 +440,10 @@ add_nodes_in_csp (const OnCell::BlackOnWhiteSubstituter &bows,
 
 //////////////////
     size_t n = 0;
-    for (uint8_t i = 0; i < type_space + 1; ++i)
-        for (uint8_t j = 0; j < num_angles - 1; ++j)
+    for (st i = 0; i < type_space + 1; ++i)
+        for (st j = 0; j < num_angles - 1; ++j)
         {
-            for (uint8_t k = 0; k < list_black_angular_neighbors[i][j].size();
+            for (st k = 0; k < list_black_angular_neighbors[i][j].size();
                     ++k)
             {
 //                printf("w=%ld n=%ld\n", bows.white[n],list_black_angular_neighbors[i][j][k]);
@@ -458,13 +458,13 @@ add_nodes_in_csp (const OnCell::BlackOnWhiteSubstituter &bows,
         };
 //    printf("N=%ld\n", n);
 
-    for (uint8_t i = 0; i < dim; ++i)
-        for (uint8_t j = 0; j < type_space + 1; ++j)
-            for (size_t k = 0; k < count_ratios; ++k)
-                for (size_t l = 0; l < list_black_dofs[i][j].size(); ++l)
+    for (st i = 0; i < dim; ++i)
+        for (st j = 0; j < type_space + 1; ++j)
+            for (st k = 0; k < count_ratios; ++k)
+                for (st l = 0; l < list_black_dofs[i][j].size(); ++l)
                     if (bows.black[k] == list_black_dofs[i][j][l])
                     {
-                        for (uint8_t m = 0; m < 
+                        for (st m = 0; m < 
                                 list_blacks_neighbors[i][j][l].size() ; ++m)
                         {
 //                            printf("w=%ld n=%ld\n", 
@@ -525,7 +525,7 @@ void DomainLooper<2, type_space>::loop_domain (
             //             i < dealii::GeometryInfo<dim>::vertices_per_cell; ++i)
             //         printf("%d ", cell ->vertex_dof_index (i,0));
             // printf("\n");
-                for (uint8_t i = 0; 
+                for (st i = 0; 
                         i < dealii::GeometryInfo<dim>::vertices_per_cell; ++i)
                 {
 //                    printf("////////////////////////\n");
@@ -617,8 +617,8 @@ void DomainLooper<2, type_space>::loop_domain (
     fclose (F);
 
         size_t num_ratios = 0;
-        for (uint8_t i = 0; i < dim; ++i)
-            for (uint8_t j = 0; j < type_space + 1; ++j)
+        for (st i = 0; i < dim; ++i)
+            for (st j = 0; j < type_space + 1; ++j)
                 num_ratios += list_white_dofs[i][j].size();
         if (type_space)
             num_ratios += (num_angles - 1) * dim;

@@ -29,6 +29,7 @@
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/source/vector/source_vector.h"
 
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/grid/grid_out.h>
@@ -834,6 +835,42 @@ ATools::FourthOrderTensor unphysical_to_physicaly (
 
 };
 
+void set_circ(dealii::Triangulation< 2 > &triangulation, 
+        const double radius, const size_t n_refine)
+{
+    dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
+   puts("1111111111111111111111111111111111111111111");
+    triangulation .refine_global (n_refine);
+    {
+        dealii::Point<2> center (0.5, 0.5);
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = triangulation .begin_active(),
+                 end_cell = triangulation .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+           printf("%f %f\n", midle_p(0), midle_p(1));
+
+            if (center.distance(midle_p) < radius)
+            {
+                cell->set_material_id(1);
+//                puts("adf");
+            }
+            else
+                cell->set_material_id(0);
+        };
+    };
+};
+
 int main()
 {
     enum {x, y, z};
@@ -936,141 +973,154 @@ int main()
 
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL
-    if (false)
+    if (true)
     {
-        Domain<2> domain;
+        FILE *F;
+        F = fopen("square.gpd", "a");
+        dbl size = 0.05;
+        while (size*size < 0.6)
         {
-            // vec<prmt::Point<2>> outer(4);
-            // vec<prmt::Point<2>> inner(4);
-
-            // outer[0].x() = 0.0; outer[0].y() = 0.0;
-            // outer[1].x() = 1.0; outer[1].y() = 0.0;
-            // outer[2].x() = 1.0; outer[2].y() = 1.0;
-            // outer[3].x() = 0.0; outer[3].y() = 1.0;
-
-            // inner[0].x() = 0.25; inner[0].y() = 0.25;
-            // inner[1].x() = 0.75; inner[1].y() = 0.25;
-            // inner[2].x() = 0.75; inner[2].y() = 0.75;
-            // inner[3].x() = 0.25; inner[3].y() = 0.75;
-
-            // // inner[0].x() = 0.0; inner[0].y() = 0.0;
-            // // inner[1].x() = 0.5; inner[1].y() = 0.0;
-            // // inner[2].x() = 0.5; inner[2].y() = 1.0;
-            // // inner[3].x() = 0.0; inner[3].y() = 1.0;
-
-            // set_grid (domain.grid, outer, inner);
-
-            const size_t material_id[4][4] =
+            printf("%f %f\n", size, size*size);
+            Domain<2> domain;
             {
-                {0, 0, 0, 0},
-                {0, 1, 1, 0},
-                {0, 1, 1, 0},
-                {0, 0, 0, 0}
-            };
-            const double dot[5] = 
-            {
-                (0.0),
-                (0.25),
-                (0.5),
-                (0.75),
-                (1.0)
-            };
-            ::set_tria <5> (domain.grid, dot, material_id);
-            // domain.grid .refine_global (1);
-            {
-                std::ofstream out ("grid-igor.eps");
-                dealii::GridOut grid_out;
-                grid_out.write_eps (domain.grid, out);
-            };
-        };
-        dealii::FE_Q<2> fe(1);
-        domain.dof_init (fe);
+                // vec<prmt::Point<2>> outer(4);
+                // vec<prmt::Point<2>> inner(4);
 
-        OnCell::SystemsLinearAlgebraicEquations<2> slae;
-        OnCell::BlackOnWhiteSubstituter bows;
-        // BlackOnWhiteSubstituter bows;
+                // outer[0].x() = 0.0; outer[0].y() = 0.0;
+                // outer[1].x() = 1.0; outer[1].y() = 0.0;
+                // outer[2].x() = 1.0; outer[2].y() = 1.0;
+                // outer[3].x() = 0.0; outer[3].y() = 1.0;
 
-        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
-        // {
+                // inner[0].x() = 0.25; inner[0].y() = 0.25;
+                // inner[1].x() = 0.75; inner[1].y() = 0.25;
+                // inner[2].x() = 0.75; inner[2].y() = 0.75;
+                // inner[3].x() = 0.25; inner[3].y() = 0.75;
+
+                // // inner[0].x() = 0.0; inner[0].y() = 0.0;
+                // // inner[1].x() = 0.5; inner[1].y() = 0.0;
+                // // inner[2].x() = 0.5; inner[2].y() = 1.0;
+                // // inner[3].x() = 0.0; inner[3].y() = 1.0;
+
+                // set_grid (domain.grid, outer, inner);
+
+                const size_t material_id[4][4] =
+                {
+                    {0, 0, 0, 0},
+                    {0, 1, 1, 0},
+                    {0, 1, 1, 0},
+                    {0, 0, 0, 0}
+                };
+                const double dot[5] = 
+                {
+                    (0.0),
+                    (0.5 - size / 2.0),
+                    (0.5),
+                    (0.5 + size / 2.0),
+                    (1.0)
+                };
+                ::set_tria <5> (domain.grid, dot, material_id);
+                // set_circ(domain.grid, 0.25, 6);
+                domain.grid .refine_global (3);
+                {
+                    std::ofstream out ("grid-igor.eps");
+                    dealii::GridOut grid_out;
+                    grid_out.write_eps (domain.grid, out);
+                };
+            };
+            dealii::FE_Q<2> fe(1);
+            domain.dof_init (fe);
+
+            OnCell::SystemsLinearAlgebraicEquations<2> slae;
+            OnCell::BlackOnWhiteSubstituter bows;
+            // BlackOnWhiteSubstituter bows;
+
+            LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+            // {
             element_matrix.C .resize(2);
-            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][x] = 10.0;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
-            element_matrix.C[0][y][y] = 1.0;
-            element_matrix.C[1][x][x] = 2.0;
+            element_matrix.C[0][y][y] = 10.0;
+            element_matrix.C[1][x][x] = 1.0;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
-            element_matrix.C[1][y][y] = 2.0;
+            element_matrix.C[1][y][y] = 1.0;
             // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
-        // };
-        const bool scalar_type = 0;
-        OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
+            // };
+            const bool scalar_type = 0;
+            OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
 
-        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
-        FILE *F;
-        F = fopen("matrix.gpd", "w");
-        for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
-            for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
-                if (slae.matrix.el(i,j))
-                {
-                    fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
-                };
-        fclose(F);
-
-        FOR(i, 0, 2)
-        {
-            vec<arr<dbl, 2>> coef_for_rhs(2);
-            FOR(j, 0, element_matrix.C.size())
-            {
-                FOR(k, 0, 2)
-                {
-                    coef_for_rhs[j][k] = element_matrix.C[j][i][k];
-                };
-            };
-            OnCell::SourceScalar<2> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
-            // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
-            OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
-            // for (auto a : slae.rhsv[i])
-            //     printf("%f\n", a);
-            {
-                dealii::DataOut<2> data_out;
-                data_out.attach_dof_handler (domain.dof_handler);
-                data_out.add_data_vector (slae.rhsv[0], "xb");
-                data_out.add_data_vector (slae.rhsv[1], "yb");
-                data_out.build_patches ();
-
-                auto name = "b.gpd";
-
-                std::ofstream output (name);
-                data_out.write_gnuplot (output);
-            };
-
-            dealii::SolverControl solver_control (10000, 1e-12);
-            dealii::SolverCG<> solver (solver_control);
-            solver.solve (
-                    slae.matrix,
-                    slae.solution[i],
-                    slae.rhsv[i]
-                    ,dealii::PreconditionIdentity()
-                    );
-            FOR(j, 0, slae.solution[i].size())
-                slae.solution[i][j] = slae.solution[i][bows.subst (j)];
-        };
-        {
-            FILE* F;
-            F = fopen("Sol.gpd", "w");
-            for (size_t i = 0; i < slae.solution[0].size(); ++i)
-                fprintf(F, "%ld %.10f\n", i, slae.solution[0](i));
+            OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+            FILE *F;
+            F = fopen("matrix.gpd", "w");
+            for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+                for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+                    if (slae.matrix.el(i,j))
+                    {
+                        fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+                    };
             fclose(F);
+
+            FOR(i, 0, 2)
+            {
+                vec<arr<dbl, 2>> coef_for_rhs(2);
+                FOR(j, 0, element_matrix.C.size())
+                {
+                    FOR(k, 0, 2)
+                    {
+                        coef_for_rhs[j][k] = element_matrix.C[j][i][k];
+                    };
+                };
+                OnCell::SourceScalar<2> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
+                // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
+                OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
+                // for (auto a : slae.rhsv[i])
+                //     printf("%f\n", a);
+                {
+                    dealii::DataOut<2> data_out;
+                    data_out.attach_dof_handler (domain.dof_handler);
+                    data_out.add_data_vector (slae.rhsv[0], "xb");
+                    data_out.add_data_vector (slae.rhsv[1], "yb");
+                    data_out.build_patches ();
+
+                    auto name = "b.gpd";
+
+                    std::ofstream output (name);
+                    data_out.write_gnuplot (output);
+                };
+
+                dealii::SolverControl solver_control (10000, 1e-12);
+                dealii::SolverCG<> solver (solver_control);
+                solver.solve (
+                        slae.matrix,
+                        slae.solution[i],
+                        slae.rhsv[i]
+                        ,dealii::PreconditionIdentity()
+                        );
+                FOR(j, 0, slae.solution[i].size())
+                    slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+            };
+            // {
+            //     FILE* F;
+            //     F = fopen("Sol.gpd", "w");
+            //     for (size_t i = 0; i < slae.solution[0].size(); ++i)
+            //         fprintf(F, "%ld %.10f\n", i, slae.solution[0](i));
+            //     fclose(F);
+            // };
+
+            // arr<str, 2> vr = {"temperature_x", "temperature_y"};
+            // FOR(i, 0, 2)
+            //     HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
+
+            auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
+                    domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
+            printf("%.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+            fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
+            puts("111111111");
+            size+=0.05;
+            puts("2222222");
         };
-
-        arr<str, 2> vr = {"temperature_x", "temperature_y"};
-        FOR(i, 0, 2)
-            HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
-
-        auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
-                domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
-        printf("%f %f %f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+            fclose(F);
     };
 
     //ELASSTIC_PROBLEM
@@ -1188,7 +1238,7 @@ int main()
     };
 
     // ELASSTIC_PROBLEM_ON_CELL
-    if (true)
+    if (false)
     {
         FILE* F;
         F = fopen("hex.gpd", "a");
@@ -1336,6 +1386,97 @@ int main()
         };
         fclose(F);
     };
+    
+    // {
+    //     vec<ATools::FourthOrderTensor> C(2);
+    //     EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.34}(C[0]);
+    //     EPTools ::set_isotropic_elascity{yung : 5.0, puasson : 0.30}(C[1]);
+    //     
+    //     auto arith = [C] (cdbl area) {
+    //         ATools::FourthOrderTensor res;
+    //         for (st i = 0; i < 3; ++i)
+    //         {
+    //             for (st j = 0; j < 3; ++j)
+    //             {
+    //                 for (st k = 0; k < 3; ++k)
+    //                 {
+    //                     for (st l = 0; l < 3; ++l)
+    //                     {
+    //                         res[i][j][k][l] = 
+    //                             C[0][i][j][k][l] * (1.0 - area) + 
+    //                             C[1][i][j][k][l] * area;
+    //                     };
+    //                 };
+    //             };
+    //         };
+    //         return res;
+    //     };
+
+    //     auto harm = [C] (cdbl area) {
+    //         ATools::FourthOrderTensor res;
+    //         for (st i = 0; i < 3; ++i)
+    //         {
+    //             for (st j = 0; j < 3; ++j)
+    //             {
+    //                 for (st k = 0; k < 3; ++k)
+    //                 {
+    //                     for (st l = 0; l < 3; ++l)
+    //                     {
+    //                         res[i][j][k][l] = 1.0 /
+    //                             (C[0][i][j][k][l] * area + 
+    //                              C[1][i][j][k][l] * (1.0 - area));
+    //                     };
+    //                 };
+    //             };
+    //         };
+    //         return res;
+    //     };
+
+    //     FILE *F1;
+    //     FILE *F2;
+    //     F1 = fopen("arith.gpd", "a");
+    //     F2 = fopen("harm.gpd", "a");
+    //     dbl size = 0.01;
+    //     while (size < 0.999)
+    //     {
+    //         auto mean1 = arith(size*size);
+    //         auto mean2 = harm(size*size);
+    //         auto newcoef1 = unphysical_to_physicaly (mean1);
+    //         auto newcoef2 = unphysical_to_physicaly (mean2);
+
+    //         fprintf(F1, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+    //                 newcoef1[0][0][0][0],
+    //                 newcoef1[0][0][1][1],
+    //                 newcoef1[0][0][2][2],
+    //                 newcoef1[1][1][0][0],
+    //                 newcoef1[1][1][1][1],
+    //                 newcoef1[1][1][2][2],
+    //                 newcoef1[2][2][0][0],
+    //                 newcoef1[2][2][1][1],
+    //                 newcoef1[2][2][2][2],
+    //                 mean1[0][1][0][1],
+    //                 mean1[0][2][0][2],
+    //                 );
+
+    //         fprintf(F2, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+    //                 newcoef2[0][0][0][0],
+    //                 newcoef2[0][0][1][1],
+    //                 newcoef2[0][0][2][2],
+    //                 newcoef2[1][1][0][0],
+    //                 newcoef2[1][1][1][1],
+    //                 newcoef2[1][1][2][2],
+    //                 newcoef2[2][2][0][0],
+    //                 newcoef2[2][2][1][1],
+    //                 newcoef2[2][2][2][2],
+    //                 mean2[0][1][0][1],
+    //                 mean2[0][2][0][2]
+    //                 );
+
+    //         size += 0.01;
+    //     };
+    //     fclose(F1);
+    //     fclose(F2);
+    // };
 
     
     

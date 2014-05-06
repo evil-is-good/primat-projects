@@ -2,7 +2,7 @@
 
 #define BLACK_ON_WHITE_SUBSTITUTER_DESC_2
 
-#include <projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include "../../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 
 namespace OnCell
 {
