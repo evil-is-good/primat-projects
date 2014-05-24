@@ -47,7 +47,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include </usr/local/include/boost/lexical_cast.hpp>
+#include <boost/lexical_cast.hpp>
 
 
 template <uint8_t dim>

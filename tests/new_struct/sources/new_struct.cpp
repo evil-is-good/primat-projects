@@ -319,15 +319,15 @@ void solved_heat_problem_on_cell (
     OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
 
     OnCell::Assembler::assemble_matrix<dim> (slae.matrix, element_matrix, domain.dof_handler, bows);
-    FILE *F;
-    F = fopen("matrix.gpd", "w");
-    for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
-        for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
-            if (slae.matrix.el(i,j))
-            {
-                fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
-            };
-    fclose(F);
+    // FILE *F;
+    // F = fopen("matrix.gpd", "w");
+    // for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+    //     for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+    //         if (slae.matrix.el(i,j))
+    //         {
+    //             fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+    //         };
+    // fclose(F);
 
     FOR(i, 0, dim)
     {
@@ -871,6 +871,436 @@ void set_circ(dealii::Triangulation< 2 > &triangulation,
     };
 };
 
+void set_circ_in_hex(dealii::Triangulation< 2 > &triangulation, 
+        const double radius, const size_t n_refine)
+{
+    cdbl hight = sqrt(3.0);
+    dealii::Point<2> p1(0.0, 0.0);
+    dealii::Point<2> p2(1.0, hight);
+    dealii::GridGenerator ::hyper_rectangle (triangulation, p1, p2);
+    triangulation .refine_global (n_refine);
+    {
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = triangulation .begin_active(),
+                 end_cell = triangulation .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+            cell->set_material_id(0);
+            {
+                dealii::Point<2> center (0.5, 0.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (0.0, hight / 2.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (1.0, hight / 2.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (0.5, hight);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            // {
+            //     dealii::Point<2> center (1.5, 0.0);
+            //     if (center.distance(midle_p) < radius)
+            //         cell->set_material_id(1);
+            // };
+            // {
+            //     dealii::Point<2> center (1.5, hight);
+            //     if (center.distance(midle_p) < radius)
+            //         cell->set_material_id(1);
+            // };
+        };
+    };
+};
+
+// template<uint8_t dim>
+// void print_stress(const dealii::DoFHandler<dim> &dof_handler,
+//         const OnCell::SystemsLinearAlgebraicEquations<4> &slae,
+//      const vec<ATools::FourthOrderTensor> &E,
+//      cdbl meta_E, 
+//      cdbl meta_nu_yx,
+//      cdbl meta_nu_zx)
+// {
+//     const int8_t x = 0;
+//     const int8_t y = 1;
+//     const int8_t z = 2;
+// 
+//     std::vector<std::array<dealii::Point<2>, 3> > 
+//         grad_elastic_field(dof_handler.n_dofs());
+// 
+//     {
+//         typename dealii::DoFHandler<2>::active_cell_iterator cell =
+//             dof_handler.begin_active();
+// 
+//         typename dealii::DoFHandler<2>::active_cell_iterator endc =
+//             dof_handler.end();
+// 
+//         std::vector<std::array<uint8_t, 3> > 
+//             divider(dof_handler.n_dofs());
+// 
+//         for (; cell != endc; ++cell)
+//         {
+//             size_t mat_id = cell->material_id();
+// 
+//             FOR_I(0, 4)
+//                 FOR_M(0, 3)
+//                 {
+//                     std::array<dealii::Point<2>, 2> deform =
+//                         ::get_grad_elastic<dim> (cell, 
+//                                 solution[m], i);  
+// 
+//                     double sigma_xx = 
+//                         E[x][x][x][x][mat_id] * deform[x](x) +
+//                         E[x][x][x][y][mat_id] * deform[x](y) +
+//                         E[x][x][y][x][mat_id] * deform[y](x) +
+//                         E[x][x][y][y][mat_id] * deform[y](y) +
+//                         E[x][x][m][m][mat_id];
+// 
+//                     double sigma_xy = 
+//                         E[x][y][x][x][mat_id] * deform[x](x) +
+//                         E[x][y][x][y][mat_id] * deform[x](y) +
+//                         E[x][y][y][x][mat_id] * deform[y](x) +
+//                         E[x][y][y][y][mat_id] * deform[y](y) +
+//                         E[x][y][m][m][mat_id];
+// 
+//                     double sigma_yx = 
+//                         E[y][x][x][x][mat_id] * deform[x](x) +
+//                         E[y][x][x][y][mat_id] * deform[x](y) +
+//                         E[y][x][y][x][mat_id] * deform[y](x) +
+//                         E[y][x][y][y][mat_id] * deform[y](y) +
+//                         E[y][x][m][m][mat_id];
+// 
+//                     double sigma_yy = 
+//                         E[y][y][x][x][mat_id] * deform[x](x) +
+//                         E[y][y][x][y][mat_id] * deform[x](y) +
+//                         E[y][y][y][x][mat_id] * deform[y](x) +
+//                         E[y][y][y][y][mat_id] * deform[y](y) +
+//                         E[y][y][m][m][mat_id];
+// 
+//                     grad_elastic_field[cell->vertex_dof_index(i,0)][m] += 
+//                         dealii::Point<2>(sigma_xx, sigma_xy);
+// //                    dealii::Point<2>(
+// //                            cell->vertex_dof_index(i,0),
+// //                            cell->vertex_dof_index(i,0));
+// //                        dealii::Point<2>(
+// //                                temp[0](0) * 
+// //                                (cell->material_id() ? 2.0 : 1.0),
+// //                                (temp[0](1) + temp[1](0)) *
+// //                                (cell->material_id() ? 2.0 : 1.0) / 
+// //                                (2.0 * (1.0 + 0.2)));
+// 
+//                     grad_elastic_field[cell->vertex_dof_index(i,1)][m] += 
+//                         dealii::Point<2>(sigma_yx, sigma_yy);
+//                     // dealii::Point<2>(
+//                     //         cell->vertex_dof_index(i,1),
+//                     //         cell->vertex_dof_index(i,1));
+// //                        dealii::Point<2>(
+// //                                (temp[0](1) + temp[1](0)) *
+// //                                (cell->material_id() ? 2.0 : 1.0) / 
+// //                                (2.0 * (1.0 + 0.2)),
+// //                                temp[1](0) * 
+// //                                (cell->material_id() ? 2.0 : 1.0));
+// 
+//                     divider[cell->vertex_dof_index(i,0)][m] += 1;
+//                     divider[cell->vertex_dof_index(i,1)][m] += 1;
+//                 };
+//         };
+// 
+//         FOR_I(0, divider.size())
+//             FOR_M(0, 3)
+//             grad_elastic_field[i][m] ;///= divider[i][m];
+//         FOR_I(0, divider.size())
+//             printf("%d %f\n", grad_elastic_field[i][0](0));
+//     };
+// 
+//     {
+//         char suffix[3] = {'x', 'y', 'z'};
+// 
+//         dealii::Vector<double> solution(problem.system_equations.x.size());
+//         dealii::Vector<double> sigma[2];
+//         sigma[0].reinit(problem.system_equations.x.size());
+//         sigma[1].reinit(problem.system_equations.x.size());
+// 
+//         double nu[3] = {- 1.0 / meta_E, + meta_nu_yx / meta_E, + meta_nu_zx / meta_E}; 
+// 
+//         FOR_I(0, 2)
+//         {
+//             FOR_J(0, problem.system_equations.x.size())
+//                 sigma[i](j) = 0.0;
+//             double integ = 0.0;
+// 
+//             FOR_M(0, 3)
+//             {
+// 
+//                 FOR_J(0, problem.system_equations.x.size())
+//                 {
+//                     solution(j) = grad_elastic_field[j][m](i);
+//                     sigma[i](j) += nu[m] * solution(j);
+//                     integ += nu[m] * solution(j);
+//                 };
+// 
+//                 //            integ /= grad_heat_field.size();
+// 
+//                 dealii::DataOut<dim> data_out;
+//                 data_out.attach_dof_handler (
+//                         problem.domain.dof_handler);
+//                 printf("%d\n", solution.size());
+// 
+//                 data_out.add_data_vector (solution, "x y");
+//                 data_out.build_patches ();
+// 
+//                 std::string file_name = "grad_";
+//                 file_name += suffix[i];
+//                 file_name += "_";
+//                 file_name += suffix[m];
+//                 file_name += suffix[m];
+//                 file_name += ".gpd";
+// 
+//                 std::ofstream output (file_name.data());
+//                 data_out.write_gnuplot (output);
+//             };
+//             printf("INTEGRAL = %f\n", integ / problem.system_equations.x.size());
+// 
+//             dealii::DataOut<dim> data_out;
+//             data_out.attach_dof_handler (
+//                     problem.domain.dof_handler);
+// 
+//             data_out.add_data_vector (sigma[i], "x y");
+//             data_out.build_patches ();
+// 
+//             std::string file_name = "sigma_";
+//             file_name += suffix[i];
+//             file_name += ".gpd";
+// 
+//             std::ofstream output (file_name.data());
+//             data_out.write_gnuplot (output);
+//         };
+//     
+//         {
+//             dealii::Vector<double> main_stress(problem.system_equations.x.size());
+//             dealii::Vector<double> angle(problem.system_equations.x.size());
+// //            cos[1].reinit(problem.system_equations.x.size());
+// 
+//             std::vector<uint8_t> divider(problem.system_equations.x.size());
+// 
+// //            double max_main_stress[2] = {0.0};
+// //            double min_main_stress[2] = {0.0};
+// 
+//             typename dealii::DoFHandler<2>::active_cell_iterator cell =
+//                 problem.domain.dof_handler.begin_active();
+// 
+//             typename dealii::DoFHandler<2>::active_cell_iterator endc =
+//                 problem.domain.dof_handler.end();
+// 
+//             for (; cell != endc; ++cell)
+//             {
+//                 FOR_I(0, 4)
+//                 {
+//                     double L1 = 
+//                         sigma[0](cell->vertex_dof_index(i,0)) +
+//                         sigma[1](cell->vertex_dof_index(i,1)); 
+//                     double L2 = 
+//                         sigma[0](cell->vertex_dof_index(i,0)) *
+//                         sigma[1](cell->vertex_dof_index(i,1)) -
+//                         sigma[0](cell->vertex_dof_index(i,1)) *
+//                         sigma[1](cell->vertex_dof_index(i,0));
+// 
+// //                    main_stress(cell->vertex_dof_index(i,0)) =
+//                         double str1 = 
+//                         (L1 - sqrt(L1*L1 - 4.0 * L2)) / 2.0;
+// //                        printf("s1=%f\n", str1);
+// 
+// //                    main_stress(cell->vertex_dof_index(i,1)) =
+//                         double str2 = 
+//                         (L1 + sqrt(L1*L1 - 4.0 * L2)) / 2.0;
+// //                        printf("s2=%f\n", str2);
+// //                        printf("%f %f %f\n", 
+// //                        sigma[0](cell->vertex_dof_index(i,0)),
+// //                        sigma[1](cell->vertex_dof_index(i,1)),
+// //                        sigma[0](cell->vertex_dof_index(i,1))
+// //                                );
+// 
+//                     double angl1 = atan(
+//                             2.0 * sigma[0](cell->vertex_dof_index(i,1)) / 
+//                             (sigma[0](cell->vertex_dof_index(i,0)) - 
+//                              sigma[1](cell->vertex_dof_index(i,1)))) / 2.0;
+//                     double angl2 = angl1 + 3.14159265359 / 2.0; 
+// 
+//                     if (str1 < str2)
+//                     {
+//                         double temp = str1;
+//                         str1 = str2;
+//                         str2 = temp;
+// 
+//                         temp = angl1;
+//                         angl1 = angl2;
+//                         angl2 = temp;
+//                     };
+// 
+//                     main_stress(cell->vertex_dof_index(i,0)) += str1;
+//                     main_stress(cell->vertex_dof_index(i,1)) += str2;
+// 
+//                     angle(cell->vertex_dof_index(i,0)) += angl1;
+//                     angle(cell->vertex_dof_index(i,1)) += angl2;
+// //                    cos[0](cell->vertex_dof_index(i,0)) +=
+// //                        sqrt(1.0 / (1.0 + 
+// //                                    pow(str1 - 
+// //                                        sigma[0](cell->vertex_dof_index(i,0)), 2.0) 
+// //                                    /
+// //                                    pow(sigma[1](cell->vertex_dof_index(i,0)), 2.0)));
+// //
+// //                    cos[0](cell->vertex_dof_index(i,1)) +=
+// //                        (str1 - 
+// //                         sigma[0](cell->vertex_dof_index(i,0)), 2.0) 
+// //                        /
+// //                        sigma[1](cell->vertex_dof_index(i,0)) 
+// //                        *
+// //                        cos[0](cell->vertex_dof_index(i,0));
+// //
+// //                    cos[1](cell->vertex_dof_index(i,0)) +=
+// //                        sqrt(1.0 / (1.0 + 
+// //                                    pow(str2 - 
+// //                                        sigma[0](cell->vertex_dof_index(i,0)), 2.0) 
+// //                                    /
+// //                                    pow(sigma[1](cell->vertex_dof_index(i,0)), 2.0)));
+// //
+// //                    cos[1](cell->vertex_dof_index(i,1)) +=
+// //                        (str2 - 
+// //                         sigma[0](cell->vertex_dof_index(i,0)), 2.0) 
+// //                        /
+// //                        sigma[1](cell->vertex_dof_index(i,0)) 
+// //                        *
+// //                        cos[1](cell->vertex_dof_index(i,0));
+// 
+//                     divider[cell->vertex_dof_index(i,0)] += 1;
+//                     divider[cell->vertex_dof_index(i,1)] += 1;
+// 
+// //                    if (str1 > max_main_stress[0])
+// //                        max_main_stress[0] = str1;
+// //                    if (str2 > max_main_stress[1])
+// //                        max_main_stress[1] = str2;
+// //                    if (str1 < min_main_stress[0])
+// //                        min_main_stress[0] = str1;
+// //                    if (str2 < max_main_stress[1])
+// //                        min_main_stress[1] = str2;
+//                 };
+//             };
+// 
+//             FOR_I(0, divider.size())
+//             {
+//                 main_stress(i) /= divider[i];
+//                 angle(i) /= divider[i];
+// //                cos[0](i) /= divider[i];
+// //                cos[1](i) /= divider[i];
+//             };
+// 
+//             {
+//                 dealii::DataOut<dim> data_out;
+//                 data_out.attach_dof_handler (
+//                         problem.domain.dof_handler);
+// 
+//                 data_out.add_data_vector (main_stress, "1 2");
+//                 data_out.build_patches ();
+// 
+//                 std::string file_name = "main_stress";
+// //                file_name += "_2_";
+//                 file_name += std::to_string(name_main_stress);
+//                 file_name += ".gpd";
+//                 printf("DDDDDDDDD %s\n", file_name.data());
+// 
+//                 std::ofstream output (file_name.data());
+// //            FOR_I(0, divider.size())
+// //            out << 
+//                 data_out.write_gnuplot (output);
+//             };
+// 
+// //            char suffix[2] = {'1', '2'};
+// //            FOR_I(0, 2)
+// //            {
+//                 dealii::DataOut<dim> data_out;
+//                 data_out.attach_dof_handler (
+//                         problem.domain.dof_handler);
+// 
+//                 data_out.add_data_vector (angle, "x y");
+//                 data_out.build_patches ();
+// 
+//                 std::string file_name = "angle";
+// //                file_name += suffix[i];
+//                 file_name += ".gpd";
+// 
+//                 std::ofstream output (file_name.data());
+//                 data_out.write_gnuplot (output);
+// //            };
+// //                {
+// //                    FILE *F;
+// //                    F = fopen("min_max", "w");
+// //                    fprintf(F, "%f %f\n", min_main_stress[0], max_main_stress[0]);
+// //                    fprintf(F, "%f %f\n", min_main_stress[1], max_main_stress[1]);
+// //                    fclose(F);
+// //                };
+// 
+//         };
+//     };
+// 
+//     {
+//         char suffix[3] = {'x', 'y', 'z'};
+// 
+//         dealii::Vector<double> solution(grad_heat_field.size());
+// 
+//         FOR_I(0, dim)
+//         {
+//             double integ = 0.0;
+// 
+//             FOR_J(0, grad_heat_field.size())
+//             {
+//                 solution(j) = grad_heat_field[j](i);
+//                 integ += solution(j);
+//             };
+// 
+// //            integ /= grad_heat_field.size();
+//             printf("INTEGRAL = %f\n", integ);
+// 
+//             dealii::DataOut<dim> data_out;
+//             data_out.attach_dof_handler (
+//                     problem.problem_of_torsion_rod.domain.dof_handler);
+//             printf("%d\n", solution.size());
+// 
+//             data_out.add_data_vector (
+//                     solution
+// //                    problem.problem_of_torsion_rod.heat_flow[i]
+//                     , "solution");
+//             data_out.build_patches ();
+// 
+//             std::string file_name = "grad_z";
+//             file_name += suffix[i];
+//             file_name += ".gpd";
+// 
+//             std::ofstream output (file_name.data());
+//             data_out.write_gnuplot (output);
+//         };
+//     };
+// 
+// };
+
+#define SUM(I, BEGIN, END, BODY) ({dbl tmp = 0.0; for (st I = BEGIN; I < END; ++I) {tmp += BODY;}; tmp;});
+
 int main()
 {
     enum {x, y, z};
@@ -889,7 +1319,7 @@ int main()
     //     inner[1].x() = 3.0; inner[1].y() = 2.74;
     //     inner[2].x() = 3.0000000000000003; inner[2].y() = 3.0;
     //     inner[3].x() = 2.77; inner[3].y() = 3.0;
-    //     set_grid (tria, outer, inner);
+    //     set_grid (tria, outer, inner)0;
     //     {
     //         std::ofstream out ("grid-igor.eps");
     //         dealii::GridOut grid_out;
@@ -976,11 +1406,11 @@ int main()
     if (true)
     {
         FILE *F;
-        F = fopen("square.gpd", "a");
+        F = fopen("square.gpd", "w");
         dbl size = 0.05;
-        while (size*size < 0.6)
+        // while (size*size < 0.6)
+        // for (st i = 0; i < 7; ++i)
         {
-            printf("%f %f\n", size, size*size);
             Domain<2> domain;
             {
                 // vec<prmt::Point<2>> outer(4);
@@ -1018,9 +1448,11 @@ int main()
                     (0.5 + size / 2.0),
                     (1.0)
                 };
-                ::set_tria <5> (domain.grid, dot, material_id);
-                // set_circ(domain.grid, 0.25, 6);
-                domain.grid .refine_global (3);
+                // ::set_tria <5> (domain.grid, dot, material_id);
+                // set_circ(domain.grid, 0.346410567, 6);
+                set_circ_in_hex(domain.grid, 0.3, 6);
+                // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
+                // domain.grid .refine_global (3);
                 {
                     std::ofstream out ("grid-igor.eps");
                     dealii::GridOut grid_out;
@@ -1037,10 +1469,10 @@ int main()
             LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
             // {
             element_matrix.C .resize(2);
-            element_matrix.C[0][x][x] = 10.0;
+            element_matrix.C[0][x][x] = 100.0;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
-            element_matrix.C[0][y][y] = 10.0;
+            element_matrix.C[0][y][y] = 100.0;
             element_matrix.C[1][x][x] = 1.0;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
@@ -1051,15 +1483,15 @@ int main()
             OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
 
             OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
-            FILE *F;
-            F = fopen("matrix.gpd", "w");
-            for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
-                for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
-                    if (slae.matrix.el(i,j))
-                    {
-                        fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
-                    };
-            fclose(F);
+            // FILE *F;
+            // F = fopen("matrix.gpd", "w");
+            // for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+            //     for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+            //         if (slae.matrix.el(i,j))
+            //         {
+            //             fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+            //         };
+            // fclose(F);
 
             FOR(i, 0, 2)
             {
@@ -1089,7 +1521,7 @@ int main()
                     data_out.write_gnuplot (output);
                 };
 
-                dealii::SolverControl solver_control (10000, 1e-12);
+                dealii::SolverControl solver_control (500000, 1e-12);
                 dealii::SolverCG<> solver (solver_control);
                 solver.solve (
                         slae.matrix,
@@ -1108,17 +1540,18 @@ int main()
             //     fclose(F);
             // };
 
-            // arr<str, 2> vr = {"temperature_x", "temperature_y"};
-            // FOR(i, 0, 2)
-            //     HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
+            arr<str, 2> vr = {"temperature_x", "temperature_y"};
+            FOR(i, 0, 2)
+                HCPTools ::print_temperature<2> (slae.solution[i], domain.dof_handler, vr[i]);
 
             auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
                     domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
-            printf("%.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
-            fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
-            puts("111111111");
-            size+=0.05;
-            puts("2222222");
+            printf("META %.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+            // fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
+            // puts("111111111");
+            // size+=0.05;
+            // puts("2222222");
+            // printf("%f %f\n", size, size*size);
         };
             fclose(F);
     };
@@ -1165,10 +1598,38 @@ int main()
 
             dealii::SubCellData b;
 
-            b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
-            b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
-            b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
-            b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
+            {
+                dealii::CellData<1> cell;
+                cell.vertices[0] = 0;
+                cell.vertices[1] = 1;
+                cell.boundary_id = 0;
+                b.boundary_lines .push_back (cell);
+            };
+            {
+                dealii::CellData<1> cell;
+                cell.vertices[0] = 1;
+                cell.vertices[1] = 2;
+                cell.boundary_id = 2;
+                b.boundary_lines .push_back (cell);
+            };
+            {
+                dealii::CellData<1> cell;
+                cell.vertices[0] = 2;
+                cell.vertices[1] = 3;
+                cell.boundary_id = 1;
+                b.boundary_lines .push_back (cell);
+            };
+            {
+                dealii::CellData<1> cell;
+                cell.vertices[0] = 3;
+                cell.vertices[1] = 0;
+                cell.boundary_id = 2;
+                b.boundary_lines .push_back (cell);
+            };
+            // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
+            // b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
+            // b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
+            // b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
 
             dealii::GridReordering<2> ::reorder_cells (c);
             domain.grid .create_triangulation_compatibility (v, c, b);
@@ -1241,10 +1702,13 @@ int main()
     if (false)
     {
         FILE* F;
-        F = fopen("hex.gpd", "a");
+        // F = fopen("isotropic_test.gpd", "w");
+        // F = fopen("isotropic/circ.gpd", "a");
+        F = fopen("isotropic/cube.gpd", "a");
         // F = fopen("ter.gpd", "a");
         dbl size = 0.01;
-        while (size < 0.999)
+        while (size < 0.99)
+        // while (size < 0.5)
         {
             Domain<2> domain;
             {
@@ -1263,8 +1727,9 @@ int main()
                     (0.5 + size / 2.0),
                     (1.0)
                 };
-                // ::set_tria <5> (domain.grid, dot, material_id);
-                ::set_hexagon_grid_pure (domain.grid, 1.0, size);
+                ::set_tria <5> (domain.grid, dot, material_id);
+                // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
+                // set_circ(domain.grid, size, 6);
                 domain.grid .refine_global (3);
                 {
                     std::ofstream out ("grid-igor.eps");
@@ -1280,8 +1745,8 @@ int main()
 
             LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
             element_matrix.C .resize (2);
-            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.34}(element_matrix.C[0]);
-            EPTools ::set_isotropic_elascity{yung : 5.0, puasson : 0.3}(element_matrix.C[1]);
+            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+            EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
 
             u8 dim = 2;
 
@@ -1368,21 +1833,125 @@ int main()
                     printf("\n");
             };
             // print_tensor<6*6>(meta_coef);
-            auto newcoef = unphysical_to_physicaly (meta_coef);
-            fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
-                    newcoef[0][0][0][0],
-                    newcoef[0][0][1][1],
-                    newcoef[0][0][2][2],
-                    newcoef[1][1][0][0],
-                    newcoef[1][1][1][1],
-                    newcoef[1][1][2][2],
-                    newcoef[2][2][0][0],
-                    newcoef[2][2][1][1],
-                    newcoef[2][2][2][2],
-                    meta_coef[0][1][0][1],
-                    meta_coef[0][2][0][2]
-                    );
+            // {
+            // auto newcoef = unphysical_to_physicaly (meta_coef);
+            // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+            //         newcoef[0][0][0][0],
+            //         newcoef[0][0][1][1],
+            //         newcoef[0][0][2][2],
+            //         newcoef[1][1][0][0],
+            //         newcoef[1][1][1][1],
+            //         newcoef[1][1][2][2],
+            //         newcoef[2][2][0][0],
+            //         newcoef[2][2][1][1],
+            //         newcoef[2][2][2][2],
+            //         meta_coef[0][1][0][1],
+            //         meta_coef[0][2][0][2]
+            //         );
+            // };
+                    // fprintf(F, "%f %f %f %f\n", 0.0,
+                    //         meta_coef[0][0][0][0],
+                    //         meta_coef[0][0][1][1],
+                    //         meta_coef[0][1][0][1]);
+            // {
+
+            //     st n = 200;
+            //     cdbl pi = 3.14159265358979323846;
+            //     cdbl d_phi = (1 * pi) / n;
+            //     FOR(e, 0, n+1)
+            //     {
+            //         cdbl phi = e*d_phi;
+            //         dbl U[3][3] = {
+            //             {cos(phi), -sin(phi), 0.0},
+            //             {sin(phi),  cos(phi), 0.0},
+            //             {0.0,            0.0, 1.0}};
+
+            //         ATools::FourthOrderTensor pivot_coef;
+            //         for (st i = 0; i < 3; ++i)
+            //         for (st j = 0; j < 3; ++j)
+            //         for (st k = 0; k < 3; ++k)
+            //         for (st l = 0; l < 3; ++l)
+            //             pivot_coef[i][j][k][l] = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //         // FOR(i, 0, 3) FOR(j, 0, 3) FOR(k, 0, 3) FOR(l, 0, 3)
+            //         //     pivot_coef[i][j][k][l] = SUM(a,0,3,SUM(b,0,3,SUM(c,0,3,SUM(d,0,3,
+            //         //                         U[i][a]*U[j][b]*U[k][c]*U[k][d]*meta_coef[a][b][c][d]))));
+            //         for (st i = 0; i < 3; ++i)
+            //         for (st j = 0; j < 3; ++j)
+            //         for (st k = 0; k < 3; ++k)
+            //         for (st l = 0; l < 3; ++l)
+            //         for (st a = 0; a < 3; ++a)
+            //         for (st b = 0; b < 3; ++b)
+            //         for (st c = 0; c < 3; ++c)
+            //         for (st d = 0; d < 3; ++d)
+            //             pivot_coef[i][j][k][l] += 
+            //                                 U[i][a]*U[j][b]*U[l][c]*U[k][d]*meta_coef[a][b][c][d];
+
+
+            //         fprintf(F, "%f %f %f %f %f %f\n", phi,
+            //                 pivot_coef[0][0][0][0],
+            //                 pivot_coef[0][0][1][1],
+            //                 pivot_coef[0][1][0][1],
+            //             std::abs((pivot_coef[0][0][0][0] - pivot_coef[0][0][1][1])/2.0 - pivot_coef[0][1][0][1])/pivot_coef[0][1][0][1],
+            //             std::abs((pivot_coef[0][0][0][0] - pivot_coef[0][0][1][1])/2.0 - pivot_coef[0][1][0][1]));
+
+            //         // auto newcoef = unphysical_to_physicaly (pivot_coef);
+            //         // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", phi, 
+            //         //         newcoef[0][0][0][0],
+            //         //         newcoef[0][0][1][1],
+            //         //         newcoef[0][0][2][2],
+            //         //         newcoef[1][1][0][0],
+            //         //         newcoef[1][1][1][1],
+            //         //         newcoef[1][1][2][2],
+            //         //         newcoef[2][2][0][0],
+            //         //         newcoef[2][2][1][1],
+            //         //         newcoef[2][2][2][2],
+            //         //         meta_coef[0][1][0][1],
+            //         //         meta_coef[0][2][0][2]
+            //         //        );
+            //     };
+            // };
+            {
+                cdbl pi = 3.14159265359;
+                dbl Y1 = 0.0;
+                dbl Y2 = 0.0;
+
+                {
+                    auto newcoef = unphysical_to_physicaly (meta_coef);
+                    Y1 = newcoef[0][0][0][0];
+                };
+
+                {
+                    cdbl phi = pi / 4.0;
+                    dbl U[3][3] = {
+                        {cos(phi), -sin(phi), 0.0},
+                        {sin(phi),  cos(phi), 0.0},
+                        {0.0,            0.0, 1.0}};
+
+                    ATools::FourthOrderTensor pivot_coef;
+
+                    for (st i = 0; i < 3; ++i)
+                    for (st j = 0; j < 3; ++j)
+                    for (st k = 0; k < 3; ++k)
+                    for (st l = 0; l < 3; ++l)
+                        pivot_coef[i][j][k][l] = 0.0; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                    FOR(i, 0, 3) FOR(j, 0, 3) FOR(k, 0, 3) FOR(l, 0, 3)
+                        pivot_coef[i][j][k][l] = SUM(a,0,3,SUM(b,0,3,SUM(c,0,3,SUM(d,0,3,
+                                            U[i][a]*U[j][b]*U[l][c]*U[k][d]*meta_coef[a][b][c][d]))));
+
+                    auto newcoef = unphysical_to_physicaly (pivot_coef);
+                    Y2 = newcoef[0][0][0][0];
+                };
+                fprintf(F, "%f %f %f %f\n", 
+                        // size*size*pi,
+                        size*size,
+                        (Y1 - Y2) / Y1, 
+                        std::abs((meta_coef[0][0][0][0] - meta_coef[0][0][1][1])/2.0 - meta_coef[0][1][0][1])/meta_coef[0][1][0][1],
+                        std::abs((meta_coef[1][1][1][1] - meta_coef[1][1][0][0])/2.0 - meta_coef[0][1][0][1])/meta_coef[0][1][0][1]);
+                // fprintf(F, "%f %f\n", size*size, (Y1 - Y2) / Y1);
+            };
             size += 0.01;
+            // size += 0.005;
         };
         fclose(F);
     };

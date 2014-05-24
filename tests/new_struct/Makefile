@@ -45,7 +45,7 @@ DebugLibraryes    := deal_II.g tbb_debug
 
 # ReleaseLibraryes  := tbb gomp pthread gmpxx mpfr boost_thread-mt z
 
-ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt z
+ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread z
 
 # StaticLibs := /usr/lib/libCGAL_Core.a /usr/lib/libCGAL.a /usr/lib/x86_64-linux-gnu/libgmp.a /home/primat/deal.II/deal.II_bo_share/lib/libdeal_II.a 
 StaticLibs := 

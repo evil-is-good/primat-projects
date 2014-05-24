@@ -548,143 +548,6 @@ typename ElasticProblemSup<3>::TypeCoef unphysical_to_compliance(
     return res;
 };
 
-typename ElasticProblemSup<3>::TypeCoef unphysical_to_physicaly (
-        typename ElasticProblemSup<3>::TypeCoef unphys)
-{
-    typename ElasticProblemSup<3>::TypeCoef res;
-
-    for (size_t i = 0; i < 3; ++i)
-        for (size_t j = 0; j < 3; ++j)
-            for (size_t k = 0; k < 3; ++k)
-                for (size_t l = 0; l < 3; ++l)
-                    res[i][j][k][l] .resize (1);
-
-    double A = 
-        unphys[x][x][x][x][0] * unphys[y][y][y][y][0] * unphys[z][z][z][z][0] - 
-        unphys[y][y][z][z][0] * unphys[z][z][y][y][0] * unphys[x][x][x][x][0] +
-        unphys[x][x][y][y][0] * unphys[y][y][z][z][0] * unphys[z][z][x][x][0] - 
-        unphys[y][y][x][x][0] * unphys[x][x][y][y][0] * unphys[z][z][z][z][0] - 
-        unphys[y][y][y][y][0] * unphys[x][x][z][z][0] * unphys[z][z][x][x][0] +
-        unphys[y][y][x][x][0] * unphys[x][x][z][z][0] * unphys[z][z][y][y][0]; 
-
-//    printf("%f %f %f A = %f\n", 
-//            unphys[x][x][x][x][0], 
-//            unphys[y][y][y][y][0], 
-//            unphys[z][z][z][z][0], 
-//            A);
-
-    for (uint8_t i = 0; i < 3; ++i)
-    {
-        int no_1 = (i + 1) % 3;
-        int no_2 = (i + 2) % 3;
-
-        for (uint8_t j = 0; j < 3; ++j)
-        {
-            int k = (j == no_1) ? no_2 : no_1;
-
-            if (i == j)
-                res[i][i][j][j][0] = A;
-            else
-                res[i][i][j][j][0] = 
-                    (unphys[i][i][j][j][0] * unphys[k][k][k][k][0] -
-                     unphys[i][i][k][k][0] * unphys[j][j][k][k][0]);
-
-            res[i][i][j][j][0] /= 
-                (unphys[no_1][no_1][no_1][no_1][0] * 
-                 unphys[no_2][no_2][no_2][no_2][0] - 
-                 unphys[no_1][no_1][no_2][no_2][0] * 
-                 unphys[no_2][no_2][no_1][no_1][0]);
-        };
-    };
-        
-    return res;
-
-};
-
-typename ElasticProblemSup<3>::TypeCoef anal (
-        const typename ElasticProblemSup<3>::TypeCoef E,
-        const double x1, const double x2, const double x3, const double x4)
-{
-    typename ElasticProblemSup<3>::TypeCoef meta;
-
-    for (size_t i = 0; i < 3; ++i)
-        for (size_t j = 0; j < 3; ++j)
-            for (size_t k = 0; k < 3; ++k)
-                for (size_t l = 0; l < 3; ++l)
-                    meta[i][j][k][l] .resize (1);
-
-    const double l1 = (x2 - x1) + (x4 - x3);
-    const double l2 = (x3 - x2);
-
-    for (size_t i = 0; i < 3; ++i)
-        for (size_t j = 0; j < 3; ++j)
-            for (size_t k = 0; k < 3; ++k)
-                for (size_t l = 0; l < 3; ++l)
-//                    if (i == j)
-                    {
-                        const double a = 
-                            ((E[i][j][x][x][0] / E[x][x][x][x][0]) * l1 +
-                             (E[i][j][x][x][1] / E[x][x][x][x][1]) * l2) /
-                            (l1 + l2);
-                        const double b = 
-                            (E[x][x][x][x][0] * E[x][x][x][x][1] * (l1 + l2)) /
-                            (E[x][x][x][x][0] * l2 + E[x][x][x][x][1] * l1);
-                        const double c = 
-                            ((E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
-                             (E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
-                            (l1 + l2);
-                        const double d =
-                            ((E[i][j][k][l][0] - E[i][j][x][x][0] * 
-                              E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
-                             (E[i][j][k][l][1] - E[i][j][x][x][1] * 
-                              E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
-                            (l1 + l2);
-
-                        meta[i][j][k][l][0] = a * b * c + d;
-                    }
-//                    else
-//                    {
-////                        const double delta1 = 
-////                            E[x][y][x][y][0] * E[x][z][x][z][0] - 
-////                            E[x][y][x][z][0] * E[x][z][x][y][0];
-////                        const double delta2 = 
-////                            E[x][y][x][y][1] * E[x][z][x][z][1] - 
-////                            E[x][y][x][z][1] * E[x][z][x][y][1];
-////                        const double a = 
-////                            (E[x][y][x][y][0] / delta1) * l1 +
-////                            (E[x][y][x][y][1] / delta2) * l2;
-////                        const double b = 
-////                            (E[x][z][x][z][0] / delta1) * l1 +
-////                            (E[x][z][x][z][1] / delta2) * l2;
-////                        const double c = 
-////                            (E[x][y][x][z][0] / delta1) * l1 +
-////                            (E[x][z][x][y][1] / delta2) * l2;
-//                        const double a = 
-//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1) /
-//                            (E[x][y][x][y][0] * E[x][y][x][y][1]);
-//                        const double delta = a * a;
-//
-////                        meta[i][j][k][l][0] = 
-////                            (1 / E[x][y][x][y][0] * l1 +
-////                             1 / E[x][y][x][y][1] * l2) / delta;
-//
-//                        meta[i][j][i][l][0] = 
-//                            (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
-//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
-//                    };
-    for (size_t i = 1; i < 3; ++i)
-        {
-            meta[x][i][x][i][0] = 
-                (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
-                (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
-            meta[x][i][i][x][0] = meta[x][i][x][i][0];
-            meta[i][x][x][i][0] = meta[x][i][x][i][0];
-            meta[i][x][i][x][0] = meta[x][i][x][i][0];
-        };
-
-    return meta;
-};
-
 void set_coef (
         typename ElasticProblemSup<3>::TypeCoef &coef,
         const uint8_t id,
@@ -2548,6 +2411,70 @@ void set_hexagon_brave(dealii::Triangulation< 2 > &triangulation,
     triangulation .create_triangulation (v, c, dealii::SubCellData());
 };
 
+void set_circ_in_hex(dealii::Triangulation< 2 > &triangulation, 
+        const double radius, const size_t n_refine)
+{
+    cdbl hight = sqrt(3.0);
+    dealii::Point<2> p1(0.0, 0.0);
+    dealii::Point<2> p2(2.0, hight);
+    dealii::GridGenerator ::hyper_rectangle (triangulation, p1, p2);
+    triangulation .refine_global (n_refine);
+    {
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = triangulation .begin_active(),
+                 end_cell = triangulation .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+            cell->set_material_id(0);
+            {
+                dealii::Point<2> center (0.5, 0.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (0.0, hight / 2.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (1.0, hight / 2.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (0.5, hight);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (1.5, 0.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (1.5, hight);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+            {
+                dealii::Point<2> center (2.0, hight/2.0);
+                if (center.distance(midle_p) < radius)
+                    cell->set_material_id(1);
+            };
+        };
+    };
+};
+
 template <size_t num_points>
 void set_line(dealii::Triangulation< 2 > &triangulation, 
         const double hx,
@@ -2855,16 +2782,165 @@ std::array<dealii::Point<dim, double>, dim> get_grad_elastic (
     return grad;
 };
 
+typename ElasticProblemSup<3>::TypeCoef unphysical_to_physicaly (
+        typename ElasticProblemSup<3>::TypeCoef unphys)
+{
+    typename ElasticProblemSup<3>::TypeCoef res;
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+                    res[i][j][k][l] .resize (1);
+
+    double A = 
+        unphys[x][x][x][x][0] * unphys[y][y][y][y][0] * unphys[z][z][z][z][0] - 
+        unphys[y][y][z][z][0] * unphys[z][z][y][y][0] * unphys[x][x][x][x][0] +
+        unphys[x][x][y][y][0] * unphys[y][y][z][z][0] * unphys[z][z][x][x][0] - 
+        unphys[y][y][x][x][0] * unphys[x][x][y][y][0] * unphys[z][z][z][z][0] - 
+        unphys[y][y][y][y][0] * unphys[x][x][z][z][0] * unphys[z][z][x][x][0] +
+        unphys[y][y][x][x][0] * unphys[x][x][z][z][0] * unphys[z][z][y][y][0]; 
+
+//    printf("%f %f %f A = %f\n", 
+//            unphys[x][x][x][x][0], 
+//            unphys[y][y][y][y][0], 
+//            unphys[z][z][z][z][0], 
+//            A);
+
+    for (uint8_t i = 0; i < 3; ++i)
+    {
+        int no_1 = (i + 1) % 3;
+        int no_2 = (i + 2) % 3;
+
+        for (uint8_t j = 0; j < 3; ++j)
+        {
+            int k = (j == no_1) ? no_2 : no_1;
+
+            if (i == j)
+                res[i][i][j][j][0] = A;
+            else
+                res[i][i][j][j][0] = 
+                    (unphys[i][i][j][j][0] * unphys[k][k][k][k][0] -
+                     unphys[i][i][k][k][0] * unphys[j][j][k][k][0]);
+
+            res[i][i][j][j][0] /= 
+                (unphys[no_1][no_1][no_1][no_1][0] * 
+                 unphys[no_2][no_2][no_2][no_2][0] - 
+                 unphys[no_1][no_1][no_2][no_2][0] * 
+                 unphys[no_2][no_2][no_1][no_1][0]);
+        };
+    };
+        
+    return res;
+
+};
+
+typename ElasticProblemSup<3>::TypeCoef anal (
+        const typename ElasticProblemSup<3>::TypeCoef E,
+        const double x1, const double x2, const double x3, const double x4)
+{
+    typename ElasticProblemSup<3>::TypeCoef meta;
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+                    meta[i][j][k][l] .resize (1);
+
+    const double l1 = (x2 - x1) + (x4 - x3);
+    const double l2 = (x3 - x2);
+
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+            for (size_t k = 0; k < 3; ++k)
+                for (size_t l = 0; l < 3; ++l)
+//                    if (i == j)
+                    {
+                        const double a = 
+                            ((E[i][j][x][x][0] / E[x][x][x][x][0]) * l1 +
+                             (E[i][j][x][x][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+                        const double b = 
+                            (E[x][x][x][x][0] * E[x][x][x][x][1] * (l1 + l2)) /
+                            (E[x][x][x][x][0] * l2 + E[x][x][x][x][1] * l1);
+                        const double c = 
+                            ((E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
+                             (E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+                        const double d =
+                            ((E[i][j][k][l][0] - E[i][j][x][x][0] * 
+                              E[x][x][k][l][0] / E[x][x][x][x][0]) * l1 +
+                             (E[i][j][k][l][1] - E[i][j][x][x][1] * 
+                              E[x][x][k][l][1] / E[x][x][x][x][1]) * l2) /
+                            (l1 + l2);
+
+                        meta[i][j][k][l][0] = a * b * c + d;
+                    }
+//                    else
+//                    {
+////                        const double delta1 = 
+////                            E[x][y][x][y][0] * E[x][z][x][z][0] - 
+////                            E[x][y][x][z][0] * E[x][z][x][y][0];
+////                        const double delta2 = 
+////                            E[x][y][x][y][1] * E[x][z][x][z][1] - 
+////                            E[x][y][x][z][1] * E[x][z][x][y][1];
+////                        const double a = 
+////                            (E[x][y][x][y][0] / delta1) * l1 +
+////                            (E[x][y][x][y][1] / delta2) * l2;
+////                        const double b = 
+////                            (E[x][z][x][z][0] / delta1) * l1 +
+////                            (E[x][z][x][z][1] / delta2) * l2;
+////                        const double c = 
+////                            (E[x][y][x][z][0] / delta1) * l1 +
+////                            (E[x][z][x][y][1] / delta2) * l2;
+//                        const double a = 
+//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1) /
+//                            (E[x][y][x][y][0] * E[x][y][x][y][1]);
+//                        const double delta = a * a;
+//
+////                        meta[i][j][k][l][0] = 
+////                            (1 / E[x][y][x][y][0] * l1 +
+////                             1 / E[x][y][x][y][1] * l2) / delta;
+//
+//                        meta[i][j][i][l][0] = 
+//                            (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
+//                            (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
+//                    };
+    for (size_t i = 1; i < 3; ++i)
+        {
+            meta[x][i][x][i][0] = 
+                (E[x][y][x][y][0] * E[x][y][x][y][1] * (l1 + l2)) /
+                (E[x][y][x][y][0] * l2 + E[x][y][x][y][1] * l1);
+            meta[x][i][i][x][0] = meta[x][i][x][i][0];
+            meta[i][x][x][i][0] = meta[x][i][x][i][0];
+            meta[i][x][i][x][0] = meta[x][i][x][i][0];
+        };
+
+    return meta;
+};
+
 template<uint8_t dim>
 void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
      const typename ElasticProblemSup<dim + 1>::TypeCoef &E,
-     const double meta_E, 
-     const double meta_nu_yx,
-     const double meta_nu_zx)
+     cdbl Px, 
+     cdbl Py,
+     cdbl Pz)
 {
     const int8_t x = 0;
     const int8_t y = 1;
     const int8_t z = 2;
+
+    typename ElasticProblemSup<dim + 1>::TypeCoef newcoef;
+    for (size_t i = 0; i < dim+1; ++i)
+        for (size_t j = 0; j < dim+1; ++j)
+            for (size_t k = 0; k < dim+1; ++k)
+                for (size_t l = 0; l < dim+1; ++l)
+                {
+                    newcoef[i][j][k][l] .resize (1);
+
+                    newcoef[i][j][k][l][0] = problem.meta_coefficient[i][j][k][l];
+                };
+    auto ME = ::unphysical_to_physicaly(newcoef);
 
     std::vector<std::array<dealii::Point<2>, 3> > 
         grad_elastic_field(problem.system_equations.x.size());
@@ -2952,7 +3028,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 
         FOR_I(0, divider.size())
             FOR_M(0, 3)
-            grad_elastic_field[i][m] ;///= divider[i][m];
+            grad_elastic_field[i][m] /= divider[i][m];
         FOR_I(0, divider.size())
             printf("%d %f\n", grad_elastic_field[i][0](0));
     };
@@ -3003,7 +3079,17 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
         sigma[0].reinit(problem.system_equations.x.size());
         sigma[1].reinit(problem.system_equations.x.size());
 
-        double nu[3] = {- 1.0 / meta_E, + meta_nu_yx / meta_E, + meta_nu_zx / meta_E}; 
+        // double nu[3] = {- 1.0 / meta_E, + meta_nu_yx / meta_E, + meta_nu_zx / meta_E}; 
+
+        cdbl nu[3] = {
+            - Px * 1.0 / ME[x][x][x][x][0] + 
+                Py * ME[x][x][y][y][0] / ME[y][y][y][y][0] + Pz * ME[x][x][z][z][0] / ME[z][z][z][z][0],
+            - Py * 1.0 / ME[y][y][y][y][0] + 
+                Px * ME[y][y][x][x][0] / ME[x][x][x][x][0] + Pz * ME[y][y][z][z][0] / ME[z][z][z][z][0],
+            - Pz * 1.0 / ME[z][z][z][z][0] + 
+                Px * ME[z][z][x][x][0] / ME[x][x][x][x][0] + Py * ME[z][z][y][y][0] / ME[y][y][y][y][0]};
+
+        printf("NU %f %f %f\n",nu[0], nu[1], nu[2]);
 
         FOR_I(0, 2)
         {
@@ -3050,7 +3136,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
             data_out.add_data_vector (sigma[i], "x y");
             data_out.build_patches ();
 
-            std::string file_name = "sigma_";
+            std::string file_name = "iso/sigma_";
             file_name += suffix[i];
             file_name += ".gpd";
 
@@ -3078,6 +3164,8 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
             {
                 FOR_I(0, 4)
                 {
+                        sigma[0](cell->vertex_dof_index(i,1)) = 0.0;
+                        sigma[1](cell->vertex_dof_index(i,0)) = 0.0;
                     double L1 = 
                         sigma[0](cell->vertex_dof_index(i,0)) +
                         sigma[1](cell->vertex_dof_index(i,1)); 
@@ -3102,12 +3190,19 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 //                        sigma[0](cell->vertex_dof_index(i,1))
 //                                );
 
-                    double angl1 = atan(
-                            2.0 * sigma[0](cell->vertex_dof_index(i,1)) / 
-                            (sigma[0](cell->vertex_dof_index(i,0)) - 
-                             sigma[1](cell->vertex_dof_index(i,1)))) / 2.0;
+                        cdbl id_x = cell->vertex_dof_index(i,x);
+                        cdbl id_y = cell->vertex_dof_index(i,y);
+                    double angl1 = std::atan(
+                            2.0 * sigma[x](id_y) / 
+                            (sigma[x](id_x) - sigma[y](id_y))
+                            ) / 2.0;
                     double angl2 = angl1 + 3.14159265359 / 2.0; 
+                    // double angl2 = std::atan(
+                    //         - 2.0 * sigma[y](id_x) / 
+                    //         (sigma[x](id_x) - sigma[y](id_y))
+                    //         ) / 2.0;
 
+                        // if (sigma[0](cell->vertex_dof_index(i,0)) < sigma[1](cell->vertex_dof_index(i,1)))
                     if (str1 < str2)
                     {
                         double temp = str1;
@@ -3122,8 +3217,8 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                     main_stress(cell->vertex_dof_index(i,0)) += str1;
                     main_stress(cell->vertex_dof_index(i,1)) += str2;
 
-                    angle(cell->vertex_dof_index(i,0)) += angl1;
-                    angle(cell->vertex_dof_index(i,1)) += angl2;
+                    angle(cell->vertex_dof_index(i,0)) = angl1;// / 3.14159265359 * 180;
+                    angle(cell->vertex_dof_index(i,1)) = angl2;// / 3.14159265359 * 180;
 //                    cos[0](cell->vertex_dof_index(i,0)) +=
 //                        sqrt(1.0 / (1.0 + 
 //                                    pow(str1 - 
@@ -3171,7 +3266,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
             FOR_I(0, divider.size())
             {
                 main_stress(i) /= divider[i];
-                angle(i) /= divider[i];
+                // angle(i) /= divider[i];
 //                cos[0](i) /= divider[i];
 //                cos[1](i) /= divider[i];
             };
@@ -3184,7 +3279,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                 data_out.add_data_vector (main_stress, "1 2");
                 data_out.build_patches ();
 
-                std::string file_name = "main_stress";
+                std::string file_name = "iso/main_stress";
 //                file_name += "_2_";
                 file_name += std::to_string(name_main_stress);
                 file_name += ".gpd";
@@ -3206,7 +3301,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                 data_out.add_data_vector (angle, "x y");
                 data_out.build_patches ();
 
-                std::string file_name = "angle";
+                std::string file_name = "iso/angle";
 //                file_name += suffix[i];
                 file_name += ".gpd";
 
@@ -3771,10 +3866,10 @@ std::array<double, 12> solved (dealii::Triangulation<dim> &triangulation,
 
     newcoef = ::unphysical_to_physicaly(newcoef);
 
-    // print_stress<2>(problem, coef,
-    //         newcoef[0][0][0][0][0],
-    //         newcoef[0][0][1][1][0],
-    //         newcoef[0][0][2][2][0]);
+    print_stress<2>(problem, coef, 0.0, 0.0, 1.0);
+            // newcoef[0][0][0][0][0],
+            // newcoef[0][0][1][1][0],
+            // newcoef[0][0][2][2][0]);
 //    printf("PPPPPPPPPP %f %f %f\n", 
 //            newcoef[0][0][0][0][0],
 //            newcoef[0][0][1][1][0],
@@ -4220,9 +4315,15 @@ int main(int argc, char *argv[])
     FOR_O(1, 2)
     {
         const double g_yung_1 = 23.0;//1.0;// //31.23 * (1 - 1/(pow(0.25 * 7.0, 0.4)));
-        const double g_puasson_1 = 0.21;//0.20;//
+        const double g_puasson_1 = 
+            // 0.21;
+            0.20;
         const double g_yung_2 = 49.0;//10.0;//49.0; //
-        const double g_puasson_2 = 0.21;//0.28;//
+        const double g_puasson_2 = 
+            // 0.21;
+            0.28;
+        // const double g_yung_2 = g_yung_1;
+        // const double g_puasson_2 = g_puasson_1;
 
     time_t time_1 = time(NULL);
 
@@ -4313,7 +4414,7 @@ int main(int argc, char *argv[])
     printf("DDDDDDDDDD=%f %f\n", get_determinant<3>(matrix), det);
     printf("MMMMMMMMMM=%f %f\n", get_minor<3>(matrix, 2, 2), det);
 
-    FOR_J(1, 2)
+    FOR_J(4, 5)
     {
 
     switch (j)
@@ -4627,7 +4728,7 @@ int main(int argc, char *argv[])
         case 4:
             {
                 FILE *F;
-                F = fopen ("mata-circ.gpd", "a");
+                F = fopen ("iso/mata-circ.gpd", "a");
 
                 {
                     name_main_stress = 0;
@@ -4638,7 +4739,9 @@ int main(int argc, char *argv[])
 
                         dealii::Triangulation<2> tria;
 
-                        ::set_circ(tria, x, 6); // /sqrt(3.1415926535), 6);
+                        ::set_circ(tria, x, 5); // /sqrt(3.1415926535), 6);
+                        // ::set_hexagon <60> (tria, 100.0, i * (sqrt(3.0) / 2.0));
+                        // ::set_circ_in_hex(tria, 0.3, 6);
 //                        tria .refine_global (3);
 
         const double yung_1 = g_yung_1;
@@ -4653,7 +4756,7 @@ int main(int argc, char *argv[])
 
                         fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
 //                                i*i, 
-                                (x*x*3.14159265358979323846264338327) / (128.0*128.0),
+                                (x*x*3.14159265358979323846264338327),
                                 meta.back()[0],
                                 meta.back()[1],
                                 meta.back()[2],
@@ -4671,7 +4774,7 @@ int main(int argc, char *argv[])
                                );
 
                         printf("\x1B[31m%f %f %f %f %f %f %f %f %f %f %f %f\x1B[0m\n", 
-                                (x*x*3.141592653589) / (128.0*128.0),
+                                (x*x*3.141592653589),
                                 meta.back()[0],
                                 meta.back()[1],
                                 meta.back()[2],
@@ -5860,6 +5963,10 @@ int main(int argc, char *argv[])
     // cell->child(0)->at_boundary();
     printf("TTTTTTTTTTTTTTTT%d\n", cell->line(0)->at_boundary());
     printf("TTTTTTTTTTTTTTTT%d\n", cell->at_boundary());
+    for (st i = 0; i < 20; ++i)
+    {
+        printf("%f %f\n", i-10.0, std::atan(i-10.0) / 3.14159265359 * 180.0);
+    };
     return 0;
 }
 ////////////////////////////////////////////////////////////

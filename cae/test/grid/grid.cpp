@@ -129,12 +129,19 @@ void convert_to_dealii_format(CDT &cdt, dealii::Triangulation<2> &triangulation)
 
         auto add_cell = [&cell_in_grid, &index_point, mat_id] (arr<st, 4> &&indx) 
         {
-            cell_in_grid .push_back (dealii::CellData<d2>{
-                    index_point[indx[0]].index,
-                    index_point[indx[1]].index,
-                    index_point[indx[2]].index,
-                    index_point[indx[3]].index,
-                    {.material_id = mat_id}});
+            dealii::CellData<d2> cell;
+            cell.vertices[0] = index_point[indx[0]].index;
+            cell.vertices[1] = index_point[indx[1]].index;
+            cell.vertices[2] = index_point[indx[2]].index;
+            cell.vertices[3] = index_point[indx[3]].index;
+            cell.material_id = mat_id;
+            cell_in_grid .push_back (cell);
+            // cell_in_grid .push_back (dealii::CellData<d2>({
+            //         index_point[indx[0]].index,
+            //         index_point[indx[1]].index,
+            //         index_point[indx[2]].index,
+            //         index_point[indx[3]].index,
+            //         {.material_id = mat_id}}));
         };
 
         add_cell (arr<st, 4>{0, 3, 6, 5});
@@ -272,12 +279,19 @@ void convert_to_dealii_format(
 
         auto add_cell = [&cell_in_grid, &index_point, mat_id] (arr<st, 4> &&indx) 
         {
-            cell_in_grid .push_back (dealii::CellData<d2>{
-                    index_point[indx[0]].index,
-                    index_point[indx[1]].index,
-                    index_point[indx[2]].index,
-                    index_point[indx[3]].index,
-                    {.material_id = mat_id}});
+            dealii::CellData<d2> cell;
+            cell.vertices[0] = index_point[indx[0]].index;
+            cell.vertices[1] = index_point[indx[1]].index;
+            cell.vertices[2] = index_point[indx[2]].index;
+            cell.vertices[3] = index_point[indx[3]].index;
+            cell.material_id = mat_id;
+            cell_in_grid .push_back (cell);
+            // cell_in_grid .push_back (dealii::CellData<d2>{
+            //         index_point[indx[0]].index,
+            //         index_point[indx[1]].index,
+            //         index_point[indx[2]].index,
+            //         index_point[indx[3]].index,
+            //         {.material_id = mat_id}});
         };
 
         // if (fit->is_in_domain())
@@ -379,15 +393,29 @@ void convert_to_dealii_format(
         // printf("olol %ld %d\n", type_border, fl);
 
 
-        edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
-                index_1,
-                index_2,
-                {.boundary_id = type_border}});
+        {
+            dealii::CellData<d1> cell;
+            cell.vertices[0] = index_1;
+            cell.vertices[1] = index_2;
+            cell.boundary_id = type_border;
+            edge_in_grid.boundary_lines .push_back (cell);
+            // edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
+            //         index_1,
+            //         index_2,
+            //         {.boundary_id = type_border}});
+        };
 
-        edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
-                index_2,
-                index_3,
-                {.boundary_id = type_border}});
+        {
+            dealii::CellData<d1> cell;
+            cell.vertices[0] = index_2;
+            cell.vertices[1] = index_3;
+            cell.boundary_id = type_border;
+            edge_in_grid.boundary_lines .push_back (cell);
+            // edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
+            //         index_2,
+            //         index_3,
+            //         {.boundary_id = type_border}});
+        };
 
         if (
                 (index_1 == 0xFFFFFFFF) or
@@ -489,12 +517,19 @@ void convert_to_dealii_format_without_domains(
 
         auto add_cell = [&cell_in_grid, &index_point, mat_id] (arr<st, 4> &&indx) 
         {
-            cell_in_grid .push_back (dealii::CellData<d2>{
-                    index_point[indx[0]].index,
-                    index_point[indx[1]].index,
-                    index_point[indx[2]].index,
-                    index_point[indx[3]].index,
-                    {.material_id = mat_id}});
+            dealii::CellData<d2> cell;
+            cell.vertices[0] = index_point[indx[0]].index;
+            cell.vertices[1] = index_point[indx[1]].index;
+            cell.vertices[2] = index_point[indx[2]].index;
+            cell.vertices[3] = index_point[indx[3]].index;
+            cell.material_id = mat_id;
+            cell_in_grid .push_back (cell);
+            // cell_in_grid .push_back (dealii::CellData<d2>{
+            //         index_point[indx[0]].index,
+            //         index_point[indx[1]].index,
+            //         index_point[indx[2]].index,
+            //         index_point[indx[3]].index,
+            //         {.material_id = mat_id}});
         };
 
         // if (fit->is_in_domain())
@@ -595,16 +630,29 @@ void convert_to_dealii_format_without_domains(
         };
         printf("olol %ld %d\n", type_border, fl);
 
+        {
+            dealii::CellData<d1> cell;
+            cell.vertices[0] = index_1;
+            cell.vertices[1] = index_2;
+            cell.boundary_id = type_border;
+            edge_in_grid.boundary_lines .push_back (cell);
+            // edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
+            //         index_1,
+            //         index_2,
+            //         {.boundary_id = type_border}});
+        };
 
-        edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
-                index_1,
-                index_2,
-                {.boundary_id = type_border}});
-
-        edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
-                index_2,
-                index_3,
-                {.boundary_id = type_border}});
+        {
+            dealii::CellData<d1> cell;
+            cell.vertices[0] = index_2;
+            cell.vertices[1] = index_3;
+            cell.boundary_id = type_border;
+            edge_in_grid.boundary_lines .push_back (cell);
+            // edge_in_grid.boundary_lines .push_back (dealii::CellData<d1>{
+            //         index_2,
+            //         index_3,
+            //         {.boundary_id = type_border}});
+        };
 
         if (
                 (index_1 == 0xFFFFFFFF) or

@@ -44,7 +44,7 @@ Sources    := $(ProjectName).cpp
 
 DebugLibraryes    := deal_II.g tbb_debug
 
-ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt z
+ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt z stdc++
 
 #=================================================================BASE FLAGS===#
 
@@ -107,15 +107,15 @@ $(ProjectName).o: $(ProjectName).cpp
 	$(CXX) -c $(CFlags) $< -o $@ $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log 
 
 analysis: $(Sources)
-	$(CXX) $(AnalysisFlags) $^ $(IncDirs) $(LibDirs) $(Libs)  
+	$(CXX) $(AnalysisFlags) $^ $(IncDirs) $(LibDirs) $(Libs)
 
 clean:
 	$(RM) $(Objects) $(Executable)
 	
-cgal: 
-	$(CXX) $(CFlags) cgal.cpp -o cgal.exe $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log
-
-tria: 
-	$(CXX) $(CFlags) tria.cpp -o tria.exe $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log
+# cgal: 
+# 	$(CXX) $(CFlags) cgal.cpp -o cgal.exe $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log
+# 
+# tria: 
+# 	$(CXX) $(CFlags) tria.cpp -o tria.exe $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log
 	
 .PHONI: run clean cgal tria

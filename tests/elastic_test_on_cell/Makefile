@@ -43,7 +43,7 @@ Sources    := $(ProjectName).cpp
 
 DebugLibraryes    := deal_II.g tbb_debug
 
-ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt z
+ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread z
 
 #=================================================================BASE FLAGS===#
 
