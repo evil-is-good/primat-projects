@@ -10,8 +10,8 @@ f3(x,d1,d2) =  x < 0.5 ? 1.0 : pow(2.0 * (1 - x), d1, d2)
 #set yrange [0:1.0]
 #set xtics 0,0.1,1.0
 #set ytics 0,0.1,1.0
-set size 1.0, 1.0
-set term png enhanced size 1024, 1024
+#set size 2.0, 1.0
+set term png enhanced size 1000, 500
 unset key
 set pm3d map
 set xlabel "X"
@@ -29,9 +29,9 @@ set palette function gray > 0.5 ? (((gray-0.5)*8.0)**0.5)/4.0 : 0.0, \
 
 #set cbrange [-1.3:1.3]
 
-set title "Stress {/Symbol s}_{yy} for R = 0.3" font "Serif, 30"
-set output "sigma_yy.png"
-splot "sigma_x.gpd" using ($2):($1):($3) with pm3d
+set title "Stress {/Symbol s}_{xx} for R = 0.3" font "Serif, 30"
+set output "sigma_xx.png"
+splot "sigma_x.gpd" using ($1):($2):($3) with pm3d
 
 set title "Stress {/Symbol s}_{2} for R = 0.3" font "Serif, 30"
 set output "main_stress_2.png"
@@ -39,9 +39,9 @@ splot "main_stress.gpd" using ($2):($1):($4) with pm3d
 
 set palette function 1.0-gray, 1.0-gray, 1.0
 
-set title "Stress {/Symbol s}_{xy} for R = 0.3" font "Serif, 30"
-set output "sigma_xy.png"
-splot "sigma_y.gpd" using ($2):($1):(abs($3)) with pm3d
+#set title "Stress {/Symbol s}_{xy} for R = 0.3" font "Serif, 30"
+#set output "sigma_xy.png"
+#splot "sigma_y.gpd" using ($2):($1):(abs($3)) with pm3d
 
 D1 = 2.0
 D2 = 0.5#f1(gray, D1, D2), f2(gray, D1, D2), f3(gray, D1, D2)
@@ -56,10 +56,10 @@ set palette function gray, 0.0, 0.0
 #set palette function gray > 0.5 ? ((gray-0.5)*2.0)**0.5 : 0, 0, gray < 0.5 ? (2.0*(0.5-gray))**0.5 : 0
 
 
-set title "Stress {/Symbol s}_{xx} for R = 0.3" font "Serif, 30"
-set output "sigma_xx.png"
+set title "Stress {/Symbol s}_{yy} for R = 0.3" font "Serif, 30"
+set output "sigma_yy.png"
 #set zrange [-0.15:0.15]
-splot "sigma_y.gpd" using ($2):($1):($4) with pm3d
+splot "sigma_y.gpd" using ($1):($2):($4) with pm3d
 
 set title "Stress {/Symbol s}_{1} for R = 0.3" font "Serif, 30"
 set output "main_stress_1.png"

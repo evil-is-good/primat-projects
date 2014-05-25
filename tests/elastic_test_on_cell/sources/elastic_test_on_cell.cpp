@@ -3160,6 +3160,8 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
             typename dealii::DoFHandler<2>::active_cell_iterator endc =
                 problem.domain.dof_handler.end();
 
+            FILE *F;
+            F = fopen("stupid.txt", "w");
             for (; cell != endc; ++cell)
             {
                 FOR_I(0, 4)
@@ -3203,6 +3205,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                     //         ) / 2.0;
 
                         // if (sigma[0](cell->vertex_dof_index(i,0)) < sigma[1](cell->vertex_dof_index(i,1)))
+                    fprintf(F, "OLOLO %f %f  %f %f %f %f %f %f  ", cell->vertex(i)[0], cell->vertex(i)[1], sigma[0](id_x), sigma[1](id_y), str1, str2, angl1, angl2);
                     if (str1 < str2)
                     {
                         double temp = str1;
@@ -3213,6 +3216,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                         angl1 = angl2;
                         angl2 = temp;
                     };
+                    fprintf(F, "STUPID %f %f %f %f\n", str1, str2, angl1, angl2);
 
                     main_stress(cell->vertex_dof_index(i,0)) += str1;
                     main_stress(cell->vertex_dof_index(i,1)) += str2;
@@ -3262,6 +3266,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 //                        min_main_stress[1] = str2;
                 };
             };
+            fclose(F);
 
             FOR_I(0, divider.size())
             {
@@ -3281,7 +3286,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 
                 std::string file_name = "iso/main_stress";
 //                file_name += "_2_";
-                file_name += std::to_string(name_main_stress);
+                // file_name += std::to_string(name_main_stress);
                 file_name += ".gpd";
                 printf("DDDDDDDDD %s\n", file_name.data());
 
@@ -3866,7 +3871,7 @@ std::array<double, 12> solved (dealii::Triangulation<dim> &triangulation,
 
     newcoef = ::unphysical_to_physicaly(newcoef);
 
-    print_stress<2>(problem, coef, 0.0, 0.0, 1.0);
+    print_stress<2>(problem, coef, 1.0, 0.0, 0.0);
             // newcoef[0][0][0][0][0],
             // newcoef[0][0][1][1][0],
             // newcoef[0][0][2][2][0]);
@@ -4414,7 +4419,7 @@ int main(int argc, char *argv[])
     printf("DDDDDDDDDD=%f %f\n", get_determinant<3>(matrix), det);
     printf("MMMMMMMMMM=%f %f\n", get_minor<3>(matrix, 2, 2), det);
 
-    FOR_J(4, 5)
+    FOR_J(1, 2)
     {
 
     switch (j)
@@ -4425,20 +4430,20 @@ int main(int argc, char *argv[])
                 F = fopen ("mata-quadrate.gpd", "w");
 
                 {
-        // const double yung_1 = g_yung_1;
-        // const double puasson_1 = g_puasson_1;
-        // const double yung_2 = g_yung_2;
-        // const double puasson_2 = g_puasson_2;
+        const double yung_1 = g_yung_1;
+        const double puasson_1 = g_puasson_1;
+        const double yung_2 = g_yung_2;
+        const double puasson_2 = g_puasson_2;
 
                     // cdbl yung_2 = 40.0;
                     // cdbl yung_1 = 393.0;
                     // cdbl puasson_2 = 0.35;
                     // cdbl puasson_1 = 0.4;
 
-                    cdbl yung_2 = 2.0;
-                    cdbl yung_1 = 1.0;
-                    cdbl puasson_2 = 0.25;
-                    cdbl puasson_1 = 0.25;
+                    // cdbl yung_2 = 2.0;
+                    // cdbl yung_1 = 1.0;
+                    // cdbl puasson_2 = 0.25;
+                    // cdbl puasson_1 = 0.25;
 
                     dbl delta = 0.005;
 
@@ -4465,11 +4470,14 @@ int main(int argc, char *argv[])
 // 
                         // ::set_grid(tria);
 
-                       ::set_tria <5> (tria, dot, material_id_for_quadrate);
+                        dealii::Point<2> p1(0.0, 0.0);
+                        dealii::Point<2> p2(2.0, 1.0);
+                        dealii::GridGenerator::hyper_rectangle (tria, p1, p2);
+                       // ::set_tria <5> (tria, dot, material_id_for_quadrate);
 //                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 //                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
                         //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                        tria .refine_global (1);
+                        tria .refine_global (2);
 
                         {
                         std::ofstream out ("grid-igor.eps");
