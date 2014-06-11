@@ -1449,8 +1449,8 @@ int main()
                     (1.0)
                 };
                 // ::set_tria <5> (domain.grid, dot, material_id);
-                // set_circ(domain.grid, 0.346410567, 6);
-                set_circ_in_hex(domain.grid, 0.3, 6);
+                set_circ(domain.grid, 0.344827, 6);
+                // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
                 // domain.grid .refine_global (3);
                 {
@@ -1469,14 +1469,14 @@ int main()
             LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
             // {
             element_matrix.C .resize(2);
-            element_matrix.C[0][x][x] = 100.0;
-            element_matrix.C[0][x][y] = 0.0;
-            element_matrix.C[0][y][x] = 0.0;
-            element_matrix.C[0][y][y] = 100.0;
-            element_matrix.C[1][x][x] = 1.0;
+            element_matrix.C[1][x][x] = 0.1;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
-            element_matrix.C[1][y][y] = 1.0;
+            element_matrix.C[1][y][y] = 0.1;
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
             // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
             // };
             const bool scalar_type = 0;

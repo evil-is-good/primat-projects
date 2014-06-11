@@ -1117,15 +1117,15 @@ prmt::Report ElasticProblem2DOnCellV2<dim>::solve_system_equations_parallel (
                              ) > 1e-10)
                         printf("\x1B[31mWARNING %ld %ld\x1B[0m\n", i, j);
 
-    FILE* F;
-    F = fopen("A1.gpd", "w");
-    for (size_t i = 0; i < this->system_equations.A.m(); ++i)
-        for (size_t j = 0; j < this->system_equations.A.n(); ++j)
-            if (std::abs(this->system_equations.A .el (i, j)) > 1e-6)
-                fprintf(F, "%ld %ld %f\n", i, j, this->system_equations.A .el (i, j));
-            else
-                fprintf(F, "%ld %ld 0.0\n", i, j);
-    fclose(F);
+    // FILE* F;
+    // F = fopen("A1.gpd", "w");
+    // for (size_t i = 0; i < this->system_equations.A.m(); ++i)
+    //     for (size_t j = 0; j < this->system_equations.A.n(); ++j)
+    //         if (std::abs(this->system_equations.A .el (i, j)) > 1e-6)
+    //             fprintf(F, "%ld %ld %f\n", i, j, this->system_equations.A .el (i, j));
+    //         else
+    //             fprintf(F, "%ld %ld 0.0\n", i, j);
+    // fclose(F);
 
     dealii::SolverControl solver_control (100000, 1e-8);
 

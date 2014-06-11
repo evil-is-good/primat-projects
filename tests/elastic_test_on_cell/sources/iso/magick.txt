@@ -1,0 +1,1 @@
+python main_stress.py; gnuplot main_stress.g; convert main_stress_1.eps -rotate 90 main_stress_1.png; convert main_stress_2.eps -rotate 90 main_stress_2.png; montage main_stress_1.png main_place_1.png -tile 2x1 -geometry +0+0 ms1.png; montage main_stress_2.png main_place_2.png -tile 2x1 -geometry +0+0 ms2.png

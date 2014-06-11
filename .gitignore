@@ -34,3 +34,4 @@ html-doc
 *.nav
 *.snm
 *.toc
+*.nogit

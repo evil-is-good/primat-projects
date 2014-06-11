@@ -29,6 +29,8 @@
 #include "./head.h"
 
 size_t name_main_stress = 0;
+st N_PROBLEM =0;
+dbl PX = 0.0;
 
 double glob_i = 0.0;
 
@@ -2945,6 +2947,22 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
     std::vector<std::array<dealii::Point<2>, 3> > 
         grad_elastic_field(problem.system_equations.x.size());
 
+    for (st i = 0; i < problem.system_equations.x.size(); ++i)
+    {
+        grad_elastic_field[i][0](0) = 0.0;
+        grad_elastic_field[i][1](0) = 0.0;
+        grad_elastic_field[i][2](0) = 0.0;
+        grad_elastic_field[i][0](1) = 0.0;
+        grad_elastic_field[i][1](1) = 0.0;
+        grad_elastic_field[i][2](1) = 0.0;
+    };
+
+    std::vector<dealii::Point<2>> 
+        points(problem.problem_of_torsion_rod.system_equations.x.size());
+
+    // std::vector<dealii::Point<2>> 
+    //     index(problem.system_equations.x.size());
+
     std::vector<dealii::Point<2> > 
         grad_heat_field(problem.problem_of_torsion_rod.system_equations.x.size());
 
@@ -3023,14 +3041,21 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 
                     divider[cell->vertex_dof_index(i,0)][m] += 1;
                     divider[cell->vertex_dof_index(i,1)][m] += 1;
+
+                    // printf("OOOGOOOOO %d %d %d\n", 
+                    //         cell->vertex_dof_index(i,0),
+                    //         cell->vertex_dof_index(i,1),
+                    //         cell->vertex_dof_index(i,0)-
+                    //         cell->vertex_dof_index(i,1)
+                    //         );
                 };
         };
 
         FOR_I(0, divider.size())
             FOR_M(0, 3)
             grad_elastic_field[i][m] /= divider[i][m];
-        FOR_I(0, divider.size())
-            printf("%d %f\n", grad_elastic_field[i][0](0));
+        // FOR_I(0, divider.size())
+        //     printf("%d %f\n", grad_elastic_field[i][0](0));
     };
 
     {
@@ -3053,6 +3078,8 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                     (cell->material_id() ? 2.0 : 1.0); 
 
                 divider[cell->vertex_dof_index(i,0)] += 1;
+
+                points[cell->vertex_dof_index(i,0)] = cell->vertex(i);
             };
         };
         for (size_t i = 0; i < divider.size(); ++i)
@@ -3078,6 +3105,12 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
         dealii::Vector<double> sigma[2];
         sigma[0].reinit(problem.system_equations.x.size());
         sigma[1].reinit(problem.system_equations.x.size());
+        for (st i = 0; i < problem.system_equations.x.size(); ++i)
+        {
+            solution(i) = 0.0;
+            sigma[0](i) = 0.0;
+            sigma[1](i) = 0.0;
+        };
 
         // double nu[3] = {- 1.0 / meta_E, + meta_nu_yx / meta_E, + meta_nu_zx / meta_E}; 
 
@@ -3146,10 +3179,21 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
     
         {
             dealii::Vector<double> main_stress(problem.system_equations.x.size());
+            dealii::Vector<double> tangent_stress(problem.problem_of_torsion_rod.system_equations.x.size());
             dealii::Vector<double> angle(problem.system_equations.x.size());
 //            cos[1].reinit(problem.system_equations.x.size());
 
             std::vector<uint8_t> divider(problem.system_equations.x.size());
+            for (st i = 0; i < problem.system_equations.x.size(); ++i)
+            {
+                main_stress(i) = 0.0;
+                // angle(i) = 0.0;
+                divider[i] = 0.0;
+            };
+            for (st i = 0; i < problem.problem_of_torsion_rod.system_equations.x.size(); ++i)
+            {
+                tangent_stress(i) = 0.0;
+            };
 
 //            double max_main_stress[2] = {0.0};
 //            double min_main_stress[2] = {0.0};
@@ -3160,14 +3204,14 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
             typename dealii::DoFHandler<2>::active_cell_iterator endc =
                 problem.domain.dof_handler.end();
 
-            FILE *F;
-            F = fopen("stupid.txt", "w");
+            // FILE *F;
+            // F = fopen("stupid.txt", "w");
             for (; cell != endc; ++cell)
             {
                 FOR_I(0, 4)
                 {
-                        sigma[0](cell->vertex_dof_index(i,1)) = 0.0;
-                        sigma[1](cell->vertex_dof_index(i,0)) = 0.0;
+                        // sigma[0](cell->vertex_dof_index(i,1)) = 0.0;
+                        // sigma[1](cell->vertex_dof_index(i,0)) = 0.0;
                     double L1 = 
                         sigma[0](cell->vertex_dof_index(i,0)) +
                         sigma[1](cell->vertex_dof_index(i,1)); 
@@ -3199,13 +3243,22 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                             (sigma[x](id_x) - sigma[y](id_y))
                             ) / 2.0;
                     double angl2 = angl1 + 3.14159265359 / 2.0; 
+                    dbl angl3 = angl1 + 3.14159265359 / 4.0;
+                    dbl str3 = 0.0;
+                    str1 = std::cos(angl1)*std::cos(angl1)*sigma[x](id_x)+
+                           std::sin(angl1)*std::sin(angl1)*sigma[y](id_y);
+                    str2 = std::cos(angl2)*std::cos(angl2)*sigma[x](id_x)+
+                           std::sin(angl2)*std::sin(angl2)*sigma[y](id_y);
+                    str3 = 2.0 * sigma[x](id_y) * std::cos(2.0 * angl3) - 
+                        (sigma[x](id_x) - sigma[y](id_y)) * std::sin(2.0 * angl3);
+                    str3 = std::abs(std::sin(angl3)*std::cos(angl3)*(str1 - str2));
                     // double angl2 = std::atan(
                     //         - 2.0 * sigma[y](id_x) / 
                     //         (sigma[x](id_x) - sigma[y](id_y))
                     //         ) / 2.0;
 
                         // if (sigma[0](cell->vertex_dof_index(i,0)) < sigma[1](cell->vertex_dof_index(i,1)))
-                    fprintf(F, "OLOLO %f %f  %f %f %f %f %f %f  ", cell->vertex(i)[0], cell->vertex(i)[1], sigma[0](id_x), sigma[1](id_y), str1, str2, angl1, angl2);
+                    // fprintf(F, "OLOLO %f %f  %f %f %f %f %f %f  ", cell->vertex(i)[0], cell->vertex(i)[1], sigma[0](id_x), sigma[1](id_y), str1, str2, angl1, angl2);
                     if (str1 < str2)
                     {
                         double temp = str1;
@@ -3216,10 +3269,12 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                         angl1 = angl2;
                         angl2 = temp;
                     };
-                    fprintf(F, "STUPID %f %f %f %f\n", str1, str2, angl1, angl2);
+                    // fprintf(F, "STUPID %f %f %f %f\n", str1, str2, angl1, angl2);
 
                     main_stress(cell->vertex_dof_index(i,0)) += str1;
                     main_stress(cell->vertex_dof_index(i,1)) += str2;
+
+                    tangent_stress(cell->vertex_dof_index(i,0) / 2) += str3;
 
                     angle(cell->vertex_dof_index(i,0)) = angl1;// / 3.14159265359 * 180;
                     angle(cell->vertex_dof_index(i,1)) = angl2;// / 3.14159265359 * 180;
@@ -3266,7 +3321,7 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
 //                        min_main_stress[1] = str2;
                 };
             };
-            fclose(F);
+            // fclose(F);
 
             FOR_I(0, divider.size())
             {
@@ -3274,6 +3329,28 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                 // angle(i) /= divider[i];
 //                cos[0](i) /= divider[i];
 //                cos[1](i) /= divider[i];
+            };
+            for (st i = 0; i < problem.problem_of_torsion_rod.system_equations.x.size(); ++i)
+            {
+                tangent_stress(i) /= divider[i * 2];
+            };
+            {
+                FILE *F;
+                str file_name = "iso/main_stress_and_place";
+                file_name += std::to_string(N_PROBLEM);
+                file_name += str(".nogit");
+                F = fopen(file_name.data(), "w");
+                for (st i = 0; i < problem.problem_of_torsion_rod.system_equations.x.size(); ++i)
+                {
+                    st n = i * 2;
+                    fprintf(F, "%f %f %f %f %f %f %f\n", 
+                            points[i](0), points[i](1), 
+                            main_stress(n), main_stress(n+1),
+                            angle(n),
+                            angle(n+1),
+                            tangent_stress(i));
+                };
+                fclose(F);
             };
 
             {
@@ -3287,13 +3364,13 @@ void print_stress(const ElasticProblem2DOnCellV2<2> &problem,
                 std::string file_name = "iso/main_stress";
 //                file_name += "_2_";
                 // file_name += std::to_string(name_main_stress);
-                file_name += ".gpd";
+                file_name += ".vtu";
                 printf("DDDDDDDDD %s\n", file_name.data());
 
                 std::ofstream output (file_name.data());
 //            FOR_I(0, divider.size())
 //            out << 
-                data_out.write_gnuplot (output);
+                data_out.write_vtu (output);
             };
 
 //            char suffix[2] = {'1', '2'};
@@ -3524,7 +3601,7 @@ std::array<std::array<double, 2>, 12> get_ch_fork(
         V12[0] = A / (B + 1 / M2) + C;
         V12[1] = A / (B + 1 / M1) + C;
 
-        printf("A=%f B=%f C=%f\n", A, B, C);
+        // printf("A=%f B=%f C=%f\n", A, B, C);
 //        printf("c1=%f c2=%f (N1-N2)=%f ()=%f\n", c1, c2, (N1-N2), (1 / K2 - 1 / K1));
     };
 
@@ -3871,247 +3948,133 @@ std::array<double, 12> solved (dealii::Triangulation<dim> &triangulation,
 
     newcoef = ::unphysical_to_physicaly(newcoef);
 
-    print_stress<2>(problem, coef, 1.0, 0.0, 0.0);
-            // newcoef[0][0][0][0][0],
-            // newcoef[0][0][1][1][0],
-            // newcoef[0][0][2][2][0]);
-//    printf("PPPPPPPPPP %f %f %f\n", 
-//            newcoef[0][0][0][0][0],
-//            newcoef[0][0][1][1][0],
-//            newcoef[0][0][2][2][0]);
-//    {
-//        FILE *F;
-//        F = fopen("turn.gpd", "w");
-//        fclose(F);
-//    };
+    dbl force_x = 0.0; 
+    for (st i = 0; i < 41; ++i) 
+    { 
+        N_PROBLEM = i;
+        print_stress<2>(problem, coef, force_x, 1.0, 0.0); 
+        force_x += 0.025; 
+    };
+            // newcoef[0][0][0][0][0], newcoef[0][0][1][1][0],
+            // newcoef[0][0][2][2][0]); printf("PPPPPPPPPP %f %f %f\n",
+            // newcoef[0][0][0][0][0], newcoef[0][0][1][1][0],
+            // newcoef[0][0][2][2][0]); { FILE *F; F = fopen("turn.gpd", "w");
+            // fclose(F); };
 //
 //
-//    FOR_I(0, 2)
-//    {
+//    FOR_I(0, 2) {
 //
-////    for (size_t i = 0; i < 6; ++i)
-////    {
-////        auto ind = to2D(i);
-////        uint8_t im = ind[0];
-////        uint8_t in = ind[1];
-////
-////        for (size_t j = 0; j < 6; ++j)
-////        {
-////            auto jnd = to2D(j);
-////            uint8_t jm = jnd[0];
-////            uint8_t jn = jnd[1];
-////
-////            if (fabs(S[im][in][jm][jn][0]) > 0.0000001)
-////                printf("\x1B[31m%f\x1B[0m   ", S[im][in][jm][jn][0]);
-////            else
-////                printf("%f   ", S[im][in][jm][jn][0]);
-////        };
-////        for (size_t i = 0; i < 2; ++i)
-////            printf("\n");
-////    };
-////
-////            printf("\n");
-////
-////    for (size_t i = 0; i < 6; ++i)
-////    {
-////        auto ind = to2D(i);
-////        uint8_t im = ind[0];
-////        uint8_t in = ind[1];
-////
-////        for (size_t j = 0; j < 6; ++j)
-////        {
-////            auto jnd = to2D(j);
-////            uint8_t jm = jnd[0];
-////            uint8_t jn = jnd[1];
-////
-////            if (fabs(E[im][in][jm][jn][0]) > 0.0000001)
-////                printf("\x1B[31m%f\x1B[0m   ", E[im][in][jm][jn][0]);
-////            else
-////                printf("%f   ", E[im][in][jm][jn][0]);
-////        };
-////        for (size_t i = 0; i < 2; ++i)
-////            printf("\n");
-////    };
+////    for (size_t i = 0; i < 6; ++i) //    { //        auto ind = to2D(i); //
+//uint8_t im = ind[0]; //        uint8_t in = ind[1]; // //        for (size_t
+//j = 0; j < 6; ++j) //        { //            auto jnd = to2D(j); //
+//uint8_t jm = jnd[0]; //            uint8_t jn = jnd[1]; // //            if
+//(fabs(S[im][in][jm][jn][0]) > 0.0000001) //
+//printf("\x1B[31m%f\x1B[0m   ", S[im][in][jm][jn][0]); //            else //
+//printf("%f   ", S[im][in][jm][jn][0]); //        }; //        for (size_t
+//i = 0; i < 2; ++i) //            printf("\n"); //    }; // //
+//printf("\n"); // //    for (size_t i = 0; i < 6; ++i) //    { //        auto
+//ind = to2D(i); //        uint8_t im = ind[0]; //        uint8_t in = ind[1];
+//// //        for (size_t j = 0; j < 6; ++j) //        { //            auto
+//jnd = to2D(j); //            uint8_t jm = jnd[0]; //            uint8_t jn
+//= jnd[1]; // //            if (fabs(E[im][in][jm][jn][0]) > 0.0000001) //
+//printf("\x1B[31m%f\x1B[0m   ", E[im][in][jm][jn][0]); //            else //
+//printf("%f   ", E[im][in][jm][jn][0]); //        }; //        for (size_t
+//i = 0; i < 2; ++i) //            printf("\n"); //    };
 //
-//      {
-//            FILE *F;
-//F = fopen("turn.gpd", "a");
-////            printf("%f %d %f\n",(3.14159265359 / 2000.0) * i, i, newcoef[0][0][0][1][0]);
-//            fprintf(F,"%f %f %f %f %f\n",
-//angl * i, newcoef[0][0][0][1][0],
-//problem.meta_coefficient[0][1][0][1],
+//      { FILE *F;
+//F = fopen("turn.gpd", "a"); //            printf("%f %d %f\n",(3.14159265359
+/// 2000.0) * i, i, newcoef[0][0][0][1][0]); fprintf(F,"%f %f %f %f %f\n", angl
+//* i, newcoef[0][0][0][1][0], problem.meta_coefficient[0][1][0][1],
 //problem.meta_coefficient[0][0][0][0] - problem.meta_coefficient[0][0][1][1],
-//(pow(cos(angl*i), 3) * sin(angl*i) - pow(sin(angl*i), 3) * cos(angl*i))*
-//(- 2.0 * problem.meta_coefficient[0][1][0][1]+
-//(problem.meta_coefficient[0][0][0][0] - problem.meta_coefficient[0][0][1][1])));
-//fclose(F);
-//    turn(newcoef, angl);
-//};
-////    turn(newcoef, 3.14159265359 / 2.0);
-////    for (size_t i = 0; i < 6; ++i)
-////    {
-////        auto ind = to2D(i);
-////        uint8_t im = ind[0];
-////        uint8_t in = ind[1];
-////
-////        for (size_t j = 0; j < 6; ++j)
-////        {
-////            auto jnd = to2D(j);
-////            uint8_t jm = jnd[0];
-////            uint8_t jn = jnd[1];
-////
-////            if (newcoef[im][in][jm][jn][0] > 0.0000001)
-////                printf("\x1B[31m%f\x1B[0m   ", newcoef[im][in][jm][jn][0]);
-////            else
-////                printf("%f   ", newcoef[im][in][jm][jn][0]);
-////        };
-////        for (size_t i = 0; i < 2; ++i)
-////            printf("\n");
-////    };
-////
-////            printf("\n");
-//    };
-//    turn(newcoef, angl);
-//    print_tensor<9*9>(newcoef);
+//(pow(cos(angl*i), 3) * sin(angl*i) - pow(sin(angl*i), 3) * cos(angl*i))* (-
+//2.0 * problem.meta_coefficient[0][1][0][1]+
+//(problem.meta_coefficient[0][0][0][0]
+//- problem.meta_coefficient[0][0][1][1]))); fclose(F); turn(newcoef, angl); };
+////    turn(newcoef, 3.14159265359 / 2.0); //    for (size_t i = 0; i < 6;
+//++i) //    { //        auto ind = to2D(i); //        uint8_t im = ind[0]; //
+//uint8_t in = ind[1]; // //        for (size_t j = 0; j < 6; ++j) //
+//{ //            auto jnd = to2D(j); //            uint8_t jm = jnd[0]; //
+//uint8_t jn = jnd[1]; // //            if (newcoef[im][in][jm][jn][0]
+//> 0.0000001) //                printf("\x1B[31m%f\x1B[0m   ",
+//newcoef[im][in][jm][jn][0]); //            else //                printf("%f
+//", newcoef[im][in][jm][jn][0]); //        }; //        for (size_t i = 0;
+//i < 2; ++i) //            printf("\n"); //    }; // //
+//printf("\n"); }; turn(newcoef, angl); print_tensor<9*9>(newcoef);
     const double W = newcoef[0][0][0][1][0];
-//    newcoef = ::unphysical_to_physicaly(newcoef);
-//    print_tensor<9*9>(newcoef);
+//    newcoef = ::unphysical_to_physicaly(newcoef); print_tensor<9*9>(newcoef);
 //
-//    typename ElasticProblemSup<dim + 1>::TypeCoef anal;
-//    for (size_t i = 0; i < dim+1; ++i)
-//        for (size_t j = 0; j < dim+1; ++j)
-//            for (size_t k = 0; k < dim+1; ++k)
-//                for (size_t l = 0; l < dim+1; ++l)
-//                {
-//                    anal[i][j][k][l] .resize (2);
-//                };
+//    typename ElasticProblemSup<dim + 1>::TypeCoef anal; for (size_t i = 0;
+//    i < dim+1; ++i) for (size_t j = 0; j < dim+1; ++j) for (size_t k = 0;
+//    k < dim+1; ++k) for (size_t l = 0; l < dim+1; ++l) { anal[i][j][k][l]
+//    .resize (2); };
 //
-//    double delta1 = 
-//        coef[x][y][x][y][0] * coef[x][z][x][z][0] - 
-//        coef[x][y][x][z][0] * coef[x][y][x][z][0];
-//    double delta2 = 
-//        coef[x][y][x][y][1] * coef[x][z][x][z][1] - 
-//        coef[x][y][x][z][1] * coef[x][y][x][z][1];
+//    double delta1 = coef[x][y][x][y][0] * coef[x][z][x][z][0]
+//    - coef[x][y][x][z][0] * coef[x][y][x][z][0]; double delta2
+//    = coef[x][y][x][y][1] * coef[x][z][x][z][1] - coef[x][y][x][z][1]
+//    * coef[x][y][x][z][1];
 //
 //    printf("%f %f\n", delta1, delta2);
 //
 ////    double S1 = lower
 //
-//    for (size_t i = 0; i < dim+1; ++i)
-//        for (size_t j = 0; j < dim+1; ++j)
-//            for (size_t k = 0; k < dim+1; ++k)
-//                for (size_t l = 0; l < dim+1; ++l)
-//                {
-////                    coef[i][j][k][l][0] /= delta1;
-////                    coef[i][j][k][l][1] /= delta2;
-//                    anal[i][j][k][l][0] = 
-//                        ((coef[i][j][k][l][0] / delta1) * 2.0 +
-//                         (coef[i][j][k][l][1] / delta2) * 1.0) / 3.0; 
-//                };
+//    for (size_t i = 0; i < dim+1; ++i) for (size_t j = 0; j < dim+1; ++j) for
+//    (size_t k = 0; k < dim+1; ++k) for (size_t l = 0; l < dim+1; ++l) {
+////                    coef[i][j][k][l][0] /= delta1; //
+//coef[i][j][k][l][1] /= delta2; anal[i][j][k][l][0] = ((coef[i][j][k][l][0]
+/// delta1) * 2.0 + (coef[i][j][k][l][1] / delta2) * 1.0) / 3.0; };
 //
-//    double delta3 = 
-//        anal[x][y][x][y][0] * anal[x][z][x][z][0] - 
-//        anal[x][y][x][z][0] * anal[x][y][x][z][0];
+//    double delta3 = anal[x][y][x][y][0] * anal[x][z][x][z][0]
+//    - anal[x][y][x][z][0] * anal[x][y][x][z][0];
 //
-//    printf("%f %f %f %f\n", delta3,
-//            anal[x][y][x][y][0], anal[x][z][x][z][0], anal[x][y][x][z][0]);
+//    printf("%f %f %f %f\n", delta3, anal[x][y][x][y][0], anal[x][z][x][z][0],
+//    anal[x][y][x][z][0]);
 //
-////    for (auto i : {0, 1, 2})
-////        for (auto j : {0, 1, 2})
-////        {
-////            anal[x][i][x][j][0] /= delta3;
-////            anal[i][x][x][j][0] /= delta3;
-////            anal[x][i][j][x][0] /= delta3;
-////            anal[i][x][j][x][0] /= delta3;
-////            anal[x][x][i][j][0] /= delta3;
-////            anal[i][j][x][x][0] /= delta3;
-////        };
-//    for (size_t i = 0; i < dim+1; ++i)
-//        for (size_t j = 0; j < dim+1; ++j)
-//            for (size_t k = 0; k < dim+1; ++k)
-//                for (size_t l = 0; l < dim+1; ++l)
-//                    anal[i][j][k][l][0] /= delta3;
+////    for (auto i : {0, 1, 2}) //        for (auto j : {0, 1, 2}) //
+//{ //            anal[x][i][x][j][0] /= delta3; //
+//anal[i][x][x][j][0] /= delta3; //            anal[x][i][j][x][0] /= delta3;
+////            anal[i][x][j][x][0] /= delta3; //
+//anal[x][x][i][j][0] /= delta3; //            anal[i][j][x][x][0] /= delta3;
+////        }; for (size_t i = 0; i < dim+1; ++i) for (size_t j = 0; j < dim+1;
+//++j) for (size_t k = 0; k < dim+1; ++k) for (size_t l = 0; l < dim+1; ++l)
+//anal[i][j][k][l][0] /= delta3;
 //
-//    for (size_t i = 0; i < dim+1; ++i)
-//        for (size_t j = 0; j < dim+1; ++j)
-//            for (size_t k = 0; k < dim+1; ++k)
-//                for (size_t l = 0; l < dim+1; ++l)
-//                {
-//                    double a = 
-//                        ((coef[i][j][x][x][0] / coef[x][x][x][x][0]) * 2.0 +
-//                         (coef[i][j][x][x][1] / coef[x][x][x][x][1]) * 1.0) / 3.0; 
-//                    double b = 
-//                        ((coef[x][x][i][j][0] / coef[x][x][x][x][0]) * 2.0 +
-//                         (coef[x][x][i][j][1] / coef[x][x][x][x][1]) * 1.0) / 3.0; 
-//                    double c = 
-//                        (
-//                         (
-//                          coef[i][j][k][l][0] - 
-//                          (coef[x][x][i][j][0] * coef[i][j][x][x][0] / 
-//                           coef[x][x][x][x][0])
-//                         ) * 2.0 +
-//                         (
-//                          coef[i][j][k][l][1] - 
-//                          (coef[x][x][i][j][1] * coef[i][j][x][x][1] /
-//                          coef[x][x][x][x][1])
-//                         ) * 1.0
-//                        ) / 3.0; 
-//                    double d = 
-//                        (coef[x][x][x][x][0] * coef[x][x][x][x][1] * 3.0) /
-//                        (coef[x][x][x][x][0] * 1.0 + coef[x][x][x][x][1] * 2.0);
-//                    anal[i][j][k][l][1] = a * b * d + c;
-////                    printf("%d %d %d %d %f %f %f %f\n", i, j, k, l, a, b, c, d);
-//                };
+//    for (size_t i = 0; i < dim+1; ++i) for (size_t j = 0; j < dim+1; ++j) for
+//    (size_t k = 0; k < dim+1; ++k) for (size_t l = 0; l < dim+1; ++l)
+//    { double a = ((coef[i][j][x][x][0] / coef[x][x][x][x][0]) * 2.0
+//    + (coef[i][j][x][x][1] / coef[x][x][x][x][1]) * 1.0) / 3.0; double
+//    b = ((coef[x][x][i][j][0] / coef[x][x][x][x][0]) * 2.0
+//    + (coef[x][x][i][j][1] / coef[x][x][x][x][1]) * 1.0) / 3.0; double
+//    c = ( ( coef[i][j][k][l][0] - (coef[x][x][i][j][0] * coef[i][j][x][x][0]
+//    / coef[x][x][x][x][0])) * 2.0 + ( coef[i][j][k][l][1]
+//    - (coef[x][x][i][j][1] * coef[i][j][x][x][1] / coef[x][x][x][x][1]))
+//    * 1.0) / 3.0; double d = (coef[x][x][x][x][0] * coef[x][x][x][x][1]
+//    * 3.0) / (coef[x][x][x][x][0] * 1.0 + coef[x][x][x][x][1] * 2.0);
+//    anal[i][j][k][l][1] = a * b * d + c;
+////                    printf("%d %d %d %d %f %f %f %f\n", i, j, k, l, a, b,
+//c, d); };
 //
-//    for (size_t i = 0; i < width_2d_matrix; ++i)
-//    {
-//        uint8_t im = i / (dim + 1);
-//        uint8_t in = i % (dim + 1);
+//    for (size_t i = 0; i < width_2d_matrix; ++i) { uint8_t im = i / (dim
+//    + 1); uint8_t in = i % (dim + 1);
 //
-//        for (size_t j = 0; j < width_2d_matrix; ++j)
-//        {
-//            uint8_t jm = j / (dim + 1);
-//            uint8_t jn = j % (dim + 1);
+//        for (size_t j = 0; j < width_2d_matrix; ++j) { uint8_t jm = j / (dim
+//        + 1); uint8_t jn = j % (dim + 1);
 //
-//            if (anal[im][in][jm][jn][0] > 0.0000001)
-//            {
-//                if ((im == x) or (in == x) or (jm == x) or (jn == x)) then
-//                {
-//                    printf("\x1B[31m%f\x1B[0m   ", 
-//                            anal[im][in][jm][jn][0]);
-//                }
-//                else 
-//                {
-//                    printf("\x1B[31m%f\x1B[0m   ", 
-//                            anal[im][in][jm][jn][1]);
-//                }
-//            }
-//            else
-//                printf("%f   ", 
-//                        anal[im][in][jm][jn][0]);
-//        };
-//        for (size_t i = 0; i < 2; ++i)
-//            printf("\n");
-//    };
+//            if (anal[im][in][jm][jn][0] > 0.0000001) { if ((im == x) or (in
+//            == x) or (jm == x) or (jn == x)) then { printf("\x1B[31m%f\x1B[0m
+//            ", anal[im][in][jm][jn][0]); } else { printf("\x1B[31m%f\x1B[0m
+//            ", anal[im][in][jm][jn][1]); } } else printf("%f   ",
+//            anal[im][in][jm][jn][0]); }; for (size_t i = 0; i < 2; ++i)
+//            printf("\n"); };
 //
 //            printf("\n");
 //
 //
-//    FILE* F;
-//    F = fopen ("E.gpd", "a");
-//    fprintf(F, "%f ", glob_i * glob_i);
-//    for (auto i : {x, y, z}) 
-//        for (auto j : {x, y, z}) 
-//            for (auto k : {x, y, z}) 
-//                for (auto l : {x, y, z}) 
-//                {
-//                    fprintf(F, "%f ", (problem.meta_coefficient[i][j][k][l]));
-//                };
-//    fprintf(F, "\n");
-//    fclose(F);
-//    printf("%f\n", 
-//            (problem.meta_coefficient[0][0][0][0] -
-//             problem.meta_coefficient[0][0][1][1]) / 2);
+//    FILE* F; F = fopen ("E.gpd", "a"); fprintf(F, "%f ", glob_i * glob_i);
+//    for (auto i : {x, y, z}) for (auto j : {x, y, z}) for (auto k : {x, y,
+//    z}) for (auto l : {x, y, z}) { fprintf(F, "%f ",
+//    (problem.meta_coefficient[i][j][k][l])); }; fprintf(F, "\n"); fclose(F);
+//    printf("%f\n", (problem.meta_coefficient[0][0][0][0]
+//    - problem.meta_coefficient[0][0][1][1]) / 2);
 
     std::array<double, 12> meta1 = {{0.0}};
     meta1[0]  = newcoef[0][0][0][0][0];
@@ -4419,7 +4382,7 @@ int main(int argc, char *argv[])
     printf("DDDDDDDDDD=%f %f\n", get_determinant<3>(matrix), det);
     printf("MMMMMMMMMM=%f %f\n", get_minor<3>(matrix, 2, 2), det);
 
-    FOR_J(1, 2)
+    FOR_J(4, 5)
     {
 
     switch (j)
@@ -4470,10 +4433,10 @@ int main(int argc, char *argv[])
 // 
                         // ::set_grid(tria);
 
-                        dealii::Point<2> p1(0.0, 0.0);
-                        dealii::Point<2> p2(2.0, 1.0);
-                        dealii::GridGenerator::hyper_rectangle (tria, p1, p2);
-                       // ::set_tria <5> (tria, dot, material_id_for_quadrate);
+                        // dealii::Point<2> p1(0.0, 0.0);
+                        // dealii::Point<2> p2(2.0, 1.0);
+                        // dealii::GridGenerator::hyper_rectangle (tria, p1, p2);
+                       ::set_tria <5> (tria, dot, material_id_for_quadrate);
 //                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 //                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
                         //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
@@ -4741,15 +4704,19 @@ int main(int argc, char *argv[])
                 {
                     name_main_stress = 0;
                     double i = 0.30;
-                    while (i < 0.31) //95.0//116.0
+                    // while (i < 0.31) //95.0//116.0
+                    /* for (st n = 0; n < 11; ++n) */
                     {
+                        // PX = 0.25;
+                        // N_PROBLEM = n;
+
                         double x = i ;///sqrt(3.141592653589);//*sqrt(sqrt(3.0)/6.0)*1.28;
 
                         dealii::Triangulation<2> tria;
 
-                        ::set_circ(tria, x, 5); // /sqrt(3.1415926535), 6);
+                        ::set_circ(tria, x, 6); // /sqrt(3.1415926535), 6);
                         // ::set_hexagon <60> (tria, 100.0, i * (sqrt(3.0) / 2.0));
-                        // ::set_circ_in_hex(tria, 0.3, 6);
+                        // ::set_circ_in_hex(tria, 0.3, 8);
 //                        tria .refine_global (3);
 
         const double yung_1 = g_yung_1;
@@ -4762,7 +4729,7 @@ int main(int argc, char *argv[])
 
                         meta .push_back (res);
 
-                        fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+                        fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
 //                                i*i, 
                                 (x*x*3.14159265358979323846264338327),
                                 meta.back()[0],
@@ -4778,7 +4745,8 @@ int main(int argc, char *argv[])
                                 meta.back()[10],
                                 meta.back()[11],
                                 g_yung_1,
-                                0.25 * 1.0
+                                0.25 * 1.0,
+                                PX
                                );
 
                         printf("\x1B[31m%f %f %f %f %f %f %f %f %f %f %f %f\x1B[0m\n", 
@@ -4798,6 +4766,8 @@ int main(int argc, char *argv[])
 
                         i += 0.01;
                         name_main_stress += 1;
+
+                        // PX += 0.025;
 //                        break;
                     };
                 };
