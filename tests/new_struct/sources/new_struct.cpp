@@ -1403,7 +1403,7 @@ int main()
 
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL
-    if (true)
+    if (false)
     {
         FILE *F;
         F = fopen("square.gpd", "w");
@@ -1557,7 +1557,7 @@ int main()
     };
 
     //ELASSTIC_PROBLEM
-    if (false)
+    if (true)
     {
         Domain<2> domain;
         {
@@ -1634,7 +1634,7 @@ int main()
             dealii::GridReordering<2> ::reorder_cells (c);
             domain.grid .create_triangulation_compatibility (v, c, b);
 
-            domain.grid.refine_global(3);
+            domain.grid.refine_global(2);
         };
     debputs();
         dealii::FESystem<2,2> fe 
@@ -1669,18 +1669,20 @@ int main()
     debputs();
 
         vec<BoundaryValueVector<2>> bound (3);
-        bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
+        bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, -1.0};};
         bound[0].boundary_id   = 0;
-        bound[0].boundary_type = TBV::Dirichlet;
-        // bound[0].boundary_type = TBV::Neumann;
-        bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{1.0, 0.0};};
+        // bound[0].boundary_type = TBV::Dirichlet;
+        bound[0].boundary_type = TBV::Neumann;
+        bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 1.0};};
         bound[1].boundary_id   = 1;
         // bound[1].boundary_type = TBV::Dirichlet;
         bound[1].boundary_type = TBV::Neumann;
         bound[2].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
         bound[2].boundary_id   = 2;
+        // bound[1].boundary_type = TBV::Dirichlet;
         bound[2].boundary_type = TBV::Neumann;
     debputs();
+    printf("CCCC %f\n",element_matrix.C[0][0][0][0][0]);
 
         for (auto b : bound)
             ATools ::apply_boundary_value_vector<2> (b) .to_slae (slae, domain);
@@ -1956,6 +1958,95 @@ int main()
         fclose(F);
     };
     
+    //HEAT_CONDUCTION_NIKOLA_PROBLEM
+    if (false)
+    {
+        Domain<2> domain;
+        {
+            vec<prmt::Point<2>> boundary_of_segments;
+            vec<st> types_boundary_segments;
+            arr<st, 4> types_boundary = {0, 1, 2, 3}; //clockwise
+            cst num_segments = 1;
+            prmt::Point<2> p1(0.0, 0.0);
+            prmt::Point<2> p2(1.0, 1.0);
+            debputs();
+            GTools::give_rectangle_with_border_condition (
+                    boundary_of_segments, types_boundary_segments, 
+                    types_boundary, num_segments, p1, p2);
+            debputs();
+            make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
+            domain.grid.refine_global(3);
+            // for (st i = 0; i < types_boundary_segments.size(); ++i)
+            // {
+            //     printf("%ld\n",types_boundary_segments[i]);
+            // };
+            // puts("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        };
+        debputs();
+        dealii::FE_Q<2> fe(1);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+        {
+            element_matrix.C .resize(1);
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
+            // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+        };
+
+        auto func = [] (dealii::Point<2>) {return 0.0;};
+        SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+
+        Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+
+        vec<BoundaryValueScalar<2>> bound (3);
+        bound[0].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        bound[0].boundary_id   = 0;
+        bound[0].boundary_type = TBV::Neumann;
+        // bound[0].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // bound[0].boundary_id   = 0;
+        // bound[0].boundary_type = TBV::Dirichlet;
+        // bound[1].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // bound[1].boundary_id   = 1;
+        // bound[1].boundary_type = TBV::Dirichlet;
+        // bound[2].function      = [] (const dealii::Point<2> &p) {return 1.0;};
+        // bound[2].boundary_id   = 2;
+        // bound[2].boundary_type = TBV::Dirichlet;
+        bound[1].function      = [] (const dealii::Point<2> &p) {return 1.0;};
+        bound[1].boundary_id   = 1;
+        bound[1].boundary_type = TBV::Neumann;
+        bound[2].function      = [] (const dealii::Point<2> &p) {return -1.0;};
+        bound[2].boundary_id   = 2;
+        bound[2].boundary_type = TBV::Neumann;
+        bound[3].function      = [] (const dealii::Point<2> &p) {return -1.0;};
+        bound[3].boundary_id   = 3;
+        bound[3].boundary_type = TBV::Neumann;
+
+        for (auto b : bound)
+            ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+
+        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+        // HCPTools ::print_heat_conductions<2> (
+        //         slae.solution, element_matrix.C, domain, "heat_conductions");
+        // HCPTools ::print_heat_gradient<2> (
+        //         slae.solution, element_matrix.C, domain, "heat_gradient");
+    };
+
     // {
     //     vec<ATools::FourthOrderTensor> C(2);
     //     EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.34}(C[0]);
