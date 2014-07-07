@@ -2004,18 +2004,38 @@ int main()
             // v[5]  = dealii::Point<2>(1.0, 1.0);
 
             std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
-
-            c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
-            c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
+            {
+                dealii::CellData<2> tmp;
+                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
+                c .push_back (tmp);
+                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=1;
+                c .push_back (tmp);
+            };
+            // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
+            // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
 
             dealii::SubCellData b;
-
-            b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
-            b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
-            b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
-            b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
-            b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
-            b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
+            {
+                dealii::CellData<1> tmp;
+                tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
+                b.boundary_lines .push_back (tmp);
+            };
+            // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
+            // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
+            // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
+            // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
+            // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
+            // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
 
             dealii::GridReordering<2> ::reorder_cells (c);
             domain.grid .create_triangulation_compatibility (v, c, b);
@@ -2044,24 +2064,26 @@ int main()
         };
 
         // T1.1
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return 2.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
+        U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        U[1][x] = [] (const dealii::Point<2> &p) {return 2.0;};
+        U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
-        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;}; //Ux
-        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25;}; //Uy
-        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;};
-        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25;};
-        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        tau[0] = [] (const dealii::Point<2> &p) {return -1;};
-        tau[1] = [] (const dealii::Point<2> &p) {return -1;};
+        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
+        // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
+        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
+        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // tau[0] = [] (const dealii::Point<2> &p) {return 0;};
+        // tau[1] = [] (const dealii::Point<2> &p) {return 0;};
+        // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
+        // tau[1] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
 
         // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
         // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
@@ -2110,6 +2132,14 @@ int main()
         // for (auto b : bound)
         //     ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
 
+        HCPTools ::print_temperature<2> (slae.rhsv, domain.dof_handler, "b");
+        dbl sum = 0.0;
+        for (st i = 0; i < slae.rhsv.size(); ++i)
+        {
+            sum += slae.rhsv(i);
+        };
+        printf("Integral %f\n", sum);
+
         dealii::SolverControl solver_control (10000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
         solver.solve (
@@ -2120,7 +2150,6 @@ int main()
                 );
 
         HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
-        HCPTools ::print_temperature<2> (slae.rhsv, domain.dof_handler, "b");
         // HCPTools ::print_heat_conductions<2> (
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         // HCPTools ::print_heat_gradient<2> (
