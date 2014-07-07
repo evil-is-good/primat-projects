@@ -104,7 +104,7 @@ Executable := $(addprefix $(ProjectDir)/$(ConfigurationName)/, $(Executable))
 #	@echo $(ObjDir)/Test1.o
 
 $(ProjectName).o: $(ProjectName).cpp
-	$(CXX) -c $(CFlags) $< -o $@ $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log 
+	g++ -c $(CFlags) $< -o $@ $(IncDirs) $(LibDirs) $(Libs) 2> ~/projects/code.log 
 
 analysis: $(Sources)
 	$(CXX) $(AnalysisFlags) $^ $(IncDirs) $(LibDirs) $(Libs)

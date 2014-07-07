@@ -27,10 +27,16 @@ class BoundaryValueScalar
         {
         public:
             typedef std::function<dbl (const dealii::Point<dim>&)> TypeFunc;
+            typedef std::function<arr<dbl, dim> (const dealii::Point<dim>&)> TypeFuncVec;
 
             void operator= (const TypeFunc func)
             {
                 this->func = func;
+            };
+
+            void operator= (const TypeFuncVec func)
+            {
+                this->func_vec = func;
             };
 
             virtual dbl value (const dealii::Point<dim> &p,
@@ -39,7 +45,20 @@ class BoundaryValueScalar
                 return func (p);
             };
 
+            virtual void vector_value (const dealii::Point<dim> &p,
+                    dealii::Vector<dbl> &values) const override
+            {
+                arr<dbl, dim> res = func_vec(p);
+                // dealii::Vector<dbl> v(1);
+                // v[0] = 0.0;
+                for (st i = 0; i < dim; ++i)
+                {
+                    values[i] = res[i];
+                };
+            };
+
             TypeFunc func;
+            TypeFuncVec func_vec;
         };
 
         //! Функция граничного условия

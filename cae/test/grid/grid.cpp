@@ -679,17 +679,17 @@ void create_grid_using_cgal(CDT &cdt,
         const vec<prmt::Point<2>> &inner_border)
 {};
 
-void insert_polygon(CDT& cdt, const CGAL::Polygon_2<K>& polygon){
-    if ( polygon.is_empty() ) return;
-    CDT::Vertex_handle v_prev=cdt.insert(*CGAL::cpp0x::prev(polygon.vertices_end()));
-    for (auto vit=polygon.vertices_begin();
-            vit!=polygon.vertices_end();++vit)
-    {
-        CDT::Vertex_handle vh=cdt.insert(*vit);
-        cdt.insert_constraint(vh,v_prev);
-        v_prev=vh;
-    }
-}
+// void insert_polygon(CDT& cdt, const CGAL::Polygon_2<K>& polygon){
+//     if ( polygon.is_empty() ) return;
+//     CDT::Vertex_handle v_prev=cdt.insert(*CGAL::cpp0x::prev(polygon.vertices_end()));
+//     for (auto vit=polygon.vertices_begin();
+//             vit!=polygon.vertices_end();++vit)
+//     {
+//         CDT::Vertex_handle vh=cdt.insert(*vit);
+//         cdt.insert_constraint(vh,v_prev);
+//         v_prev=vh;
+//     }
+// }
 
 template <>
 void create_grid_using_cgal<cguc_type::Default> (CDT &cdt,

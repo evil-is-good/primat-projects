@@ -76,9 +76,9 @@ dbl SourceScalar<dim>::operator () (cst i)
     FOR (q_point, 0, num_quad_points)
     {
         res +=  
-            fe_values.shape_value (i, q_point) *
+            this->fe_values.shape_value (i, q_point) *
             this->f(fe_values.quadrature_point(q_point)) *
-            fe_values.JxW(q_point);
+            this->fe_values.JxW(q_point);
     };
 
     return res;

@@ -52,13 +52,23 @@ namespace ATools
                 {
                     dealii::Vector<dbl> tmp (slae.rhsv.size());
 
+                    std::set<u8> b_id;
+                    b_id.insert(boundary_value.boundary_id);
+
                     dealii::VectorTools::create_boundary_right_hand_side (
                             domain.dof_handler,
                             dealii::QGauss<dim-1>(2),
                             boundary_value.function,
-                            tmp);
+                            tmp,
+                            b_id);
+                    // dealii::VectorTools::create_boundary_right_hand_side (
+                    //         domain.dof_handler,
+                    //         dealii::QGauss<dim-1>(2),
+                    //         boundary_value.function,
+                    //         tmp);
 
                     slae.rhsv += tmp;
+                    // slae.rhsv = tmp;
                 };
             };
         private:

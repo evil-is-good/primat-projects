@@ -28,6 +28,9 @@
 
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/source/vector/source_vector.h"
 
+
+#include "../../../calculation_core/src/blocks/special/nikola_problem/source/scalar/source_scalar.h"
+
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/lac/solver_cg.h>
@@ -1557,7 +1560,7 @@ int main()
     };
 
     //ELASSTIC_PROBLEM
-    if (true)
+    if (false)
     {
         Domain<2> domain;
         {
@@ -1585,8 +1588,8 @@ int main()
 
             v[0] = dealii::Point<2>(0.0, 0.0);
             v[1] = dealii::Point<2>(1.0, 0.0);
-            v[2] = dealii::Point<2>(1.0, 10.0);
-            v[3] = dealii::Point<2>(0.0, 10.0);
+            v[2] = dealii::Point<2>(1.0, 1.0);
+            v[3] = dealii::Point<2>(0.0, 1.0);
 
             std::vector< dealii::CellData< 2 > > c (1, dealii::CellData<2>());
 
@@ -1682,7 +1685,8 @@ int main()
         // bound[1].boundary_type = TBV::Dirichlet;
         bound[2].boundary_type = TBV::Neumann;
     debputs();
-    printf("CCCC %f\n",element_matrix.C[0][0][0][0][0]);
+    printf("CCCC %f\n",element_matrix.C[0][1][1][1][1]);
+    print_tensor<6*6>(element_matrix.C[0]);
 
         for (auto b : bound)
             ATools ::apply_boundary_value_vector<2> (b) .to_slae (slae, domain);
@@ -1959,29 +1963,65 @@ int main()
     };
     
     //HEAT_CONDUCTION_NIKOLA_PROBLEM
-    if (false)
+    if (true)
     {
         Domain<2> domain;
+        // {
+        //     vec<prmt::Point<2>> boundary_of_segments;
+        //     vec<st> types_boundary_segments;
+        //     arr<st, 4> types_boundary = {0, 1, 2, 3}; //clockwise
+        //     cst num_segments = 1;
+        //     prmt::Point<2> p1(0.0, 0.0);
+        //     prmt::Point<2> p2(1.0, 1.0);
+        //     debputs();
+        //     GTools::give_rectangle_with_border_condition (
+        //             boundary_of_segments, types_boundary_segments, 
+        //             types_boundary, num_segments, p1, p2);
+        //     debputs();
+        //     make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
+        //     domain.grid.refine_global(3);
+        //     // for (st i = 0; i < types_boundary_segments.size(); ++i)
+        //     // {
+        //     //     printf("%ld\n",types_boundary_segments[i]);
+        //     // };
+        //     // puts("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        // };
         {
-            vec<prmt::Point<2>> boundary_of_segments;
-            vec<st> types_boundary_segments;
-            arr<st, 4> types_boundary = {0, 1, 2, 3}; //clockwise
-            cst num_segments = 1;
-            prmt::Point<2> p1(0.0, 0.0);
-            prmt::Point<2> p2(1.0, 1.0);
-            debputs();
-            GTools::give_rectangle_with_border_condition (
-                    boundary_of_segments, types_boundary_segments, 
-                    types_boundary, num_segments, p1, p2);
-            debputs();
-            make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
-            domain.grid.refine_global(3);
-            // for (st i = 0; i < types_boundary_segments.size(); ++i)
-            // {
-            //     printf("%ld\n",types_boundary_segments[i]);
-            // };
-            // puts("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        };
+
+            std::vector< dealii::Point< 2 > > v (6);
+
+            v[0]  = dealii::Point<2>(0.0, 0.0);
+            v[1]  = dealii::Point<2>(1.0, 0.0);
+            v[2]  = dealii::Point<2>(0.0, 0.5);
+            v[3]  = dealii::Point<2>(1.0, 0.5);
+            v[4]  = dealii::Point<2>(0.0, 1.0);
+            v[5]  = dealii::Point<2>(1.0, 1.0);
+            // v[0]  = dealii::Point<2>(0.0, 0.0);
+            // v[1]  = dealii::Point<2>(0.0, 1.0);
+            // v[2]  = dealii::Point<2>(0.5, 0.0);
+            // v[3]  = dealii::Point<2>(0.5, 1.0);
+            // v[4]  = dealii::Point<2>(1.0, 0.0);
+            // v[5]  = dealii::Point<2>(1.0, 1.0);
+
+            std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
+
+            c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
+            c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
+
+            dealii::SubCellData b;
+
+            b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
+            b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
+            b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
+            b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
+            b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
+            b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
+
+            dealii::GridReordering<2> ::reorder_cells (c);
+            domain.grid .create_triangulation_compatibility (v, c, b);
+
+            domain.grid .refine_global (3);
+        }
         debputs();
         dealii::FE_Q<2> fe(1);
         domain.dof_init (fe);
@@ -1991,45 +2031,84 @@ int main()
 
         LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
         {
-            element_matrix.C .resize(1);
-            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C .resize(2);
+            element_matrix.C[0][x][x] = 0.4;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
-            element_matrix.C[0][y][y] = 1.0;
+            element_matrix.C[0][y][y] = 0.4;
+            element_matrix.C[1][x][x] = 0.4;
+            element_matrix.C[1][x][y] = 0.0;
+            element_matrix.C[1][y][x] = 0.0;
+            element_matrix.C[1][y][y] = 0.4;
             // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
         };
 
-        auto func = [] (dealii::Point<2>) {return 0.0;};
-        SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+        // T1.1
+        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [] (const dealii::Point<2> &p) {return 2.0;};
+        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+
+        // T1.2
+        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;}; //Ux
+        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25;}; //Uy
+        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;};
+        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25;};
+        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        tau[0] = [] (const dealii::Point<2> &p) {return -1;};
+        tau[1] = [] (const dealii::Point<2> &p) {return -1;};
+
+        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // tau[0] = [] (const dealii::Point<2> &p) {return -2.0;};
+        // tau[1] = [] (const dealii::Point<2> &p) {return -2.0;};
+        Nikola::SourceScalar<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
+        // auto func = [] (dealii::Point<2>) {return 0.0;};
+        // SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
 
         Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
         Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
 
-        vec<BoundaryValueScalar<2>> bound (3);
-        bound[0].function      = [] (const dealii::Point<2> &p) {return 0.0;};
-        bound[0].boundary_id   = 0;
-        bound[0].boundary_type = TBV::Neumann;
-        // bound[0].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // puts("AAAAAAAAAAAAAAAAAAAAA");
+        // vec<BoundaryValueScalar<2>> bound (4);
+        // bound[0].function      = [] (const dealii::Point<2> &p) {return 2.0*p(0);};
+        // // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
         // bound[0].boundary_id   = 0;
-        // bound[0].boundary_type = TBV::Dirichlet;
-        // bound[1].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // bound[0].boundary_type = TBV::Neumann;
+        // // bound[0].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // // bound[0].boundary_id   = 0;
+        // // bound[0].boundary_type = TBV::Dirichlet;
+        // // bound[1].function      = [] (const dealii::Point<2> &p) {return 0.0;};
+        // // bound[1].boundary_id   = 1;
+        // // bound[1].boundary_type = TBV::Dirichlet;
+        // // bound[2].function      = [] (const dealii::Point<2> &p) {return 1.0;};
+        // // bound[2].boundary_id   = 2;
+        // // bound[2].boundary_type = TBV::Dirichlet;
+        // bound[1].function      = [] (const dealii::Point<2> &p) {return 2.0*p(0);};
+        // // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{1.0, 0.0};};
         // bound[1].boundary_id   = 1;
-        // bound[1].boundary_type = TBV::Dirichlet;
-        // bound[2].function      = [] (const dealii::Point<2> &p) {return 1.0;};
+        // bound[1].boundary_type = TBV::Neumann;
+        // bound[2].function      = [] (const dealii::Point<2> &p) {return 2.0*p(0);};
+        // // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
         // bound[2].boundary_id   = 2;
-        // bound[2].boundary_type = TBV::Dirichlet;
-        bound[1].function      = [] (const dealii::Point<2> &p) {return 1.0;};
-        bound[1].boundary_id   = 1;
-        bound[1].boundary_type = TBV::Neumann;
-        bound[2].function      = [] (const dealii::Point<2> &p) {return -1.0;};
-        bound[2].boundary_id   = 2;
-        bound[2].boundary_type = TBV::Neumann;
-        bound[3].function      = [] (const dealii::Point<2> &p) {return -1.0;};
-        bound[3].boundary_id   = 3;
-        bound[3].boundary_type = TBV::Neumann;
+        // bound[2].boundary_type = TBV::Neumann;
+        // bound[3].function      = [] (const dealii::Point<2> &p) {return 2.0*p(0);};
+        // // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{-1.0, 0.0};};
+        // bound[3].boundary_id   = 3;
+        // bound[3].boundary_type = TBV::Neumann;
+        // puts("BBBBBBBBBBBBBb");
 
-        for (auto b : bound)
-            ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
+        // for (auto b : bound)
+        //     ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
 
         dealii::SolverControl solver_control (10000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
@@ -2041,6 +2120,7 @@ int main()
                 );
 
         HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+        HCPTools ::print_temperature<2> (slae.rhsv, domain.dof_handler, "b");
         // HCPTools ::print_heat_conductions<2> (
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         // HCPTools ::print_heat_gradient<2> (
