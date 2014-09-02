@@ -13,13 +13,13 @@ namespace OnCell
 {
     //! Расчет метакоэффициентов, скалярный случай
     template<u8 dim>
-    arr<arr<dbl, dim>, dim> calculate_meta_coefficients_scalar(
+    ATools::SecondOrderTensor calculate_meta_coefficients_scalar(
             const dealii::DoFHandler<dim> &dof_handler,
             const arr<dealii::Vector<dbl>, dim> &solution,
             const arr<dealii::Vector<dbl>, dim> &heat_flow,
             const vec<ATools::SecondOrderTensor> &coef)
     {
-        arr<arr<dbl, dim>, dim> mean_coefficient;
+        ATools::SecondOrderTensor mean_coefficient;
         for (st i = 0; i < dim; ++i)
             for (st j = 0; j < dim; ++j)
                 mean_coefficient[i][j] = 0.0;
@@ -57,8 +57,8 @@ namespace OnCell
         };
 
         st len_vector_solution = dof_handler.n_dofs();
-        arr<arr<dbl, dim>, dim> mean_heat_flow;
-        arr<arr<dbl, dim>, dim> meta_coefficient;
+        ATools::SecondOrderTensor mean_heat_flow;
+        ATools::SecondOrderTensor meta_coefficient;
 
         for (st i = 0; i < dim; ++i)
             for (st j = 0; j < dim; ++j)
@@ -198,6 +198,92 @@ namespace OnCell
     // for (st m = 0; m < len_vector_solution; ++m)
     //     printf("%f %f %f\n", 
     //             solution(1, 2, m), -stress(1,2,m), solution(1, 2, m) * (-stress(1, 2, m)));
+
+        return  meta_coefficient;
+    };
+
+    //! Расчет метакоэффициентов, обьёмная задача упругости
+    template<u8 dim>
+    ATools::FourthOrderTensor calculate_meta_coefficients_3d_elastic(
+            const dealii::DoFHandler<dim> &dof_handler,
+            const SystemsLinearAlgebraicEquations<6> &slae,
+            const vec<ATools::FourthOrderTensor> &coef)
+    {
+        ATools::FourthOrderTensor mean_coefficient;
+        for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+                for (st k = 0; k < 3; ++k)
+                    for (st l = 0; l < 3; ++l)
+                        mean_coefficient[i][j][k][l] = 0.0;
+        dbl area_of_domain = 0.0;
+
+        {
+            dealii::QGauss<dim>  quadrature_formula(2);
+
+            dealii::FEValues<dim> fe_values (dof_handler.get_fe(), quadrature_formula,
+                    dealii::update_quadrature_points | dealii::update_JxW_values);
+
+            cst n_q_points = quadrature_formula.size();
+
+            auto cell = dof_handler.begin_active();
+            auto endc = dof_handler.end();
+            for (; cell != endc; ++cell)
+            {
+                fe_values .reinit (cell);
+
+                for (st q_point = 0; q_point < n_q_points; ++q_point)
+                    for (st i = 0; i < 3; ++i)
+                        for (st j = 0; j < 3; ++j)
+                            for (st k = 0; k < 3; ++k)
+                                for (st l = 0; l < 3; ++l)
+                                    mean_coefficient[i][j][k][l] += 
+                                        coef[cell->material_id()][i][j][k][l] *
+                                        fe_values.JxW(q_point);
+
+                for (st q_point = 0; q_point < n_q_points; ++q_point)
+                    area_of_domain += fe_values.JxW(q_point);
+            };
+
+            for (st i = 0; i < 3; ++i)
+                for (st j = 0; j < 3; ++j)
+                    for (st k = 0; k < 3; ++k)
+                        for (st l = 0; l < 3; ++l)
+                            mean_coefficient[i][j][k][l] /= area_of_domain;
+        };
+
+        st len_vector_solution = dof_handler.n_dofs();
+        ATools::FourthOrderTensor mean_stress;
+        ATools::FourthOrderTensor meta_coefficient;
+
+        cu8 indx[3][3] = {
+            {0, 3, 4},
+            {3, 1, 5},
+            {4, 5, 2}
+        };
+
+        for (auto i : {x, y, z}) 
+            for (auto j : {x, y, z}) 
+                for (auto k : {x, y, z}) 
+                    for (auto l : {x, y, z}) 
+                    {
+                        mean_stress[i][j][k][l] = 0.0;
+
+                        for (st m = 0; m < len_vector_solution; ++m)
+                            mean_stress[i][j][k][l] += slae.solution[indx[i][j]](m) * (-slae.rhsv[indx[k][l]](m));
+
+                        mean_stress[i][j][k][l] /= area_of_domain;
+
+                        // printf("%ld %ld %ld %ld %f %f %f\n", i, j, k, l,
+                        //         mean_stress[i][j][k][l], mean_coefficient[i][j][k][l],
+                        //         mean_coefficient[i][j][k][l] + mean_stress[i][j][k][l]);
+
+                        meta_coefficient[i][j][k][l] = 
+                            mean_coefficient[i][j][k][l] + mean_stress[i][j][k][l];
+                    };
+
+        // for (st m = 0; m < len_vector_solution; ++m)
+        //     printf("%f %f %f\n", 
+        //             solution(1, 2, m), -stress(1,2,m), solution(1, 2, m) * (-stress(1, 2, m)));
 
         return  meta_coefficient;
     };

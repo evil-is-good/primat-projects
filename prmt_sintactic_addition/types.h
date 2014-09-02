@@ -35,6 +35,7 @@ typedef const long double  cldbl;
 
 #include <vector>
 #include <array>
+#include <functional>
 
 template<typename T>
 using vec = std::vector<T>;
@@ -47,5 +48,8 @@ using str = std::string;
 //{
 //    return str(s);
 //};
+
+template<typename Signature>
+using lmbd = std::function<Signature>;
 
 #endif

@@ -1,0 +1,90 @@
+\chapter{Для затравки ай} \label{chapt1}
+
+Композитный материал -- искуственно созданный материал, обладающий неоднородными физическими свойствами.
+В данной работе ему ставится в соответствие математическая модель, описываемая материальными функциями определяющих соотношений. Материальные функции
+разрывные по координатам.
+Определяющее соотношение имеет вид:
+% искусственно созданный неоднородный сплошной материал, состоящий из двух или более компонентов с чёткой границей раздела между ними. 
+\begin{equation}
+    \label{eq:BasicDefRelations}
+\mathfrak{b} = \mathfrak{F}(\mathfrak{a}, \vec{x}),
+\end{equation}
+где, $\mathfrak{a}$ может быть, например, градиентом температуры, в случае задачи темплопроводности или тензором деформации, в случае
+задачи упругости; $\mathfrak{b}$ будет, соответственно, вектором теплопроводности, либо тензором напряжения; $\vec{x}$ -- вектор координат.
+
+В вырожении \ref{eq:BasicDefRelations} явно задана зависимость материальных функций от координат.
+
+Периодический композитный материал -- композитный материал, материальные функции, которого, периодические по координатам.
+\begin{equation}
+    \label{eq:BasicPeriodicFuction}
+    \mathfrak{F}(\mathfrak{a}, \vec{x} + n_i\vec{a_i}) = \mathfrak{F}(\mathfrak{a}, \vec{x}),
+\end{equation}
+
+где, $\vec{a_i}$ -- постоянные векторы, $n_i$ -- произвольные числа.
+
+Периодические композитные материалы, по типу периодичности, можно разделить на 3 вида:
+
+1-периодические композитные материалы (слоистые) (рис. \ref{img:one_period}).
+Физические свойства изменяются периодически вдоль одного направления (на рис. \ref{img:one_period} направление $Ox$). В доль двух других направлений
+физические свойства не изменяются.
+
+\begin{equation}
+    \begin{array}{ccc}
+        \vec{a}_x = \left(\begin{array}{c}h_x\\0\\0\end{array}\right) & 
+        \vec{a}_y = \left(\begin{array}{c}0\\0\\0\end{array}\right) & 
+        \vec{a}_z = \left(\begin{array}{c}0\\0\\0\end{array}\right)
+    \end{array}
+\end{equation}
+
+\begin{figure} [h] 
+    \center
+    \includegraphics [scale=0.5] {one_period}
+    \caption{1-периодчекая среда.} 
+    \label{img:one_period}  
+\end{figure}
+
+2-периодические коомпозитные материалы (армированные) (рис. \ref{img:two_period}).
+Физические свойства изменяются периодически вдоль двух направлений (на рис. \ref{img:two_period} $Ox$ и $Oy$). 
+В доль третьего направления ($Oz$) физические свойства не изменяются. 
+
+\begin{equation}
+    \begin{array}{ccc}
+        \vec{a}_x = \left(\begin{array}{c}h_x\\0\\0\end{array}\right) & 
+        \vec{a}_y = \left(\begin{array}{c}0\\h_y\\0\end{array}\right) & 
+        \vec{a}_z = \left(\begin{array}{c}0\\0\\0\end{array}\right)
+    \end{array}
+\end{equation}
+
+\begin{figure} [h] 
+    \center
+    \includegraphics [scale=0.5] {two_period}
+    \caption{2-периодчекая среда.} 
+    \label{img:two_period}  
+\end{figure}
+
+3-периодические коомпозитные материалы (рис. \ref{img:three_period}).
+Физические свойства изменяются периодически вдоль всех трёх направлений.
+
+\begin{equation}
+    \begin{array}{ccc}
+        \vec{a}_x = \left(\begin{array}{c}h_x\\0\\0\end{array}\right) & 
+        \vec{a}_y = \left(\begin{array}{c}0\\h_y\\0\end{array}\right) & 
+        \vec{a}_z = \left(\begin{array}{c}0\\0\\h_z\end{array}\right)
+    \end{array}
+\end{equation}
+
+\begin{figure} [h] 
+    \center
+    \includegraphics [scale=0.5] {three_period}
+    \caption{3-периодчекая среда.} 
+    \label{img:three_period}  
+\end{figure}
+
+Область в которой определяющие соотношения \ref{eq:BasicDefRelations} непрерывны по координате будем называть компонентом композита.
+Композит ожет иметь два и более компонент. Если композит двухкомпонентный, то один из компонентом можно называть связующим (матрицей), а другой
+включениями (в случае армированного композита арматурой, волокнами).
+
+%\newpage
+%============================================================================================================================
+
+\clearpage

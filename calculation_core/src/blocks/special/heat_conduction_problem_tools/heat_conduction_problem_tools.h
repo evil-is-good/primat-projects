@@ -34,7 +34,8 @@ namespace HCPTools
     template<u8 dim>
     void print_temperature (const dealii::Vector<dbl> &temperature, 
                             const dealii::DoFHandler<dim> &dof_handler,
-                            const str file_name)
+                            const str file_name,
+                            const dealii::DataOutBase::OutputFormat output_format = dealii::DataOutBase::gnuplot)
     {
         dealii::DataOut<dim> data_out;
         data_out.attach_dof_handler (dof_handler);
@@ -42,11 +43,57 @@ namespace HCPTools
         data_out.build_patches ();
 
         auto name = file_name;
-        name += ".gpd";
+        // name += ".gpd";
 
         std::ofstream output (name);
-        data_out.write_gnuplot (output);
-    }
+        data_out.write (output, output_format);
+    };
+
+    //! Распечатать в файл 2d срез температуры для 3d случая
+    void print_temperature_slice (const dealii::Vector<dbl> &temperature, 
+                            const dealii::DoFHandler<3> &dof_handler,
+                            const str file_name,
+                            cst ort,
+                            cdbl slice_coor)
+    {
+        // struct LocPoint
+        // {
+        //     bool flag = false;
+        //     dealii::Point<2> coor;
+        //     dbl val;
+        // };
+        //     
+        // cst num_point_on_slice = (2_pow(dof_handler.get_tria().n_levels() - 1) + 1)_pow(2);
+        // vec<LocPoint> slice (num_point_on_slice);
+
+        FILE* f_out;
+        f_out = fopen (file_name.c_str(), "w");
+        for (auto cell = dof_handler.begin_active (); cell != dof_handler.end (); ++cell)
+        {
+            for (st i = 0; i < dealii::GeometryInfo<3>::vertices_per_cell; ++i)
+            {
+                if (std::abs(cell->vertex(i)(ort) - slice_coor) < 1e-10)
+                {
+                    // dealii::Point<2> point;
+                    // for (st j = 0; j < 3; ++j)
+                    // {
+                    //     if (j != ort)
+                    //     {
+                    //         point(j) = cell->vetrex(i)(j);
+                    //     };
+                    // };
+                    // cdbl val = temperature(cell->vertex_dof_index(i, 0));
+                    // fprintf(f_out, "%f %f %f\n", point(0), point(1), val);
+                    fprintf(f_out, "%f %f %f %f\n",
+                            cell->vertex(i)(0),
+                            cell->vertex(i)(1),
+                            cell->vertex(i)(2),
+                            temperature(cell->vertex_dof_index(i, 0)));
+                };
+            };
+        };
+        fclose(f_out);
+    };
 
     //! Распечатать в файл тепловые потоки
     template<u8 dim>

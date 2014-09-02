@@ -1,5 +1,5 @@
-#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS_ON_CELL
-#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS_ON_CELL
+#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS_WITH_CUBIC_GRID_ON_CELL
+#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS_WITH_CUBIC_GRID_ON_CELL
 
 #include <deal.II/lac/vector.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -10,7 +10,7 @@
 #include "../../../general/domain/domain.h"
 #include "../../../general/boundary_value/boundary_value.h"
 #include "../system_linear_algebraic_equations/system_linear_algebraic_equations.h"
-#include "../domain_looper/domain_looper.h"
+#include "../domain_looper_trivial/domain_looper_trivial.h"
 // #include "../../../../../../deal/main/domain_looper/sources/domain_looper.h"
 // #include "../black_on_white_substituter/black_on_white_substituter.h"
 
@@ -21,12 +21,11 @@
  */
 namespace OnCell
 {
-    //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке
-    template<bool type_space, u8 dim, u8 num_tasks>
-    void prepare_system_equations (
+    //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке и простейшей кубической сетки, сгенерированной дилом
+    template<u8 dim, u8 type_space, u8 num_tasks>
+    void prepare_system_equations_with_cubic_grid (
             ::OnCell::SystemsLinearAlgebraicEquations<num_tasks> &se,
             ::OnCell::BlackOnWhiteSubstituter &bows,
-            // BlackOnWhiteSubstituter &bows,
             const Domain<dim> &domain)
     {
         dealii::CompressedSparsityPattern c_sparsity (
@@ -40,7 +39,7 @@ namespace OnCell
         // c_sparsity .print_gnuplot (output);
         // };
 
-        ::OnCell::DomainLooper<dim, type_space> dl;
+        ::OnCell::DomainLooperTrivial<dim, type_space> dl;
         // DomainLooper<dim, 0> dl;
         dl .loop_domain(
                 domain.dof_handler,
@@ -48,7 +47,7 @@ namespace OnCell
                 c_sparsity);
 
         {
-        std::ofstream output ("csp_old.gpd");
+        std::ofstream output ("csp_new.gpd");
         c_sparsity .print_gnuplot (output);
         };
 

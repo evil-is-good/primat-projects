@@ -29,6 +29,7 @@
 *.jpeg
 *.JPG
 *.vtu
+*.vtk
 *doxygen*
 html-doc
 *.nav

@@ -37,6 +37,8 @@ namespace OnCell
         public:
             template<u8 dim, bool type_space>
                 friend class DomainLooper;
+            template<u8 dim, u8 type_space>
+                friend class DomainLooperTrivial;
     };
 };
 

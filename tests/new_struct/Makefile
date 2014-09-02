@@ -52,9 +52,9 @@ StaticLibs :=
 
 #=================================================================BASE FLAGS===#
 
-DebugFlagsC   := -O0 -gstabs+ -pipe -std=c++11
+DebugFlagsC   := -O2 -gstabs+ -pipe -std=c++11
 
-ReleaseFlagsC := -std=c++11 -O0 -pipe -fopenmp -frounding-math
+ReleaseFlagsC := -std=c++11 -O2 -pipe -fopenmp -frounding-math
 
 DebugFlagL    := -gstabs+
 

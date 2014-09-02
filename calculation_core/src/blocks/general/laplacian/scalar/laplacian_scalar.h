@@ -133,6 +133,7 @@ void LaplacianScalar<dim>::update_on_cell (
 {
     fe_values .reinit (cell);
     material_id = cell->material_id();
+    // printf("%ld %f\n", material_id, C[material_id][0][0]);
 };
 
 template <u8 dim>
