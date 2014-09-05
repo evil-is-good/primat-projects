@@ -1638,6 +1638,23 @@ void set_speciment (dealii::Triangulation<3> &triangulation,
     };
 };
 
+dbl uber_function (const dealii::Point<2> p, cst n)
+{
+    cdbl PI = 3.14159265359;
+    dbl Uz = 0.0;
+    dbl Uw = 0.0;
+    for (st i = 1; i < n+1; ++i)
+    {
+        Uw += (0.25 * 4.0 / (std::pow(PI, 3.0) * std::pow((2.0 * i - 1.0), 3.0)) *
+                cosh((2.0 * i - 1.0) * PI * p(1)) / sinh((2.0 * i - 1.0) * PI / 2.0) +
+        8.0 / (std::pow(PI, 4.0) * std::pow((2.0 * i - 1.0), 4.0))) *
+        cos((2.0 * i - 1.0) * PI * p(0));
+    };
+    Uz = Uw - 0.25 * (std::pow(p(0), 3.0) / 6.0 - std::pow(p(1), 2.0) / 2.0 * p(0));
+    printf("Uber %ld %f %f\n", n, Uw, Uz);
+    return Uz;
+};
+
 int main()
 {
     enum {x, y, z};
@@ -2431,7 +2448,7 @@ int main()
     };
     
     //HEAT_CONDUCTION_NIKOLA_PROBLEM
-    if (false)
+    if (1)
     {
         Domain<2> domain;
         // {
@@ -2458,12 +2475,12 @@ int main()
 
             std::vector< dealii::Point< 2 > > v (6);
 
-            v[0]  = dealii::Point<2>(0.0, 0.0);
-            v[1]  = dealii::Point<2>(1.0, 0.0);
-            v[2]  = dealii::Point<2>(0.0, 0.5);
-            v[3]  = dealii::Point<2>(1.0, 0.5);
-            v[4]  = dealii::Point<2>(0.0, 1.0);
-            v[5]  = dealii::Point<2>(1.0, 1.0);
+            v[0]  = dealii::Point<2>(-0.5, -0.5);
+            v[1]  = dealii::Point<2>(0.5, -0.5);
+            v[2]  = dealii::Point<2>(-0.5, 0.0);
+            v[3]  = dealii::Point<2>(0.5, 0.0);
+            v[4]  = dealii::Point<2>(-0.5, 0.5);
+            v[5]  = dealii::Point<2>(0.5, 0.5);
             // v[0]  = dealii::Point<2>(0.0, 0.0);
             // v[1]  = dealii::Point<2>(0.0, 1.0);
             // v[2]  = dealii::Point<2>(0.5, 0.0);
@@ -2532,24 +2549,30 @@ int main()
         };
 
         // T1.1
-        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
-        U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        U[1][x] = [] (const dealii::Point<2> &p) {return 2.0;};
-        U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
-        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [] (const dealii::Point<2> &p) {return 1.0;};
+        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;}; //Ux
+        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1);}; //Uy
+        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;};
+        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1);};
         // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
         // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
         // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
         // U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return 0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 0;};
+        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // tau[0] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
+        // tau[1] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
         // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
         // tau[1] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
 
@@ -2617,11 +2640,35 @@ int main()
                 ,dealii::PreconditionIdentity()
                 );
 
-        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature");
+        dealii::Vector<dbl> uber(slae.solution.size());
+        dealii::Vector<dbl> diff(slae.solution.size());
+        for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        {
+            for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+            {
+                dbl indx = cell->vertex_dof_index(i, 0);
+                uber(indx) = uber_function(cell->vertex(i), 1);
+                diff(indx) = std::abs(uber(indx) - slae.solution(indx));
+            };
+        };
+
+        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature.gpd");
+        HCPTools ::print_temperature<2> (uber, domain.dof_handler, "uber.gpd");
+        HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff.gpd");
         // HCPTools ::print_heat_conductions<2> (
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         // HCPTools ::print_heat_gradient<2> (
         //         slae.solution, element_matrix.C, domain, "heat_gradient");
+        // for (st i = 0; i < 4; ++i)
+        //     uber_function (dealii::Point<2>(-0.5, -0.5), i);
+        // for (st i = 0; i < 4; ++i)
+        //     uber_function (dealii::Point<2>(-0.5, 0.5), i);
+        // for (st i = 0; i < 40; ++i)
+        //     uber_function (dealii::Point<2>(0.0, 0.0), i);
+        cdbl d = 
+            (uber_function(dealii::Point<2>(0.5+0.001, 0), 1) - 
+            uber_function(dealii::Point<2>(0.5-0.001, 0), 1)) / (0.002);
+        printf("Border %f %f\n", d, 0.4 * (d + 0.125 * (0.5*0.5 + 0.5 * 0.5)));
     };
 
     //HEAT_CONDUCTION_PROBLEM_3D
@@ -2919,7 +2966,7 @@ int main()
 };
 
     // ELASSTIC_PROBLEM_ON_CELL_3D
-    if (1)
+    if (0)
     {
         Domain<3> domain;
         {
