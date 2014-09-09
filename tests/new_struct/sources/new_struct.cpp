@@ -1650,8 +1650,8 @@ dbl uber_function (const dealii::Point<2> p, cst n)
         8.0 / (std::pow(PI, 4.0) * std::pow((2.0 * i - 1.0), 4.0))) *
         cos((2.0 * i - 1.0) * PI * p(0));
     };
-    Uz = Uw - 0.25 * (std::pow(p(0), 3.0) / 6.0 - std::pow(p(1), 2.0) / 2.0 * p(0));
-    printf("Uber %ld %f %f\n", n, Uw, Uz);
+    Uz = Uw - 0.25 * (std::pow(p(0) - 0.5, 3.0) / 6.0 - std::pow(p(1), 2.0) / 2.0 * (p(0) - 0.5));
+    // printf("Uber %ld %f %f\n", n, Uw, Uz);
     return Uz;
 };
 
@@ -2475,12 +2475,12 @@ int main()
 
             std::vector< dealii::Point< 2 > > v (6);
 
-            v[0]  = dealii::Point<2>(-0.5, -0.5);
-            v[1]  = dealii::Point<2>(0.5, -0.5);
-            v[2]  = dealii::Point<2>(-0.5, 0.0);
-            v[3]  = dealii::Point<2>(0.5, 0.0);
-            v[4]  = dealii::Point<2>(-0.5, 0.5);
-            v[5]  = dealii::Point<2>(0.5, 0.5);
+            v[0]  = dealii::Point<2>(0.0, -0.5);
+            v[1]  = dealii::Point<2>(1.0, -0.5);
+            v[2]  = dealii::Point<2>(0.0, 0.0);
+            v[3]  = dealii::Point<2>(1.0, 0.0);
+            v[4]  = dealii::Point<2>(0.0, 0.5);
+            v[5]  = dealii::Point<2>(1.0, 0.5);
             // v[0]  = dealii::Point<2>(0.0, 0.0);
             // v[1]  = dealii::Point<2>(0.0, 1.0);
             // v[2]  = dealii::Point<2>(0.5, 0.0);
@@ -2525,7 +2525,7 @@ int main()
             dealii::GridReordering<2> ::reorder_cells (c);
             domain.grid .create_triangulation_compatibility (v, c, b);
 
-            domain.grid .refine_global (3);
+            domain.grid .refine_global (5);
         }
         debputs();
         dealii::FE_Q<2> fe(1);
@@ -2559,18 +2559,22 @@ int main()
         // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
+        cdbl c0 = 0.5;
+        cdbl E = 1.0;
+        cdbl nu = 0.25;
+        cdbl mu = 0.4;
         vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;}; //Ux
-        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1);}; //Uy
-        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4;};
-        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1);};
+        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
+        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
+        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
+        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
         // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
         // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
         // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
         // U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
         vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[0] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
+        tau[1] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
         // tau[0] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
         // tau[1] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
         // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
@@ -2647,7 +2651,7 @@ int main()
             for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
             {
                 dbl indx = cell->vertex_dof_index(i, 0);
-                uber(indx) = uber_function(cell->vertex(i), 1);
+                uber(indx) = uber_function(cell->vertex(i), 10);
                 diff(indx) = std::abs(uber(indx) - slae.solution(indx));
             };
         };
@@ -2666,8 +2670,8 @@ int main()
         // for (st i = 0; i < 40; ++i)
         //     uber_function (dealii::Point<2>(0.0, 0.0), i);
         cdbl d = 
-            (uber_function(dealii::Point<2>(0.5+0.001, 0), 1) - 
-            uber_function(dealii::Point<2>(0.5-0.001, 0), 1)) / (0.002);
+            (uber_function(dealii::Point<2>(1.0+0.001, 0), 1) - 
+            uber_function(dealii::Point<2>(1.0-0.001, 0), 1)) / (0.002);
         printf("Border %f %f\n", d, 0.4 * (d + 0.125 * (0.5*0.5 + 0.5 * 0.5)));
     };
 
