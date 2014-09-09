@@ -2675,6 +2675,101 @@ int main()
         printf("Border %f %f\n", d, 0.4 * (d + 0.125 * (0.5*0.5 + 0.5 * 0.5)));
     };
 
+    //NIKOLA_ELASSTIC_PROBLEM
+    if (false)
+    {
+        Domain<2> domain;
+        {
+            std::vector< dealii::Point< 2 > > v (6);
+
+            v[0]  = dealii::Point<2>(0.0, -0.5);
+            v[1]  = dealii::Point<2>(1.0, -0.5);
+            v[2]  = dealii::Point<2>(0.0, 0.0);
+            v[3]  = dealii::Point<2>(1.0, 0.0);
+            v[4]  = dealii::Point<2>(0.0, 0.5);
+            v[5]  = dealii::Point<2>(1.0, 0.5);
+
+            std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
+            {
+                dealii::CellData<2> tmp;
+                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
+                c .push_back (tmp);
+                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=1;
+                c .push_back (tmp);
+            };
+            // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
+            // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
+
+            dealii::SubCellData b;
+            {
+                dealii::CellData<1> tmp;
+                tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
+                b.boundary_lines .push_back (tmp);
+                tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
+                b.boundary_lines .push_back (tmp);
+            };
+            // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
+            // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
+            // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
+            // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
+            // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
+            // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
+
+            dealii::GridReordering<2> ::reorder_cells (c);
+            domain.grid .create_triangulation_compatibility (v, c, b);
+
+            domain.grid .refine_global (5);
+        };
+        dealii::FESystem<2,2> fe 
+            (dealii::FE_Q<2,2>(1), 2);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (1);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+
+        // T2.2
+        cdbl c0 = 0.5;
+        cdbl E = 1.0;
+        cdbl nu = 0.25;
+        cdbl mu = 0.4;
+        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(2);
+        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return ;}; //Uy
+        vec<typename Nikola::SourceVector<2>::Func> tau(2);
+        tau[0][x] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+        tau[0][y] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+
+        Nikola::SourceVector<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
+        SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
+
+        Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+
+        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+
+        // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
+        EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
+    };
+
     //HEAT_CONDUCTION_PROBLEM_3D
     if (false)
     {
