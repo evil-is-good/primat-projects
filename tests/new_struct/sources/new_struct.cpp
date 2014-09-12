@@ -32,6 +32,7 @@
 
 
 #include "../../../calculation_core/src/blocks/special/nikola_problem/source/scalar/source_scalar.h"
+#include "../../../calculation_core/src/blocks/special/nikola_problem/source/vector/source_vector.h"
 
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/grid/grid_generator.h>
@@ -790,6 +791,106 @@ void set_hexagon_grid_pure(dealii::Triangulation< 2 > &triangulation,
     std::ofstream out ("grid-2.eps");
     dealii::GridOut grid_out;
     grid_out.write_eps (triangulation , out);
+};
+
+template <uint8_t dim>
+void set_quadrate (dealii::Triangulation<dim> &triangulation, 
+        cdbl x0, cdbl x1, cdbl x2, cdbl x3,
+        cdbl y0, cdbl y1, cdbl y2, cdbl y3,
+        // const double lower, const double top,
+        size_t n_refine)
+{
+    // const double x0 = 0.0;
+    // const double x1 = lower;
+    // const double x2 = top;
+    // const double x3 = 128.0;
+
+//    std::vector< dealii::Point< 2 > > v (8);
+//
+//    v[0][0] = x0; v[0][1] = x0;
+//    v[1][0] = x4; v[1][1] = x0;
+//    v[2][0] = x1; v[2][1] = x1;
+//    v[3][0] = x3; v[3][1] = x1;
+//    v[4][0] = x0; v[4][1] = x4;
+//    v[5][0] = x1; v[5][1] = x3;
+//    v[6][0] = x3; v[6][1] = x3;
+//    v[7][0] = x4; v[7][1] = x4;
+//
+//    std::vector< dealii::CellData< 2 > > c (5, dealii::CellData<2>());
+//
+//    c[0].vertices[0] = 0;
+//    c[0].vertices[1] = 1;
+//    c[0].vertices[2] = 2;
+//    c[0].vertices[3] = 3;
+//    c[0].material_id = 0;
+//
+//    c[1].vertices[0] = 0;
+//    c[1].vertices[1] = 2;
+//    c[1].vertices[2] = 4;
+//    c[1].vertices[3] = 5;
+//    c[1].material_id = 0;
+//    
+//    c[2].vertices[0] = 2;
+//    c[2].vertices[1] = 3;
+//    c[2].vertices[2] = 5;
+//    c[2].vertices[3] = 6;
+//    c[2].material_id = 1;
+//
+//    c[3].vertices[0] = 4;
+//    c[3].vertices[1] = 5;
+//    c[3].vertices[2] = 7;
+//    c[3].vertices[3] = 6;
+//    c[3].material_id = 0;
+//    
+//    c[4].vertices[0] = 1;
+//    c[4].vertices[1] = 7;
+//    c[4].vertices[2] = 3;
+//    c[4].vertices[3] = 6;
+//    c[4].material_id = 0;
+
+    std::vector< dealii::Point< 2 > > v (16);
+
+    v[0]  = dealii::Point<dim>(x0, y0);
+    v[1]  = dealii::Point<dim>(x1, y0);
+    v[2]  = dealii::Point<dim>(x2, y0);
+    v[3]  = dealii::Point<dim>(x3, y0);
+    v[4]  = dealii::Point<dim>(x0, y1);
+    v[5]  = dealii::Point<dim>(x1, y1);
+    v[6]  = dealii::Point<dim>(x2, y1);
+    v[7]  = dealii::Point<dim>(x3, y1);
+    v[8]  = dealii::Point<dim>(x0, y2);
+    v[9]  = dealii::Point<dim>(x1, y2);
+    v[10] = dealii::Point<dim>(x2, y2);
+    v[11] = dealii::Point<dim>(x3, y2);
+    v[12] = dealii::Point<dim>(x0, y3);
+    v[13] = dealii::Point<dim>(x1, y3);
+    v[14] = dealii::Point<dim>(x2, y3);
+    v[15] = dealii::Point<dim>(x3, y3);
+
+    std::vector< dealii::CellData< 2 > > c (9, dealii::CellData<2>());
+
+    c[6].vertices[0] = 8;  c[7].vertices[0] = 9;  c[8].vertices[0] = 10;
+    c[6].vertices[1] = 9;  c[7].vertices[1] = 10; c[8].vertices[1] = 11;
+    c[6].vertices[2] = 12; c[7].vertices[2] = 13; c[8].vertices[2] = 14;
+    c[6].vertices[3] = 13; c[7].vertices[3] = 14; c[8].vertices[3] = 15;
+    c[6].material_id = 0;  c[7].material_id = 0;  c[8].material_id = 0;
+
+    c[3].vertices[0] = 4;  c[4].vertices[0] = 5;  c[5].vertices[0] = 6;
+    c[3].vertices[1] = 5;  c[4].vertices[1] = 6;  c[5].vertices[1] = 7;
+    c[3].vertices[2] = 8;  c[4].vertices[2] = 9;  c[5].vertices[2] = 10;
+    c[3].vertices[3] = 9;  c[4].vertices[3] = 10; c[5].vertices[3] = 11;
+    c[3].material_id = 0;  c[4].material_id = 1;  c[5].material_id = 0;
+
+    c[0].vertices[0] = 0;  c[1].vertices[0] = 1;  c[2].vertices[0] = 2;
+    c[0].vertices[1] = 1;  c[1].vertices[1] = 2;  c[2].vertices[1] = 3;
+    c[0].vertices[2] = 4;  c[1].vertices[2] = 5;  c[2].vertices[2] = 6;
+    c[0].vertices[3] = 5;  c[1].vertices[3] = 6;  c[2].vertices[3] = 7;
+    c[0].material_id = 0;  c[1].material_id = 0;  c[2].material_id = 0;
+
+
+    triangulation .create_triangulation (v, c, dealii::SubCellData());
+
+    triangulation .refine_global (n_refine);
 };
 
 ATools::FourthOrderTensor unphysical_to_physicaly (
@@ -2473,59 +2574,66 @@ int main()
         // };
         {
 
-            std::vector< dealii::Point< 2 > > v (6);
+            // std::vector< dealii::Point< 2 > > v (6);
 
-            v[0]  = dealii::Point<2>(0.0, -0.5);
-            v[1]  = dealii::Point<2>(1.0, -0.5);
-            v[2]  = dealii::Point<2>(0.0, 0.0);
-            v[3]  = dealii::Point<2>(1.0, 0.0);
-            v[4]  = dealii::Point<2>(0.0, 0.5);
-            v[5]  = dealii::Point<2>(1.0, 0.5);
-            // v[0]  = dealii::Point<2>(0.0, 0.0);
-            // v[1]  = dealii::Point<2>(0.0, 1.0);
-            // v[2]  = dealii::Point<2>(0.5, 0.0);
-            // v[3]  = dealii::Point<2>(0.5, 1.0);
-            // v[4]  = dealii::Point<2>(1.0, 0.0);
-            // v[5]  = dealii::Point<2>(1.0, 1.0);
+            // v[0]  = dealii::Point<2>(0.0, -0.5);
+            // v[1]  = dealii::Point<2>(1.0, -0.5);
+            // v[2]  = dealii::Point<2>(0.0, 0.0);
+            // v[3]  = dealii::Point<2>(1.0, 0.0);
+            // v[4]  = dealii::Point<2>(0.0, 0.5);
+            // v[5]  = dealii::Point<2>(1.0, 0.5);
+            // // v[0]  = dealii::Point<2>(0.0, 0.0);
+            // // v[1]  = dealii::Point<2>(0.0, 1.0);
+            // // v[2]  = dealii::Point<2>(0.5, 0.0);
+            // // v[3]  = dealii::Point<2>(0.5, 1.0);
+            // // v[4]  = dealii::Point<2>(1.0, 0.0);
+            // // v[5]  = dealii::Point<2>(1.0, 1.0);
 
-            std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
-            {
-                dealii::CellData<2> tmp;
-                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
-                c .push_back (tmp);
-                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=1;
-                c .push_back (tmp);
-            };
-            // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
-            // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
+            // std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
+            // {
+            //     dealii::CellData<2> tmp;
+            //     tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
+            //     c .push_back (tmp);
+            //     tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=1;
+            //     c .push_back (tmp);
+            // };
+            // // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
+            // // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
 
-            dealii::SubCellData b;
-            {
-                dealii::CellData<1> tmp;
-                tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
-                b.boundary_lines .push_back (tmp);
-            };
-            // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
-            // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
-            // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
-            // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
-            // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
-            // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
+            // dealii::SubCellData b;
+            // {
+            //     dealii::CellData<1> tmp;
+            //     tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
+            //     b.boundary_lines .push_back (tmp);
+            // };
+            // // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
 
-            dealii::GridReordering<2> ::reorder_cells (c);
-            domain.grid .create_triangulation_compatibility (v, c, b);
+            // dealii::GridReordering<2> ::reorder_cells (c);
+            // domain.grid .create_triangulation_compatibility (v, c, b);
 
-            domain.grid .refine_global (5);
+            // domain.grid .refine_global (5);
+            
+            set_quadrate<2> (domain.grid, 
+                    0.0, 1.0/3.0, 2.0/4.0, 1.0, 
+                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+                    4);
+            // set_hexagon_grid_pure(domain.grid, 100.0, 50.0);
+            // domain.grid .refine_global (4);
         }
         debputs();
         dealii::FE_Q<2> fe(1);
@@ -2575,6 +2683,8 @@ int main()
         vec<typename Nikola::SourceScalar<2>::Func> tau(2);
         tau[0] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
         tau[1] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
+        // tau[0] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // tau[1] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
         // tau[0] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
         // tau[1] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
         // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
@@ -2651,7 +2761,7 @@ int main()
             for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
             {
                 dbl indx = cell->vertex_dof_index(i, 0);
-                uber(indx) = uber_function(cell->vertex(i), 10);
+                uber(indx) = uber_function(cell->vertex(i), 20);
                 diff(indx) = std::abs(uber(indx) - slae.solution(indx));
             };
         };
@@ -2676,57 +2786,58 @@ int main()
     };
 
     //NIKOLA_ELASSTIC_PROBLEM
-    if (false)
+    if (0)
     {
         Domain<2> domain;
         {
-            std::vector< dealii::Point< 2 > > v (6);
+            // std::vector< dealii::Point< 2 > > v (6);
 
-            v[0]  = dealii::Point<2>(0.0, -0.5);
-            v[1]  = dealii::Point<2>(1.0, -0.5);
-            v[2]  = dealii::Point<2>(0.0, 0.0);
-            v[3]  = dealii::Point<2>(1.0, 0.0);
-            v[4]  = dealii::Point<2>(0.0, 0.5);
-            v[5]  = dealii::Point<2>(1.0, 0.5);
+            // v[0]  = dealii::Point<2>(0.0, -0.5);
+            // v[1]  = dealii::Point<2>(1.0, -0.5);
+            // v[2]  = dealii::Point<2>(0.0, 0.0);
+            // v[3]  = dealii::Point<2>(1.0, 0.0);
+            // v[4]  = dealii::Point<2>(0.0, 0.5);
+            // v[5]  = dealii::Point<2>(1.0, 0.5);
 
-            std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
-            {
-                dealii::CellData<2> tmp;
-                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
-                c .push_back (tmp);
-                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=1;
-                c .push_back (tmp);
-            };
-            // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
-            // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
+            // std::vector< dealii::CellData<2>> c; //(3, dealii::CellData<2>());
+            // {
+            //     dealii::CellData<2> tmp;
+            //     tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.vertices[2]=3;tmp.vertices[3]=2;tmp.material_id=0;
+            //     c .push_back (tmp);
+            //     tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.vertices[2]=4;tmp.vertices[3]=2;tmp.material_id=0;
+            //     c .push_back (tmp);
+            // };
+            // // c .push_back (dealii::CellData<2>{{0, 1, 3, 2}, 0});
+            // // c .push_back (dealii::CellData<2>{{3, 5, 4, 2}, 1});
 
-            dealii::SubCellData b;
-            {
-                dealii::CellData<1> tmp;
-                tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
-                b.boundary_lines .push_back (tmp);
-                tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
-                b.boundary_lines .push_back (tmp);
-            };
-            // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
-            // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
-            // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
-            // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
-            // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
-            // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
+            // dealii::SubCellData b;
+            // {
+            //     dealii::CellData<1> tmp;
+            //     tmp.vertices[0]=4;tmp.vertices[1]=2;tmp.boundary_id=0;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=2;tmp.vertices[1]=0;tmp.boundary_id=0;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=0;tmp.vertices[1]=1;tmp.boundary_id=1;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=1;tmp.vertices[1]=3;tmp.boundary_id=2;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=3;tmp.vertices[1]=5;tmp.boundary_id=2;
+            //     b.boundary_lines .push_back (tmp);
+            //     tmp.vertices[0]=5;tmp.vertices[1]=4;tmp.boundary_id=3;
+            //     b.boundary_lines .push_back (tmp);
+            // };
+            // // b.boundary_lines .push_back (dealii::CellData<1>{4, 2, 0});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{2, 0, 0});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 1});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{1, 3, 2});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{3, 5, 2});
+            // // b.boundary_lines .push_back (dealii::CellData<1>{5, 4, 3});
 
-            dealii::GridReordering<2> ::reorder_cells (c);
-            domain.grid .create_triangulation_compatibility (v, c, b);
+            // dealii::GridReordering<2> ::reorder_cells (c);
+            // domain.grid .create_triangulation_compatibility (v, c, b);
 
-            domain.grid .refine_global (5);
+            // domain.grid .refine_global (4);
+            // set_quadrate<2> (domain.grid, 32.0, 96.0, 4);
         };
         dealii::FESystem<2,2> fe 
             (dealii::FE_Q<2,2>(1), 2);
@@ -2740,19 +2851,18 @@ int main()
         EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
 
         // T2.2
-        cdbl c0 = 0.5;
-        cdbl E = 1.0;
-        cdbl nu = 0.25;
-        cdbl mu = 0.4;
-        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(2);
-        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
-        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return ;}; //Uy
-        vec<typename Nikola::SourceVector<2>::Func> tau(2);
-        tau[0][x] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
-        tau[0][y] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(1);
+        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(1);
+        U[0][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[0][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][y][y][z][z];}; //Uy
+        // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> tau(1);
+        tau[0][x] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[0][y] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         Nikola::SourceVector<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
-        SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
+        // SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
 
         Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
         Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
@@ -2766,7 +2876,7 @@ int main()
                 ,dealii::PreconditionIdentity()
                 );
 
-        // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
+        // // // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
         EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
     };
 

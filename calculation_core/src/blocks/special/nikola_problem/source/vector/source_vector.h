@@ -1,10 +1,7 @@
 #ifndef SOURCE_Vector_NIKOLA_PROBLEM
 #define SOURCE_Vector_NIKOLA_PROBLEM
  
-#include "../../../../general/source/Vector/source_Vector.h"
-#include <deal.II/grid/tria.h>
-#include <deal.II/fe/fe.h>
-#include <deal.II/base/quadrature_lib.h>
+#include "../scalar/source_scalar.h"
 
 namespace Nikola
 {
@@ -40,10 +37,11 @@ namespace Nikola
         class SourceVector : public ::SourceInterface<dim>
     {
         public:
-            typedef std::function<dbl (const dealii::Point<dim>&)> Func;
+            // typedef std::function<dbl (const dealii::Point<dim>&)> Func;
+            typedef typename ::Nikola::SourceScalar<dim>::Func Func;
 
             SourceVector (const dealii::FiniteElement<dim> &fe);
-            SourceVector (const vec<arr<Func, dim>> &U, const vec<Func> &tau, const dealii::FiniteElement<dim> &fe);
+            SourceVector (const vec<arr<Func, dim>> &U, const vec<arr<Func, dim>> &tau, const dealii::FiniteElement<dim> &fe);
 
             virtual void update_on_cell (
                     typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
@@ -55,21 +53,12 @@ namespace Nikola
 
             vec<arr<Func, dim>> U;
             vec<arr<Func, dim>> tau;
-            dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
-            dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
-            cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
-            cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
-            u8                         material_id = 0; //!< Идентефикатор материала ячейки.
+            ::Nikola::SourceScalar<dim> source; 
     };
 
     template <u8 dim>
         SourceVector<dim>::SourceVector (const dealii::FiniteElement<dim> &fe) :
-            quadrature_formula (2),
-            fe_values (fe, quadrature_formula,
-                    dealii::update_values | dealii::update_gradients | dealii::update_quadrature_points | 
-                    dealii::update_JxW_values),
-            dofs_per_cell (fe.dofs_per_cell),
-            num_quad_points (quadrature_formula.size())
+            source (fe)
     {};
 
     template <u8 dim>
@@ -88,6 +77,7 @@ namespace Nikola
             };
         };
 
+        tau .resize (tau_p.size());
         for (st i = 0; i < U.size(); ++i)
         {
             for (st j = 0; j < dim; ++j)
@@ -95,45 +85,38 @@ namespace Nikola
                 tau[i][j] = tau_p[i][j];
             };
         };
+            source.U .resize (U.size());
+            source.tau .resize (tau.size());
     };
 
     template <u8 dim>
         void SourceVector<dim>::update_on_cell (
                 typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
         {
-            fe_values .reinit (cell);
-            material_id = cell->material_id();
+            source .update_on_cell (cell);
         };
 
     template <u8 dim>
         dbl SourceVector<dim>::operator () (cst i)
         {
-            const uint8_t num_quad_points = this->quadrature_formula.size();
-
-            dbl res = 0.0;
-
-            for (st q_point = 0; q_point < num_quad_points; ++q_point)
+            for (st m = 0; m < U.size(); ++m)
             {
-                for(st ort = 0; ort < dim; ++ort)
+                for (st n = 0; n < dim; ++n)
                 {
-                    res += 
-                        -(this->fe_values.shape_grad (i, q_point)[ort]) *
-                        this->U[this->material_id][ort](fe_values.quadrature_point(q_point)) *
-                        this->fe_values.JxW(q_point);
+                    source.U[m][n] = (i % dim) == n ? U[m][n] : [](const dealii::Point<2> &p){return 0.0;};
                 };
-                res +=
-                    -(this->fe_values.shape_value (i, q_point)) *
-                    this->tau[this->material_id](fe_values.quadrature_point(q_point)) *
-                    this->fe_values.JxW(q_point);
+
+                source.tau[m] = tau[m][i % dim];
             };
 
-            return res;
+            return source (i);
+            return 0.0;
         };
 
     template <u8 dim>
         u8 SourceVector<dim>::get_dofs_per_cell ()
         {
-            return dofs_per_cell;
+            return source.dofs_per_cell;
         };
 };
 
