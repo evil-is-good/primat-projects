@@ -890,7 +890,8 @@ void set_quadrate (dealii::Triangulation<dim> &triangulation,
 
     triangulation .create_triangulation (v, c, dealii::SubCellData());
 
-    triangulation .refine_global (n_refine);
+    if (n_refine > 0)
+        triangulation .refine_global (n_refine);
 };
 
 ATools::FourthOrderTensor unphysical_to_physicaly (
@@ -3824,18 +3825,20 @@ int main()
     {
         SystemsLinearAlgebraicEquations slae1;
         SystemsLinearAlgebraicEquations slae2;
+        vec<dealii::Point<2>> v1;
+        vec<dealii::Point<2>> v2;
         {
         Domain<2> domain;
         {
             
-        set_quadrate<2> (domain.grid, 
-                    0.0, 1.0/3.0, 2.0/3.0, 1.0, 
+        // set_quadrate<2> (domain.grid, 
+        //             0.0, 1.0/3.0, 2.0/3.0, 1.0, 
+        //             -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+        //             5);
+            set_quadrate<2> (domain.grid, 
+                    0.0, 1.0/3.0, 2.0/4.0, 1.0, 
                     -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
                     4);
-            // set_quadrate<2> (domain.grid, 
-            //         0.0, 1.0/3.0, 2.0/4.0, 1.0, 
-            //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-            //         4);
         }
         debputs();
         dealii::FE_Q<2> fe(1);
@@ -3855,16 +3858,6 @@ int main()
             element_matrix.C[1][y][x] = 0.0;
             element_matrix.C[1][y][y] = 0.4;
         };
-
-        // T1.1
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return 1.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
         cdbl c0 = 0.5;
@@ -3906,8 +3899,47 @@ int main()
                 ,dealii::PreconditionIdentity()
                 );
 
+        // dbl Integral = 0.0;
+        // dbl area_of_domain = 0.0;
+        // {
+        //     dealii::QGauss<2>  quadrature_formula(2);
+
+        //     dealii::FEValues<2> fe_values (domain.dof_handler.get_fe(), quadrature_formula,
+        //             dealii::update_quadrature_points | dealii::update_JxW_values |
+        //             dealii::update_values);
+
+        //     cst n_q_points = quadrature_formula.size();
+
+
+        //     auto cell = domain.dof_handler.begin_active();
+        //     auto endc = domain.dof_handler.end();
+        //     for (; cell != endc; ++cell)
+        //     {
+        //         fe_values .reinit (cell);
+
+        //         dbl area_of_cell = 0.0;
+        //         for (st q_point = 0; q_point < n_q_points; ++q_point)
+        //             area_of_cell += fe_values.JxW(q_point);
+
+        //         dealii::Point<2> c_point(
+        //                 (cell->vertex(0)(0) +
+        //                  cell->vertex(1)(0) +
+        //                  cell->vertex(2)(0) +
+        //                  cell->vertex(3)(0)) / 4.0,
+        //                 (cell->vertex(0)(1) +
+        //                  cell->vertex(1)(1) +
+        //                  cell->vertex(2)(1) +
+        //                  cell->vertex(3)(1)) / 4.0);
+        //         Integral += get_value<2> (cell, slae1.solution, c_point) * area_of_cell; 
+
+        //         area_of_domain += area_of_cell;
+        //     };
+        // };
+        // printf("%f %f %f\n", Integral, area_of_domain, Integral / area_of_domain);
         dbl Integral = 0.0;
         dbl area_of_domain = 0.0;
+        dealii::Vector<dbl> s_values(slae1.solution.size());
+        s_values = 0.0;
         {
             dealii::QGauss<2>  quadrature_formula(2);
 
@@ -3915,7 +3947,10 @@ int main()
                     dealii::update_quadrature_points | dealii::update_JxW_values |
                     dealii::update_values);
 
+            cst dofs_per_cell = fe.dofs_per_cell;
             cst n_q_points = quadrature_formula.size();
+            dealii::Vector<dbl> cell_value (dofs_per_cell);
+            vec<dealii::types::global_dof_index> local_dof_indices (dofs_per_cell);
 
 
             auto cell = domain.dof_handler.begin_active();
@@ -3923,44 +3958,58 @@ int main()
             for (; cell != endc; ++cell)
             {
                 fe_values .reinit (cell);
+                cell_value = 0.0;
 
-                dbl area_of_cell = 0.0;
-                for (st q_point = 0; q_point < n_q_points; ++q_point)
-                    area_of_cell += fe_values.JxW(q_point);
+                for (st i = 0; i < dofs_per_cell; ++i)
+                    for (st q_point = 0; q_point < n_q_points; ++q_point)
+                        cell_value[i] += fe_values.shape_value (i, q_point) *
+                            fe_values.JxW(q_point);
 
-                dealii::Point<2> c_point(
-                        (cell->vertex(0)(0) +
-                         cell->vertex(1)(0) +
-                         cell->vertex(2)(0) +
-                         cell->vertex(3)(0)) / 4.0,
-                        (cell->vertex(0)(1) +
-                         cell->vertex(1)(1) +
-                         cell->vertex(2)(1) +
-                         cell->vertex(3)(1)) / 4.0);
-                Integral += get_value<2> (cell, slae1.solution, c_point) * area_of_cell; 
-
-                area_of_domain += area_of_cell;
+                cell->get_dof_indices (local_dof_indices);
+                for (st i = 0; i < dofs_per_cell; ++i)
+                    s_values(local_dof_indices[i]) += cell_value(i);
             };
         };
-        printf("%f %f %f\n", Integral, area_of_domain, Integral / area_of_domain);
+        for (st i = 0; i < slae1.solution.size(); ++i)
+        {
+            Integral += slae1.solution(i) * s_values(i);
+        };
+        printf("Integral %f\n", Integral);
 
         for (st i = 0; i < slae1.solution.size(); ++i)
         {
-            slae1.solution(i) -= Integral;
+            slae1.solution(i) -= -0.01480835;//Integral;
         };
+        dealii::Vector<dbl> uber(slae1.solution.size());
+        dealii::Vector<dbl> diff(slae1.solution.size());
+        v1.resize(slae1.solution.size());
+        for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        {
+            for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+            {
+                dbl indx = cell->vertex_dof_index(i, 0);
+                uber(indx) = uber_function(cell->vertex(i), 200);
+                diff(indx) = 
+                    std::abs(uber(indx) - slae1.solution(indx));
+                v1[indx] = cell->vertex(i);
+            };
+        };
+
+        HCPTools ::print_temperature<2> (slae1.solution, domain.dof_handler, "temperature-1.gpd");
+        HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff-1.gpd");
     };        
         {
         Domain<2> domain;
         {
             
-        // set_quadrate<2> (domain.grid, 
-        //             0.0, 1.0/3.0, 2.0/3.0, 1.0, 
-        //             -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-        //             4);
-            set_quadrate<2> (domain.grid, 
-                    0.0, 1.0/3.0, 2.0/4.0, 1.0, 
+        set_quadrate<2> (domain.grid, 
+                    0.0, 1.0/3.0, 2.0/3.0, 1.0, 
                     -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
                     4);
+            // set_quadrate<2> (domain.grid, 
+            //         0.0, 1.0/3.0, 2.0/4.0, 1.0, 
+            //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+            //         4);
         }
         debputs();
         dealii::FE_Q<2> fe(1);
@@ -3980,16 +4029,6 @@ int main()
             element_matrix.C[1][y][x] = 0.0;
             element_matrix.C[1][y][y] = 0.4;
         };
-
-        // T1.1
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return 1.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
         cdbl c0 = 0.5;
@@ -4033,6 +4072,8 @@ int main()
 
         dbl Integral = 0.0;
         dbl area_of_domain = 0.0;
+        dealii::Vector<dbl> s_values(slae2.solution.size());
+        s_values = 0.0;
         {
             dealii::QGauss<2>  quadrature_formula(2);
 
@@ -4040,7 +4081,10 @@ int main()
                     dealii::update_quadrature_points | dealii::update_JxW_values |
                     dealii::update_values);
 
+            cst dofs_per_cell = fe.dofs_per_cell;
             cst n_q_points = quadrature_formula.size();
+            dealii::Vector<dbl> cell_value (dofs_per_cell);
+            vec<dealii::types::global_dof_index> local_dof_indices (dofs_per_cell);
 
 
             auto cell = domain.dof_handler.begin_active();
@@ -4048,31 +4092,64 @@ int main()
             for (; cell != endc; ++cell)
             {
                 fe_values .reinit (cell);
+                cell_value = 0.0;
 
-                dbl area_of_cell = 0.0;
-                for (st q_point = 0; q_point < n_q_points; ++q_point)
-                    area_of_cell += fe_values.JxW(q_point);
+                // dbl area_of_cell = 0.0;
+                // for (st q_point = 0; q_point < n_q_points; ++q_point)
+                //     area_of_cell += fe_values.JxW(q_point);
+                for (st i = 0; i < dofs_per_cell; ++i)
+                    for (st q_point = 0; q_point < n_q_points; ++q_point)
+                        cell_value[i] += fe_values.shape_value (i, q_point) *
+                            fe_values.JxW(q_point);
 
-                dealii::Point<2> c_point(
-                        (cell->vertex(0)(0) +
-                         cell->vertex(1)(0) +
-                         cell->vertex(2)(0) +
-                         cell->vertex(3)(0)) / 4.0,
-                        (cell->vertex(0)(1) +
-                         cell->vertex(1)(1) +
-                         cell->vertex(2)(1) +
-                         cell->vertex(3)(1)) / 4.0);
-                Integral += get_value<2> (cell, slae1.solution, c_point) * area_of_cell; 
+                cell->get_dof_indices (local_dof_indices);
+                for (st i = 0; i < dofs_per_cell; ++i)
+                    s_values(local_dof_indices[i]) += cell_value(i);
+                // dealii::Point<2> c_point(
+                //         (cell->vertex(0)(0) +
+                //          cell->vertex(1)(0) +
+                //          cell->vertex(2)(0) +
+                //          cell->vertex(3)(0)) / 4.0,
+                //         (cell->vertex(0)(1) +
+                //          cell->vertex(1)(1) +
+                //          cell->vertex(2)(1) +
+                //          cell->vertex(3)(1)) / 4.0);
+                // Integral += get_value<2> (cell, slae2.solution, c_point) * area_of_cell; 
 
-                area_of_domain += area_of_cell;
+                // area_of_domain += area_of_cell;
             };
         };
-        printf("%f %f %f\n", Integral, area_of_domain, Integral / area_of_domain);
+        // printf("%f %f %f\n", Integral, area_of_domain, Integral / area_of_domain);
+
+        printf("Integral %f\n", Integral);
+        for (st i = 0; i < slae2.solution.size(); ++i)
+        {
+            Integral += slae2.solution(i) * s_values(i);
+            // printf("%f %f %f\n", slae2.solution(i) , s_values(i), slae2.solution(i) * s_values(i));
+        };
+        printf("Integral %f\n", Integral);
 
         for (st i = 0; i < slae2.solution.size(); ++i)
         {
             slae2.solution(i) -= Integral;
         };
+        dealii::Vector<dbl> uber(slae2.solution.size());
+        dealii::Vector<dbl> diff(slae2.solution.size());
+        v2.resize(slae2.solution.size());
+        for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        {
+            for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+            {
+                dbl indx = cell->vertex_dof_index(i, 0);
+                uber(indx) = uber_function(cell->vertex(i), 200);
+                diff(indx) = 
+                    std::abs(uber(indx) - slae2.solution(indx));
+                v2[indx] = cell->vertex(i);
+            };
+        };
+
+        HCPTools ::print_temperature<2> (slae2.solution, domain.dof_handler, "temperature-2.gpd");
+        HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff-2.gpd");
     };
         
         // dealii::Vector<dbl> uber(slae1.solution.size());
@@ -4090,9 +4167,22 @@ int main()
         // };
         FILE *F;
         F = fopen("diff.gpd", "w");
-        for (st i = 0; i < slae1.solution.size(); ++i)
+        for (st i = 0; i < v1.size(); ++i)
         {
-            fprintf(F, "%f\n", slae2.solution(i) - slae1.solution(i));
+            cdbl s1 = slae1.solution(i);
+            dbl s2 = 0.0;
+            // printf("(%f %f) ", v1[i](0), v1[i](1));
+            for (st j = 0; j < v2.size(); ++j)
+            {
+                // printf("%f\n",v1[i].distance(v2[j]));
+                if (v1[i].distance(v2[j]) < 1.0e-10)
+                {
+                    s2 = slae2.solution(j);
+                    // printf("(%f %f)\n", v2[j](0), v2[j](1));
+                    fprintf(F, "%f %f %f\n", v1[i](0), v1[i](1), std::abs(s1 - s2));
+                    break;
+                };
+            };
         };
         fclose(F);
 
