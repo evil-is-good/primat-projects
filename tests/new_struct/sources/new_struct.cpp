@@ -1786,6 +1786,49 @@ dbl get_value (
     return  a + b * p(0) + c * p(1) + d * p(0) * p(1);
 };
 
+void give_line_without_end_point(
+        vec<prmt::Point<2>> &curve,
+        cst num_points,
+        prmt::Point<2> first,
+        prmt::Point<2> second)
+{
+    dbl dx = (second.x() - first.x()) / num_points;
+    dbl dy = (second.y() - first.y()) / num_points;
+    dbl x = first.x();
+    dbl y = first.y();
+    FOR_I(0, num_points - 0)
+    {
+        // printf("x=%f y=%f dx=%f dy=%f\n", x, y, dx, dy);
+        curve .push_back (prmt::Point<2>(x, y)); 
+        x += dx;
+        y += dy;
+    };
+};
+
+void give_rectangle(
+        vec<prmt::Point<2>> &curve,
+        cst num_points_on_edge,
+        prmt::Point<2> first,
+        prmt::Point<2> second)
+{
+    give_line_without_end_point(curve, num_points_on_edge,
+            first,
+            prmt::Point<2>(first.x(), second.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(first.x(), second.y()),
+            second);
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            second,
+            prmt::Point<2>(second.x(), first.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(second.x(), first.y()),
+            first);
+
+};
+
 int main()
 {
     enum {x, y, z};
@@ -2869,7 +2912,7 @@ int main()
     };
 
     //NIKOLA_ELASSTIC_PROBLEM
-    if (0)
+    if (1)
     {
         Domain<2> domain;
         {
@@ -2920,7 +2963,23 @@ int main()
             // domain.grid .create_triangulation_compatibility (v, c, b);
 
             // domain.grid .refine_global (4);
+
             // set_quadrate<2> (domain.grid, 32.0, 96.0, 4);
+            //
+            //
+            // vec<prmt::Point<2>> inner_border;
+            // vec<prmt::Point<2>> outer_border;
+            // give_rectangle(inner_border, 1,
+            //         prmt::Point<2>(0.25, -0.25), prmt::Point<2>(0.75, 0.25));
+            // give_rectangle(outer_border, 1,
+            //         prmt::Point<2>(0.0, -0.5), prmt::Point<2>(1.0, 0.5));
+            // set_grid(domain.grid, outer_border, inner_border);
+
+
+            set_quadrate<2> (domain.grid, 
+                    0.0, 1.0/3.0, 2.0/3.0, 1.0, 
+                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+                    0);
         };
         dealii::FESystem<2,2> fe 
             (dealii::FE_Q<2,2>(1), 2);
@@ -2948,6 +3007,7 @@ int main()
         // SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
 
         Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        puts("scsdf");
         Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
 
         dealii::SolverControl solver_control (10000, 1e-12);
@@ -3821,7 +3881,7 @@ int main()
 //     printf("%f %f\n", foo1.dy(1.0, 1.0), foo2.dy(1.0, 1.0));
 // };
 
-    if (1)
+    if (0)
     {
         SystemsLinearAlgebraicEquations slae1;
         SystemsLinearAlgebraicEquations slae2;
@@ -3835,10 +3895,18 @@ int main()
         //             0.0, 1.0/3.0, 2.0/3.0, 1.0, 
         //             -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
         //             5);
-            set_quadrate<2> (domain.grid, 
-                    0.0, 1.0/3.0, 2.0/4.0, 1.0, 
-                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-                    4);
+            // set_quadrate<2> (domain.grid, 
+            //         0.0, 1.0/3.0, 2.0/4.0, 1.0, 
+            //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+            //         4);
+            vec<prmt::Point<2>> inner_border;
+            vec<prmt::Point<2>> outer_border;
+            give_rectangle(inner_border, 1,
+                    prmt::Point<2>(0.25, -0.25), prmt::Point<2>(0.75, 0.25));
+            give_rectangle(outer_border, 1,
+                    prmt::Point<2>(0.0, -0.5), prmt::Point<2>(1.0, 0.5));
+            set_grid(domain.grid, outer_border, inner_border);
+            domain.grid.refine_global(1);
         }
         debputs();
         dealii::FE_Q<2> fe(1);
@@ -3865,14 +3933,14 @@ int main()
         cdbl nu = 0.25;
         cdbl mu = 0.4;
         vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
-        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
-        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
-        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
-        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
+        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
+        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
+        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
+        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
         // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
         // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
         // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
@@ -3973,13 +4041,21 @@ int main()
         for (st i = 0; i < slae1.solution.size(); ++i)
         {
             Integral += slae1.solution(i) * s_values(i);
+            // printf("%.10f %.10f %.10f\n", slae1.solution(i) , s_values(i), slae1.solution(i) * s_values(i));
         };
-        printf("Integral %f\n", Integral);
+        printf("Integral %.10f\n", Integral);
 
         for (st i = 0; i < slae1.solution.size(); ++i)
         {
-            slae1.solution(i) -= -0.01480835;//Integral;
+            slae1.solution(i) -= 
+                Integral;
+                // -0.01480835;
+                // -0.01253845;
         };
+        printf("\n");
+
+
+
         dealii::Vector<dbl> uber(slae1.solution.size());
         dealii::Vector<dbl> diff(slae1.solution.size());
         v1.resize(slae1.solution.size());
@@ -3994,6 +4070,15 @@ int main()
                 v1[indx] = cell->vertex(i);
             };
         };
+
+        Integral = 0.0;
+        for (st i = 0; i < slae1.solution.size(); ++i)
+        {
+            Integral += slae1.solution(i) * s_values(i);
+            // printf("(%f,%f) %.10f %.10f %.10f\n", v1[i](0), v1[i](1),
+            //         slae1.solution(i) , s_values(i), slae1.solution(i) * s_values(i));
+        };
+        printf("Integral %f\n", Integral);
 
         HCPTools ::print_temperature<2> (slae1.solution, domain.dof_handler, "temperature-1.gpd");
         HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff-1.gpd");
@@ -4036,14 +4121,14 @@ int main()
         cdbl nu = 0.25;
         cdbl mu = 0.4;
         vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
-        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
-        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
-        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
-        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
+        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
+        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
+        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
+        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
         // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
         // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
         // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
@@ -4121,7 +4206,6 @@ int main()
         };
         // printf("%f %f %f\n", Integral, area_of_domain, Integral / area_of_domain);
 
-        printf("Integral %f\n", Integral);
         for (st i = 0; i < slae2.solution.size(); ++i)
         {
             Integral += slae2.solution(i) * s_values(i);
