@@ -101,6 +101,7 @@ namespace Nikola
         {
             fe_values .reinit (cell);
             material_id = cell->material_id();
+            printf("111 %ld\n", material_id);
         };
 
     template <u8 dim>

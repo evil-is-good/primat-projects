@@ -144,14 +144,57 @@ void convert_to_dealii_format(CDT &cdt, dealii::Triangulation<2> &triangulation)
             //         {.material_id = mat_id}}));
         };
 
-        add_cell (arr<st, 4>{0, 3, 6, 5});
-        add_cell (arr<st, 4>{1, 4, 6, 3});
-        add_cell (arr<st, 4>{2, 5, 6, 4});
+        // add_cell (arr<st, 4>{0, 3, 6, 5});
+        // add_cell (arr<st, 4>{1, 4, 6, 3});
+        // add_cell (arr<st, 4>{2, 5, 6, 4});
+        add_cell (arr<st, 4>{3, 0, 6, 5});
+        add_cell (arr<st, 4>{3, 1, 6, 4});
+        add_cell (arr<st, 4>{6, 4, 5, 2});
+    };
+    {
+        FILE *F;
+        F = fopen("tria.gpd", "w");
+        for (st i = 0; i < vertex_in_grid.size(); ++i)
+        {
+            fprintf(F, "%f %f 0.0\n", vertex_in_grid[i](0), vertex_in_grid[i](1));
+        };
+        fclose(F);
+    };
+    {
+        FILE *F;
+        F = fopen("9.gpd", "w");
+        fprintf (F, "%f %f 0.0\n",
+                vertex_in_grid[cell_in_grid[9].vertices[0]](0),
+                vertex_in_grid[cell_in_grid[9].vertices[0]](1));
+        fprintf (F, "%f %f 0.0\n",
+                vertex_in_grid[cell_in_grid[9].vertices[1]](0),
+                vertex_in_grid[cell_in_grid[9].vertices[1]](1));
+        fprintf (F, "%f %f 0.0\n",
+                vertex_in_grid[cell_in_grid[9].vertices[2]](0),
+                vertex_in_grid[cell_in_grid[9].vertices[2]](1));
+        fprintf (F, "%f %f 0.0\n",
+                vertex_in_grid[cell_in_grid[9].vertices[3]](0),
+                vertex_in_grid[cell_in_grid[9].vertices[3]](1));
+        for (st i = 0; i < cell_in_grid.size(); ++i)
+        {
+            printf("%d %d %d %d %d\n", 
+                    i,
+                    cell_in_grid[i].vertices[0],
+                    cell_in_grid[i].vertices[1],
+                    cell_in_grid[i].vertices[2],
+                    cell_in_grid[i].vertices[3]
+                  );
+        };
+        fclose(F);
     };
 
-    dealii::GridReordering<2> ::reorder_cells (cell_in_grid);
-    triangulation .create_triangulation_compatibility (
+    puts("111");
+    // dealii::GridReordering<2> ::reorder_cells (cell_in_grid);
+    puts("111");
+    // triangulation .create_triangulation_compatibility (
+    triangulation .create_triangulation (
             vertex_in_grid, cell_in_grid, dealii::SubCellData());
+    puts("111");
 };
 
 // void make_edge_in_grid (
