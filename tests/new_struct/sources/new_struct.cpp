@@ -1097,15 +1097,16 @@ void set_ball(dealii::Triangulation< 3 > &triangulation,
     };
 };
 
-void set_tube(dealii::Triangulation< 2 > &triangulation, const dealii::Point<2> center,
+void set_tube(dealii::Triangulation< 2 > &triangulation, const str file_name, 
+        const dealii::Point<2> center,
         cdbl inner_radius, cdbl outer_radius, cst n_refine)
 {
     // dealii::GridGenerator ::hyper_ball (triangulation, center, outer_radius);
     dealii::GridIn<2> gridin;
     gridin.attach_triangulation(triangulation);
-    std::ifstream f("circle_R2.msh");
+    std::ifstream f(file_name);
     gridin.read_msh(f);
-    triangulation .refine_global (n_refine);
+    // triangulation .refine_global (n_refine);
     {
         dealii::Triangulation<2>::active_cell_iterator
             cell = triangulation .begin_active(),
@@ -1131,6 +1132,45 @@ void set_tube(dealii::Triangulation< 2 > &triangulation, const dealii::Point<2> 
             }
             else
                 cell->set_material_id(0);
+        };
+    };
+};
+
+void set_crazy_tube(dealii::Triangulation< 2 > &triangulation, const dealii::Point<2> center,
+        cdbl inner_radius, cdbl outer_radius, cst n_refine)
+{
+    dealii::GridGenerator ::hyper_cube (triangulation, -2.0, 2.0);
+    triangulation .refine_global (n_refine);
+    {
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = triangulation .begin_active(),
+                 end_cell = triangulation .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+           // printf("%f %f\n", midle_p(0), midle_p(1));
+
+            if (center.distance(midle_p) < inner_radius)
+            {
+                cell->set_material_id(1);
+//                puts("adf");
+            }
+            else if (center.distance(midle_p) < outer_radius)
+            {
+                cell->set_material_id(0);
+//                puts("adf");
+            }
+            else
+                cell->set_material_id(2);
         };
     };
 };
@@ -2008,7 +2048,8 @@ int main()
             // debputs();
             // make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
             // domain.grid.refine_global(3);
-            set_tube(domain.grid, dealii::Point<2>(0.0,0.0), 1.0, 2.0, 2);
+            // set_tube(domain.grid, dealii::Point<2>(0.0,0.0), 1.0, 2.0, 2);
+            set_tube(domain.grid, str("circle_R2.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 1);
 
         };
         debputs();
@@ -2077,10 +2118,10 @@ int main()
 
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL
-    if (false)
+    if (1)
     {
-        FILE *F;
-        F = fopen("square.gpd", "w");
+        // FILE *F;
+        // F = fopen("square.gpd", "w");
         dbl size = 0.05;
         // while (size*size < 0.6)
         // for (st i = 0; i < 7; ++i)
@@ -2123,7 +2164,7 @@ int main()
                     (1.0)
                 };
                 // ::set_tria <5> (domain.grid, dot, material_id);
-                set_circ(domain.grid, 0.2, 5); //0.344827, 2);
+                set_circ(domain.grid, 0.2, 6); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
                 // domain.grid .refine_global (3);
@@ -2156,50 +2197,50 @@ int main()
             const bool scalar_type = 0;
             // OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
             OnCell::prepare_system_equations_with_cubic_grid<2, 1> (slae, bows, domain);
-            {
-                OnCell::BlackOnWhiteSubstituter bows_old;
-                OnCell::BlackOnWhiteSubstituter bows_new;
-
-                {
-                    dealii::CompressedSparsityPattern c_sparsity (
-                            domain.dof_handler.n_dofs());
-
-                    dealii::DoFTools ::make_sparsity_pattern (
-                            domain.dof_handler, c_sparsity);
-
-                    ::OnCell::DomainLooper<2, 0> dl;
-                    dl .loop_domain(
-                            domain.dof_handler,
-                            bows_old,
-                            c_sparsity);
-                };
-
-                {
-                    dealii::CompressedSparsityPattern c_sparsity (
-                            domain.dof_handler.n_dofs());
-
-                    dealii::DoFTools ::make_sparsity_pattern (
-                            domain.dof_handler, c_sparsity);
-
-                    ::OnCell::DomainLooperTrivial<2, 1> dl;
-                    dl .loop_domain(
-                            domain.dof_handler,
-                            bows_new,
-                            c_sparsity);
-                };
-                printf("Size %ld %ld\n", bows_old.size, bows_new.size);
-                for (st i = 0; i < bows_old.size; ++i)
-                {
-                    printf("%ld %ld %ld  %ld %ld %ld\n", 
-                            bows_old.black[i], 
-                            bows_new.black[i],
-                            bows_new.black[i] - bows_old.black[i],
-                            bows_old.white[i], 
-                            bows_new.white[i],
-                            bows_new.white[i] - bows_old.white[i]
-                            );
-                };
-            };
+            // {
+            //     OnCell::BlackOnWhiteSubstituter bows_old;
+            //     OnCell::BlackOnWhiteSubstituter bows_new;
+            //
+            //     {
+            //         dealii::CompressedSparsityPattern c_sparsity (
+            //                 domain.dof_handler.n_dofs());
+            //
+            //         dealii::DoFTools ::make_sparsity_pattern (
+            //                 domain.dof_handler, c_sparsity);
+            //
+            //         ::OnCell::DomainLooper<2, 0> dl;
+            //         dl .loop_domain(
+            //                 domain.dof_handler,
+            //                 bows_old,
+            //                 c_sparsity);
+            //     };
+            //
+            //     {
+            //         dealii::CompressedSparsityPattern c_sparsity (
+            //                 domain.dof_handler.n_dofs());
+            //
+            //         dealii::DoFTools ::make_sparsity_pattern (
+            //                 domain.dof_handler, c_sparsity);
+            //
+            //         ::OnCell::DomainLooperTrivial<2, 1> dl;
+            //         dl .loop_domain(
+            //                 domain.dof_handler,
+            //                 bows_new,
+            //                 c_sparsity);
+            //     };
+            //     printf("Size %ld %ld\n", bows_old.size, bows_new.size);
+            //     for (st i = 0; i < bows_old.size; ++i)
+            //     {
+            //         printf("%ld %ld %ld  %ld %ld %ld\n", 
+            //                 bows_old.black[i], 
+            //                 bows_new.black[i],
+            //                 bows_new.black[i] - bows_old.black[i],
+            //                 bows_old.white[i], 
+            //                 bows_new.white[i],
+            //                 bows_new.white[i] - bows_old.white[i]
+            //                 );
+            //     };
+            // };
 
             OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
             // FILE *F;
@@ -2266,13 +2307,77 @@ int main()
             auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
                     domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
             printf("META %.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+
+            cdbl A = 0.2;
+            cdbl R_0 = 0.5;
+            cdbl lambda_1 = element_matrix.C[0][x][x];
+            cdbl lambda_2 = element_matrix.C[1][x][x];
+            // auto D = [lamdda_2, R_in, R_0] (cdbl theta){
+            //     cdbl delta = [](cdbl t){while (PI / 2.0 > t){t - (PI / 2.0)}; return t;}(theta);
+            //     cdbl chi = (R_in*R_in)/(R_0*R_0) * cos(delta);
+            //     return lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
+            // };
+            // auto C_11 = 
+            dealii::Vector<dbl> andrianov(slae.solution[0].size());
+            dealii::Vector<dbl> t_r(slae.solution[0].size());
+            dealii::Vector<dbl> diff(slae.solution[0].size());
+            for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+            {
+                for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+                {
+                    dbl indx_x = cell->vertex_dof_index(i, x);
+                    // dbl indx_y = cell->vertex_dof_index(i, y);
+                    auto p = cell->vertex(i);
+                    p(x) -= 0.5;
+                    p(y) -= 0.5;
+                    
+                    cdbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
+                    // cdbl theta = atan (p(y) / p(x));
+                    cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0) - dealii::numbers::PI / 2.0;
+                    // printf("%f %f\n",dealii::numbers::PI / 2.0, theta);
+                    cdbl delta = [](dbl t){
+                        while ((dealii::numbers::PI / 2.0) < t)
+                        {
+                            t -= (dealii::numbers::PI / 2.0);
+                            // printf("theta %f %f\n", (dealii::numbers::PI / 2.0), t);
+                        };
+                        return t;}(theta);
+                    cdbl chi = (A*A)/(R_0*R_0) * cos(delta) * cos(delta);
+                    cdbl D = 1.0;//lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
+                    cdbl C_11 = (lambda_2 - 1.0) * chi / D;
+                    cdbl C_12 = - (C_11 * A * A) / chi;
+                    cdbl C_21 = - (lambda_2 - 1.0) * (1.0 - chi) / D;
+                    // if (p(x) == 0.5)
+                    if (std::abs(r - R_0) < 1e-5)
+                        printf("C %f %f %f %f %f %f\n", lambda_2, C_11*r, C_12/r, C_11, C_12, chi);
+                    
+                    andrianov(indx_x) = (r < A) ? C_21*r : C_11*r+C_12/r;
+                    t_r(indx_x) = std::abs(r) > 1e-5 ? 
+                        // slae.solution(indx_x) * p(0) / r + slae.solution(indx_y) * p(1) / r :
+                        std::sqrt(std::pow(slae.solution[x](indx_x), 2.0) + std::pow(slae.solution[y](indx_x), 2.0)) :
+                        0.0;
+                    // if (p(0) == -0.5)
+                    //     printf("%f %f %f %f %f %f\n", digit(indx_x),
+                    //             slae.solution(indx_x),
+                    //             p(0) / r,
+                    //             slae.solution(indx_y),
+                    //             p(1) / r,
+                    //             r);
+                    // digit(indx_y) = C1 * r;
+                    diff(indx_x) = 
+                        std::abs(andrianov(indx_x) - t_r(indx_x));
+                };
+            };
+            HCPTools ::print_temperature<2> (t_r, domain.dof_handler, "temperature_r.gpd");
+            HCPTools ::print_temperature<2> (andrianov, domain.dof_handler, "andrianov.gpd");
+            HCPTools ::print_temperature<2> (diff, domain.dof_handler, "diff.gpd");
             // fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
             // puts("111111111");
             // size+=0.05;
             // puts("2222222");
             // printf("%f %f\n", size, size*size);
         };
-            fclose(F);
+            // fclose(F);
     };
 
     //ELASSTIC_PROBLEM
@@ -2989,7 +3094,7 @@ int main()
     };
 
     //NIKOLA_ELASSTIC_PROBLEM
-    if (1)
+    if (0)
     {
         Domain<2> domain;
         {
@@ -3058,14 +3163,22 @@ int main()
             // //         prmt::Point<2>(0.0, -0.5), prmt::Point<2>(1.0, 0.5));
             // set_grid(domain.grid, outer_border, inner_border);
 
-            // set_tube(domain.grid, dealii::Point<2>(0.0,0.0), 1.0, 2.0, 2);
+            set_tube(domain.grid, str("test_3.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 1);
+            // set_tube(domain.grid, str("circle_R2.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 2);
+            // set_tube(domain.grid, str("quadro_R2_R1.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 1);
+            // set_tube(domain.grid, str("quadro_dirka_R2_R1.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 4);
+            // set_crazy_tube(domain.grid, dealii::Point<2>(0.0,0.0), 1.0, 2.0, 6);
+            // set_quadrate<2>(domain.grid, 
+            //         -2.0, -1.0, 1.0, 2.0,
+            //         -2.0, -1.0, 1.0, 2.0,
+            //         4);
 
 
-            set_quadrate<2> (domain.grid, 
-                    // 0.0, 1.0/3.0, 2.0/3.0, 1.0, 
-                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-                    5);
+            // set_quadrate<2> (domain.grid, 
+            //         // 0.0, 1.0/3.0, 2.0/3.0, 1.0, 
+            //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+            //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+            //         5);
         };
         dealii::FESystem<2,2> fe 
             (dealii::FE_Q<2,2>(1), 2);
@@ -3075,24 +3188,26 @@ int main()
         ATools ::trivial_prepare_system_equations (slae, domain);
 
         LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
-        element_matrix.C .resize (2);
+        element_matrix.C .resize (3);
+        EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.1}(element_matrix.C[1]);
         EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
 
         // T2.2
-        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(2);
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(1);
+        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(3);
         U[0][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
         U[0][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][y][y][z][z];}; //Uy
         U[1][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[1][x][x][z][z];}; //Ux
         U[1][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[1][y][y][z][z];}; //Uy
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> tau(2);
+        U[2][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[2][x][x][z][z];}; //Ux
+        U[2][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[2][y][y][z][z];}; //Uy
+        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> tau(3);
         tau[0][x] = [] (const dealii::Point<2> &p) {return 0.0;};
         tau[0][y] = [] (const dealii::Point<2> &p) {return 0.0;};
         tau[1][x] = [] (const dealii::Point<2> &p) {return 0.0;};
         tau[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[2][x] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[2][y] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         Nikola::SourceVector<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
         // SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
@@ -3151,58 +3266,68 @@ int main()
             integral_x += (i % 2) ? slae.solution(i) * s_values(i) : 0.0;
             integral_y += !(i % 2) ? slae.solution(i) * s_values(i) : 0.0;
         };
-        printf("Integral %.10f %.10f\n", integral_x, integral_y);
+        // printf("Integral %.10f %.10f\n", integral_x, integral_y);
 
-        for (st i = 0; i < slae.solution.size(); ++i)
-        {
-            // slae.solution(i) -= (i % 2) ? integral_x : integral_y;
-        };
+        // for (st i = 0; i < slae.solution.size(); ++i)
+        // {
+        //     // slae.solution(i) -= (i % 2) ? integral_x : integral_y;
+        // };
         // // // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
         EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
 
-        cdbl R_1 = 1.0;
-        cdbl R_2 = 2.0;
-        cdbl lambda_1 = element_matrix.C[0][x][x][y][y];
-        cdbl lambda_2 = element_matrix.C[1][x][x][y][y];
-        cdbl mu_1 = element_matrix.C[0][x][y][x][y];
-        cdbl mu_2 = element_matrix.C[1][x][y][x][y];
-        cdbl a_1 = (lambda_2 + mu_2);
-        cdbl b_1 = - mu_2 / (R_2 * R_2);
-        cdbl d_1 = - lambda_2 / 2.0;
-        cdbl a_2 = (lambda_2 + mu_2) - (lambda_1 + mu_1);
-        cdbl b_2 = - (mu_2 + lambda_1 + mu_1) / (R_1 * R_1);
-        cdbl d_2 = (lambda_1 - lambda_2) / 2.0;
-        cdbl C2 = (d_2 - a_2 / a_1 * d_1) / (b_2 - a_2 / a_1 * b_1);
-        cdbl C1 = (d_1 - b_1 * C2) / a_1;
-        printf("%f %f %f %f\n", lambda_1, mu_1, C1, C2);
-
-        dealii::Vector<dbl> anal(slae.solution.size());
-        dealii::Vector<dbl> diff(slae.solution.size());
-        dealii::Vector<dbl> digit(slae.solution.size());
-        for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
-        {
-            for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
-            {
-                dbl indx_x = cell->vertex_dof_index(i, x);
-                dbl indx_y = cell->vertex_dof_index(i, y);
-                auto p = cell->vertex(i);
-                dbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
-                anal(indx_x) = (r < R_1) ? (C1+C2/(R_1*R_1))*r : C1*r+C2/r;
-                digit(indx_x) = slae.solution(indx_x) * p(0) / r + slae.solution(indx_y) * p(1) / r;
-                if (p(0) == 2.0)
-                    printf("%f %f %f %f\n", 
-                            slae.solution(indx_x),
-                            p(0) / r,
-                            slae.solution(indx_y),
-                            p(1) / r);
-                digit(indx_y) = C1 * r;
-                diff(indx_x) = 
-                    std::abs(anal(indx_x) - digit(indx_x));
-            };
-        };
-        EPTools ::print_move<2> (digit, domain.dof_handler, "digit.gpd");
-        EPTools ::print_move<2> (anal, domain.dof_handler, "anal.gpd");
-        EPTools ::print_move<2> (diff, domain.dof_handler, "diff.gpd");
+        // cdbl R_1 = 1.0;
+        // cdbl R_2 = 2.0;
+        // cdbl lambda_1 = element_matrix.C[1][x][x][y][y];
+        // cdbl lambda_2 = element_matrix.C[0][x][x][y][y];
+        // cdbl mu_1 = element_matrix.C[1][x][y][x][y];
+        // cdbl mu_2 = element_matrix.C[0][x][y][x][y];
+        // cdbl a_1 = (lambda_2 + mu_2);
+        // cdbl b_1 = - mu_2 / (R_2 * R_2);
+        // cdbl d_1 = - lambda_2 / 2.0;
+        // cdbl a_2 = (lambda_2 + mu_2) - (lambda_1 + mu_1);
+        // cdbl b_2 = - (mu_2 + lambda_1 + mu_1) / (R_1 * R_1);
+        // cdbl d_2 = (lambda_1 - lambda_2) / 2.0;
+        // cdbl C2 = (d_2 - a_2 / a_1 * d_1) / (b_2 - a_2 / a_1 * b_1);
+        // cdbl C1 = (d_1 - b_1 * C2) / a_1;
+        // printf("%f %f %f %f %f %f\n", a_1, b_1, d_1, a_2, b_2, d_2);
+        // printf("%f %f\n", (d_2 - a_2 / a_1 * d_1), (b_2 - a_2 / a_1 * b_1));
+        // printf("%f %f C1=%f C2=%f\n", lambda_1, mu_1, C1, C2);
+        // printf("%f\n", (lambda_2+2.0*mu_2)*(C1-C2/(R_2*R_2))+lambda_2*(C1+C2/(R_2*R_2))+lambda_2);
+        // printf("%f\n", (lambda_2+2.0*mu_2)*(C1-C2/(R_1*R_1))+lambda_2*(C1+C2/(R_1*R_1))+lambda_2);
+        // printf("%f\n", C1 * R_2 + C2 / R_2);
+        //
+        // dealii::Vector<dbl> anal(slae.solution.size());
+        // dealii::Vector<dbl> diff(slae.solution.size());
+        // dealii::Vector<dbl> digit(slae.solution.size());
+        // for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        // {
+        //     for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+        //     {
+        //         dbl indx_x = cell->vertex_dof_index(i, x);
+        //         dbl indx_y = cell->vertex_dof_index(i, y);
+        //         auto p = cell->vertex(i);
+        //         dbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
+        //         anal(indx_x) = (r < R_1) ? (C1+C2/(R_1*R_1))*r : C1*r+C2/r;
+        //         digit(indx_x) = std::abs(r) > 1e-5 ? 
+        //             // slae.solution(indx_x) * p(0) / r + slae.solution(indx_y) * p(1) / r :
+        //             -std::sqrt(std::pow(slae.solution(indx_x), 2.0) + std::pow(slae.solution(indx_y), 2.0)) :
+        //             0.0;
+        //         if (p(0) == -0.5)
+        //             printf("%f %f %f %f %f %f\n", digit(indx_x),
+        //                     slae.solution(indx_x),
+        //                     p(0) / r,
+        //                     slae.solution(indx_y),
+        //                     p(1) / r,
+        //                     r);
+        //         digit(indx_y) = C1 * r;
+        //         diff(indx_x) = 
+        //             std::abs(anal(indx_x) - digit(indx_x));
+        //     };
+        // };
+        // EPTools ::print_move<2> (digit, domain.dof_handler, "digit.gpd");
+        // EPTools ::print_move<2> (anal, domain.dof_handler, "anal.gpd");
+        // EPTools ::print_move<2> (diff, domain.dof_handler, "diff.gpd");
+        // EPTools ::print_move<2> (slae.rhsv, domain.dof_handler, "rhsv.gpd");
 
     };
 
