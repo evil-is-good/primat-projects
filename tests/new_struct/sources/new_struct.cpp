@@ -2164,7 +2164,7 @@ int main()
                     (1.0)
                 };
                 // ::set_tria <5> (domain.grid, dot, material_id);
-                set_circ(domain.grid, 0.2, 6); //0.344827, 2);
+                set_circ(domain.grid, 0.2, 2); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
                 // domain.grid .refine_global (3);
@@ -2333,16 +2333,21 @@ int main()
                     
                     cdbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
                     // cdbl theta = atan (p(y) / p(x));
-                    cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0) - dealii::numbers::PI / 2.0;
-                    // printf("%f %f\n",dealii::numbers::PI / 2.0, theta);
+                    cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0);// - dealii::numbers::PI / 2.0;
+                    // cdbl cos = ((std::abs(r) > 1e-5) ? (p(x) / r) : 1.0);// - dealii::numbers::PI / 2.0;
+                    // printf("chi %f %f %f\n", cos, p(x), r);
                     cdbl delta = [](dbl t){
-                        while ((dealii::numbers::PI / 2.0) < t)
+                        while ((dealii::numbers::PI / 2.0) <= t)
+                        // while (t > 1.0/sqrt(2.0))
                         {
                             t -= (dealii::numbers::PI / 2.0);
+                            // t -= sqrt(2.0);
                             // printf("theta %f %f\n", (dealii::numbers::PI / 2.0), t);
                         };
-                        return t;}(theta);
-                    cdbl chi = (A*A)/(R_0*R_0) * cos(delta) * cos(delta);
+                        return std::abs(t);}(theta);
+                    cdbl chi = (A*A)/(R_0*R_0) * 
+                        //cos * cos;
+                        cos(delta) * cos(delta);
                     cdbl D = 1.0;//lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
                     cdbl C_11 = (lambda_2 - 1.0) * chi / D;
                     cdbl C_12 = - (C_11 * A * A) / chi;
