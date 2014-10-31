@@ -1,10 +1,10 @@
-#ifndef SOURCE_Vector_NIKOLA_PROBLEM
-#define SOURCE_Vector_NIKOLA_PROBLEM
+#ifndef FEATURE_SOURCE_Vector_PROBLEM
+#define FEATURE_SOURCE_Vector_PROBLEM
  
 #include "../scalar/source_scalar.h"
 
-namespace Nikola
-{
+// namespace Nikola
+// {
 //! Элемент вектора праой части уравнения в МКЭ для задачи Николы, векторный случай
 /*!
  * Правая часть уравнений на ячейке имеет вид:
@@ -34,14 +34,14 @@ namespace Nikola
   \f]
 */
     template <u8 dim>
-        class SourceVector : public ::SourceInterface<dim>
+        class SourceVectorFeature : public ::SourceInterface<dim>
     {
         public:
             // typedef std::function<dbl (const dealii::Point<dim>&)> Func;
-            typedef typename ::Nikola::SourceScalar<dim>::Func Func;
+            typedef typename SourceScalarFeature<dim>::Func Func;
 
-            SourceVector (const dealii::FiniteElement<dim> &fe);
-            SourceVector (const vec<arr<Func, dim>> &U, const vec<arr<Func, dim>> &tau, const dealii::FiniteElement<dim> &fe);
+            SourceVectorFeature (const dealii::FiniteElement<dim> &fe);
+            SourceVectorFeature (const vec<arr<arr<Func, dim>, dim>> &U_p, const dealii::FiniteElement<dim> &fe);
 
             virtual void update_on_cell (
                     typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
@@ -51,72 +51,62 @@ namespace Nikola
             virtual u8 get_dofs_per_cell () override;
 
 
-            vec<arr<Func, dim>> U;
-            vec<arr<Func, dim>> tau;
-            ::Nikola::SourceScalar<dim> source; 
+            vec<arr<arr<Func, dim>, dim>> U;
+            SourceScalarFeature<dim> source; 
     };
 
     template <u8 dim>
-        SourceVector<dim>::SourceVector (const dealii::FiniteElement<dim> &fe) :
+        SourceVectorFeature<dim>::SourceVectorFeature (const dealii::FiniteElement<dim> &fe) :
             source (fe)
     {};
 
     template <u8 dim>
-        SourceVector<dim>::SourceVector (
-                const vec<arr<Func, dim>> &U_p,
-                const vec<arr<Func, dim>> &tau_p,
+        SourceVectorFeature<dim>::SourceVectorFeature (
+                const vec<arr<arr<Func, dim>, dim>> &U_p,
                 const dealii::FiniteElement<dim> &fe) :
-            SourceVector<dim>(fe)
+            SourceVectorFeature<dim>(fe)
     {
         U .resize (U_p.size());
         for (st i = 0; i < U.size(); ++i)
         {
             for (st j = 0; j < dim; ++j)
             {
-                U[i][j] = U_p[i][j];
+                for (st k = 0; k < dim; ++k)
+                {
+                    U[i][j][k] = U_p[i][j][k];
+                };
             };
         };
 
-        tau .resize (tau_p.size());
-        for (st i = 0; i < U.size(); ++i)
-        {
-            for (st j = 0; j < dim; ++j)
-            {
-                tau[i][j] = tau_p[i][j];
-            };
-        };
-            source.U .resize (U.size());
-            source.tau .resize (tau.size());
+        source.U .resize (U.size());
     };
 
     template <u8 dim>
-        void SourceVector<dim>::update_on_cell (
+        void SourceVectorFeature<dim>::update_on_cell (
                 typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
         {
             source .update_on_cell (cell);
         };
 
     template <u8 dim>
-        dbl SourceVector<dim>::operator () (cst i)
+        dbl SourceVectorFeature<dim>::operator () (cst i)
         {
             for (st m = 0; m < U.size(); ++m)
             {
                 for (st n = 0; n < dim; ++n)
                 {
-                    source.U[m][n] = (i % dim) == n ? U[m][n] : [](const dealii::Point<2> &p){return 0.0;};
+                    source.U[m][n] = U[m][i % dim][n];
                 };
-
-                source.tau[m] = tau[m][i % dim];
             };
 
             return source (i);
         };
 
     template <u8 dim>
-        u8 SourceVector<dim>::get_dofs_per_cell ()
+        u8 SourceVectorFeature<dim>::get_dofs_per_cell ()
         {
             return source.dofs_per_cell;
         };
-};
+// };
 
 #endif

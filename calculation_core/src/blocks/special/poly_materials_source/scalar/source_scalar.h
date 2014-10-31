@@ -1,7 +1,7 @@
-#ifndef SOURCE_SCALAR
-#define SOURCE_SCALAR
+#ifndef POLY_MATERIALS_SOURCE_SCALAR
+#define POLY_MATERIALS_SOURCE_SCALAR
  
-#include "../interface/source_interface.h"
+#include "../../../general/source/scalar/source_scalar.h"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -18,13 +18,13 @@
   \f]
 */
 template <u8 dim>
-class SourceScalar : public SourceInterface<dim>
+class SourceScalarPolyMaterials : public SourceInterface<dim>
 {
     public:
     typedef std::function<dbl (const dealii::Point<dim>&)> Func;
 
-    SourceScalar (const dealii::FiniteElement<dim> &fe);
-    SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe);
+    SourceScalarPolyMaterials (const dealii::FiniteElement<dim> &fe);
+    SourceScalarPolyMaterials (const vec<Func> &func, const dealii::FiniteElement<dim> &fe);
 
     virtual void update_on_cell (
         typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
@@ -34,7 +34,7 @@ class SourceScalar : public SourceInterface<dim>
     virtual u8 get_dofs_per_cell () override;
 
 
-    Func                  f; //!< Функция из правой части уравнения.
+    vec<Func>                  f; //!< Функция из правой части уравнения.
     dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
     dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
     cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
@@ -44,7 +44,7 @@ class SourceScalar : public SourceInterface<dim>
 };
 
 template <u8 dim>
-SourceScalar<dim>::SourceScalar (const dealii::FiniteElement<dim> &fe) :
+SourceScalarPolyMaterials<dim>::SourceScalarPolyMaterials (const dealii::FiniteElement<dim> &fe) :
     quadrature_formula (2),
     fe_values (fe, quadrature_formula,
             dealii::update_values | dealii::update_quadrature_points | 
@@ -54,14 +54,18 @@ SourceScalar<dim>::SourceScalar (const dealii::FiniteElement<dim> &fe) :
 {};
 
 template <u8 dim>
-SourceScalar<dim>::SourceScalar (const Func func, const dealii::FiniteElement<dim> &fe) :
-    SourceScalar(fe)
+SourceScalarPolyMaterials<dim>::SourceScalarPolyMaterials (const vec<Func> &func, const dealii::FiniteElement<dim> &fe) :
+    SourceScalarPolyMaterials(fe)
 {
-    f = func;
+    f .resize (func.size());
+    for (st i = 0; i < f.size(); ++i)
+    {
+        f[i] = func[i];
+    };
 };
 
 template <u8 dim>
-void SourceScalar<dim>::update_on_cell (
+void SourceScalarPolyMaterials<dim>::update_on_cell (
         typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
 {
     fe_values .reinit (cell);
@@ -70,15 +74,15 @@ void SourceScalar<dim>::update_on_cell (
 };
 
 template <u8 dim>
-dbl SourceScalar<dim>::operator () (cst i)
+dbl SourceScalarPolyMaterials<dim>::operator () (cst i)
 {
     dbl res = 0.0;
 
     FOR (q_point, 0, num_quad_points)
     {
-        res +=  
+        res -=  
             this->fe_values.shape_value (i, q_point) *
-            this->f(fe_values.quadrature_point(q_point)) *
+            this->f[material_id](fe_values.quadrature_point(q_point)) *
             this->fe_values.JxW(q_point);
     };
 
@@ -86,7 +90,7 @@ dbl SourceScalar<dim>::operator () (cst i)
 };
 
 template <u8 dim>
-u8 SourceScalar<dim>::get_dofs_per_cell ()
+u8 SourceScalarPolyMaterials<dim>::get_dofs_per_cell ()
 {
     return dofs_per_cell;
 };

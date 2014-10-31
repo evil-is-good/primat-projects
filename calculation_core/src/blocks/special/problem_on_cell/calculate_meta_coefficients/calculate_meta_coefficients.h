@@ -73,6 +73,9 @@ namespace OnCell
                 meta_coefficient[i][j] = mean_coefficient[i][j] + mean_heat_flow[i][j];
             };
 
+        // mean_heat_flow[1][1] = mean_coefficient[1][1];
+        // mean_heat_flow[0][1] = meta_coefficient[1][1];
+        // return  mean_heat_flow; 
         return  meta_coefficient;
     };
 

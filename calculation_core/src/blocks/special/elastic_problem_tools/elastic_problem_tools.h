@@ -84,16 +84,16 @@ namespace EPTools
         switch (dim)
         {
             case 1:
-                solution_names.push_back ("x");
+                solution_names.push_back ("move_x");
                 break;
             case 2:
-                solution_names.push_back ("x");
-                solution_names.push_back ("y");
+                solution_names.push_back ("move_x");
+                solution_names.push_back ("move_y");
                 break;
             case 3:
-                solution_names.push_back ("x");
-                solution_names.push_back ("y");
-                solution_names.push_back ("z");
+                solution_names.push_back ("move_x");
+                solution_names.push_back ("move_y");
+                solution_names.push_back ("move_z");
                 break;
         };
         data_out.add_data_vector (move, solution_names);

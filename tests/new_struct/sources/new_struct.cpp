@@ -34,6 +34,12 @@
 #include "../../../calculation_core/src/blocks/special/nikola_problem/source/scalar/source_scalar.h"
 #include "../../../calculation_core/src/blocks/special/nikola_problem/source/vector/source_vector.h"
 
+#include "../../../calculation_core/src/blocks/special/feature_source/scalar/source_scalar.h"
+#include "../../../calculation_core/src/blocks/special/feature_source/vector/source_vector.h"
+
+#include "../../../calculation_core/src/blocks/special/poly_materials_source/scalar/source_scalar.h"
+#include "../../../calculation_core/src/blocks/special/poly_materials_source/vector/source_vector.h"
+
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/lac/solver_cg.h>
@@ -966,12 +972,57 @@ void set_circ(dealii::Triangulation< 2 > &triangulation,
             midle_p(0) /= 4.0;
             midle_p(1) /= 4.0;
 
-           printf("%f %f\n", midle_p(0), midle_p(1));
+           // printf("%f %f\n", midle_p(0), midle_p(1));
 
             if (center.distance(midle_p) < radius)
             {
                 cell->set_material_id(1);
 //                puts("adf");
+            }
+            else
+                cell->set_material_id(0);
+        };
+    };
+};
+
+void set_rect(dealii::Triangulation< 2 > &triangulation, 
+        const dealii::Point<2> p1, const dealii::Point<2> p2, const size_t n_refine)
+{
+    dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
+    triangulation .refine_global (n_refine);
+    {
+        dealii::Point<2> center (0.5, 0.5);
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = triangulation .begin_active(),
+                 end_cell = triangulation .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+           // printf("%f %f\n", midle_p(0), midle_p(1));
+
+            if 
+                (
+                (
+                (midle_p(0) > p1(0)) and
+                (midle_p(0) < p2(0))
+                ) and
+                (
+                (midle_p(1) > p1(1)) and
+                (midle_p(1) < p2(1))
+                )
+                )
+            {
+                cell->set_material_id(1);
+               // puts("adf");
             }
             else
                 cell->set_material_id(0);
@@ -2118,11 +2169,14 @@ int main()
 
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL
-    if (1)
+    if (0)
     {
         // FILE *F;
         // F = fopen("square.gpd", "w");
-        dbl size = 0.05;
+        cdbl c = 0.78;
+        cdbl lambda = 2.0e1;
+        cdbl R_in = sqrt((c / dealii::numbers::PI));
+        dbl size = sqrt(c);
         // while (size*size < 0.6)
         // for (st i = 0; i < 7; ++i)
         {
@@ -2151,8 +2205,8 @@ int main()
                 const size_t material_id[4][4] =
                 {
                     {0, 0, 0, 0},
-                    {0, 1, 1, 0},
-                    {0, 1, 1, 0},
+                    {0, 0, 0, 0},
+                    {0, 0, 0, 0},
                     {0, 0, 0, 0}
                 };
                 const double dot[5] = 
@@ -2164,10 +2218,13 @@ int main()
                     (1.0)
                 };
                 // ::set_tria <5> (domain.grid, dot, material_id);
-                set_circ(domain.grid, 0.2, 2); //0.344827, 2);
+                // domain.grid .refine_global (1);
+                set_rect(domain.grid,
+                        dealii::Point<2>((0.5 - size / 2.0),(0.5 - size / 2.0)),
+                        dealii::Point<2>((0.5 + size / 2.0),(0.5 + size / 2.0)), 6);
+                // set_circ(domain.grid, R_in, 6); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
-                // domain.grid .refine_global (3);
                 {
                     std::ofstream out ("grid-igor.eps");
                     dealii::GridOut grid_out;
@@ -2184,10 +2241,10 @@ int main()
             LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
             // {
             element_matrix.C .resize(2);
-            element_matrix.C[1][x][x] = 0.1;
+            element_matrix.C[1][x][x] = lambda;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
-            element_matrix.C[1][y][y] = 0.1;
+            element_matrix.C[1][y][y] = lambda;
             element_matrix.C[0][x][x] = 1.0;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
@@ -2308,79 +2365,247 @@ int main()
                     domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
             printf("META %.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
 
-            cdbl A = 0.2;
-            cdbl R_0 = 0.5;
-            cdbl lambda_1 = element_matrix.C[0][x][x];
-            cdbl lambda_2 = element_matrix.C[1][x][x];
-            // auto D = [lamdda_2, R_in, R_0] (cdbl theta){
-            //     cdbl delta = [](cdbl t){while (PI / 2.0 > t){t - (PI / 2.0)}; return t;}(theta);
-            //     cdbl chi = (R_in*R_in)/(R_0*R_0) * cos(delta);
-            //     return lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
-            // };
-            // auto C_11 = 
-            dealii::Vector<dbl> andrianov(slae.solution[0].size());
-            dealii::Vector<dbl> t_r(slae.solution[0].size());
-            dealii::Vector<dbl> diff(slae.solution[0].size());
-            for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
-            {
-                for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
-                {
-                    dbl indx_x = cell->vertex_dof_index(i, x);
-                    // dbl indx_y = cell->vertex_dof_index(i, y);
-                    auto p = cell->vertex(i);
-                    p(x) -= 0.5;
-                    p(y) -= 0.5;
-                    
-                    cdbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
-                    // cdbl theta = atan (p(y) / p(x));
-                    cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0);// - dealii::numbers::PI / 2.0;
-                    // cdbl cos = ((std::abs(r) > 1e-5) ? (p(x) / r) : 1.0);// - dealii::numbers::PI / 2.0;
-                    // printf("chi %f %f %f\n", cos, p(x), r);
-                    cdbl delta = [](dbl t){
-                        while ((dealii::numbers::PI / 2.0) <= t)
-                        // while (t > 1.0/sqrt(2.0))
-                        {
-                            t -= (dealii::numbers::PI / 2.0);
-                            // t -= sqrt(2.0);
-                            // printf("theta %f %f\n", (dealii::numbers::PI / 2.0), t);
-                        };
-                        return std::abs(t);}(theta);
-                    cdbl chi = (A*A)/(R_0*R_0) * 
-                        //cos * cos;
-                        cos(delta) * cos(delta);
-                    cdbl D = 1.0;//lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
-                    cdbl C_11 = (lambda_2 - 1.0) * chi / D;
-                    cdbl C_12 = - (C_11 * A * A) / chi;
-                    cdbl C_21 = - (lambda_2 - 1.0) * (1.0 - chi) / D;
-                    // if (p(x) == 0.5)
-                    if (std::abs(r - R_0) < 1e-5)
-                        printf("C %f %f %f %f %f %f\n", lambda_2, C_11*r, C_12/r, C_11, C_12, chi);
-                    
-                    andrianov(indx_x) = (r < A) ? C_21*r : C_11*r+C_12/r;
-                    t_r(indx_x) = std::abs(r) > 1e-5 ? 
-                        // slae.solution(indx_x) * p(0) / r + slae.solution(indx_y) * p(1) / r :
-                        std::sqrt(std::pow(slae.solution[x](indx_x), 2.0) + std::pow(slae.solution[y](indx_x), 2.0)) :
-                        0.0;
-                    // if (p(0) == -0.5)
-                    //     printf("%f %f %f %f %f %f\n", digit(indx_x),
-                    //             slae.solution(indx_x),
-                    //             p(0) / r,
-                    //             slae.solution(indx_y),
-                    //             p(1) / r,
-                    //             r);
-                    // digit(indx_y) = C1 * r;
-                    diff(indx_x) = 
-                        std::abs(andrianov(indx_x) - t_r(indx_x));
-                };
-            };
-            HCPTools ::print_temperature<2> (t_r, domain.dof_handler, "temperature_r.gpd");
-            HCPTools ::print_temperature<2> (andrianov, domain.dof_handler, "andrianov.gpd");
-            HCPTools ::print_temperature<2> (diff, domain.dof_handler, "diff.gpd");
-            // fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
-            // puts("111111111");
-            // size+=0.05;
-            // puts("2222222");
-            // printf("%f %f\n", size, size*size);
+        //     cdbl A = R_in;
+        //     cdbl R_0 = 0.5;
+        //     cdbl lambda_1 = element_matrix.C[0][x][x];
+        //     cdbl lambda_2 = element_matrix.C[1][x][x];
+        //     // auto D = [lamdda_2, R_in, R_0] (cdbl theta){
+        //     //     cdbl delta = [](cdbl t){while (PI / 2.0 > t){t - (PI / 2.0)}; return t;}(theta);
+        //     //     cdbl chi = (R_in*R_in)/(R_0*R_0) * cos(delta);
+        //     //     return lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
+        //     // };
+        //     // auto C_11 = 
+        //     auto solve_andrianov = [A, R_0, lambda_2](const dealii::Point<2> p){
+        //             cdbl r = sqrt(p(x)*p(x) + p(y)*p(y));
+        //             cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0);// - dealii::numbers::PI / 2.0;
+        //             cdbl delta = [](dbl t){
+        //                 while ((dealii::numbers::PI / 4.0) < t)
+        //                 {
+        //                     t -= (dealii::numbers::PI / 2.0);
+        //                 };
+        //                 return std::abs(t);}(theta);
+        //             cdbl R_theta = R_0 / cos(delta);
+        //             cdbl chi = (A*A) / (R_theta*R_theta);
+        //             cdbl D = lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
+        //             cdbl C_11 = (lambda_2 - 1.0) * chi / D;
+        //             // cdbl C_12 = (lambda_2 - 1.0) * A * A / D;
+        //             cdbl C_12 = - (C_11 * A * A) / chi;
+        //             cdbl C_21 = - (lambda_2 - 1.0) * (1.0 - chi) / D;
+        //             
+        //             return (r < A) ? C_21*r : C_11*r+C_12/r;
+        //     };
+        //
+        //     dealii::Vector<dbl> andrianov(slae.solution[0].size());
+        //     dealii::Vector<dbl> andrianov_x(slae.solution[0].size());
+        //     dealii::Vector<dbl> andrianov_y(slae.solution[0].size());
+        //     dealii::Vector<dbl> t_r(slae.solution[0].size());
+        //     dealii::Vector<dbl> t_dx(slae.solution[0].size());
+        //     dealii::Vector<dbl> diff(slae.solution[0].size());
+        //     dealii::Vector<dbl> andrianov_dx(slae.solution[0].size());
+        //     for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        //     {
+        //         for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+        //         {
+        //             cdbl indx_x = cell->vertex_dof_index(i, x);
+        //             // dbl indx_y = cell->vertex_dof_index(i, y);
+        //             auto p = cell->vertex(i);
+        //             p(x) -= 0.5;
+        //             p(y) -= 0.5;
+        //             
+        //             cdbl r = std::pow(p(x)*p(x) + p(y)*p(y), 0.5);
+        //             // cdbl theta = atan (p(y) / p(x));
+        //             cdbl theta = ((std::abs(r) > 1e-5) ? acos(p(x) / r) : 0.0);// - dealii::numbers::PI / 2.0;
+        //             // cdbl cos = ((std::abs(r) > 1e-5) ? (p(x) / r) : 1.0);// - dealii::numbers::PI / 2.0;
+        //             // printf("chi %f %f %f\n", cos, p(x), r);
+        //             cdbl delta = [](dbl t){
+        //                 while ((dealii::numbers::PI / 4.0) < t)
+        //                 // while (t > 1.0/sqrt(2.0))
+        //                 {
+        //                     t -= (dealii::numbers::PI / 2.0);
+        //                     // t -= sqrt(2.0);
+        //                     // printf("theta %f %f\n", (dealii::numbers::PI / 2.0), t);
+        //                 };
+        //                 return std::abs(t);}(theta);
+        //             cdbl R_theta = R_0 / cos(delta);
+        //             // cdbl chi = (A*A)/(R_0*R_0) * 
+        //             //     //cos * cos;
+        //             //     cos(delta) * cos(delta);
+        //             cdbl chi = (A*A) / (R_theta*R_theta);
+        //             cdbl D = lambda_2 + 1.0 - chi * (lambda_2 - 1.0);
+        //             cdbl C_11 = (lambda_2 - 1.0) * chi / D;
+        //             // cdbl C_12 = (lambda_2 - 1.0) * A * A / D;
+        //             cdbl C_12 = - (C_11 * A * A) / chi;
+        //             cdbl C_21 = - (lambda_2 - 1.0) * (1.0 - chi) / D;
+        //             // if (std::abs(1.107149 - delta) < 1e-5)
+        //             // printf("theta %f %f delta %f %f chi %f D %f  %f %f  %f r %f R_theta %f\n", 
+        //             //         theta, theta / dealii::numbers::PI,
+        //             //         delta, delta / dealii::numbers::PI,
+        //             //         chi, D, C_11*r, C_12/r,
+        //             //         chi * R_theta * R_theta - A * A,
+        //             //         r, R_theta);
+        //             // if (p(x) == 0.5)
+        //             // if (std::abs(r - R_0) < 1e-5)
+        //                 // printf("C %f %f %f %f %f %f\n", D, C_11*r, C_12/r, C_11, C_12, chi);
+        //
+        //             andrianov(indx_x) = (r < A) ? C_21*r : C_11*r+C_12/r;
+        //             // andrianov(indx_x) = solve_andrianov(p);
+        //             andrianov_x(indx_x) = andrianov(indx_x) * cos(theta);
+        //             andrianov_y(indx_x) = std::abs(r) > 1e-5 ?
+        //                 andrianov(indx_x) * p(y) / r :
+        //                 0.0;
+        //             // printf("sin %f %f\n", sin(theta), theta / dealii::numbers::PI);
+        //             // andrianov_y(indx_x) = andrianov(indx_x) * cos(dealii::numbers::PI / 2 - theta);
+        //             t_r(indx_x) = std::abs(r) > 1e-5 ? 
+        //                 // slae.solution(indx_x) * p(0) / r + slae.solution(indx_y) * p(1) / r :
+        //                 std::sqrt(std::pow(slae.solution[x](indx_x), 2.0) + std::pow(slae.solution[y](indx_x), 2.0)) :
+        //                 0.0;
+        //             // if (p(0) == -0.5)
+        //             //     printf("%f %f %f %f %f %f\n", digit(indx_x),
+        //             //             slae.solution(indx_x),
+        //             //             p(0) / r,
+        //             //             slae.solution(indx_y),
+        //             //             p(1) / r,
+        //             //             r);
+        //             // digit(indx_y) = C1 * r;
+        //             diff(indx_x) = 
+        //                 std::abs(andrianov(indx_x) - t_r(indx_x));
+        //         };
+        //     };
+        //     HCPTools ::print_temperature<2> (t_r, domain.dof_handler, "temperature_r.gpd");
+        //     HCPTools ::print_temperature<2> (andrianov, domain.dof_handler, "andrianov.gpd");
+        //     HCPTools ::print_temperature<2> (andrianov_x, domain.dof_handler, "andrianov_x.gpd");
+        //     HCPTools ::print_temperature<2> (andrianov_y, domain.dof_handler, "andrianov_y.gpd");
+        //     HCPTools ::print_temperature<2> (diff, domain.dof_handler, "diff.gpd");
+        //     for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+        //     {
+        //         for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
+        //         {
+        //             cdbl indx = cell->vertex_dof_index(i, x);
+        //             cst mat = cell->material_id();
+        //             andrianov_dx[indx] = 
+        //                 element_matrix.C[mat][x][x] * get_grad<2>(cell, andrianov_x, i)[x];
+        //             t_dx[indx] = 
+        //                 element_matrix.C[mat][x][x] * get_grad<2>(cell, slae.solution[x], i)[x];
+        //         };
+        //     };
+        //     HCPTools ::print_temperature<2> (andrianov_dx, domain.dof_handler, "andrianov_dx.gpd");
+        //     HCPTools ::print_temperature<2> (t_dx, domain.dof_handler, "t_dx.gpd");
+        //
+        //     dbl sum = 0.0;
+        //     for (st i = 0; i < andrianov.size(); ++i)
+        //     {
+        //         sum += andrianov_dx[i];
+        //     };
+        //     sum /= andrianov.size();
+        //     printf("andrianov meta %f %f\n", sum, sum + meta_coef[y][y]);
+        //
+        //     {
+        //         FILE *F;
+        //         F = fopen("a_dx.gpd", "w");
+        //     cst N = 10000;
+        //     cdbl dx = 1.0 / N; 
+        //     cdbl dy = 1.0 / N; 
+        //     dbl andrianov_meta = 0.0;
+        //     // arr<arr<dbl, N+1>, N+1> a_res;
+        //
+        //     auto solv_cos = [] (cdbl px, cdbl py){
+        //         cdbl r = sqrt(px*px+py*py);
+        //         return std::abs(r) > 1e-10 ? (px/r) : 0.0;
+        //     };
+        //
+        //     // for (st i = 0; i < N+1; ++i)
+        //     // {
+        //     //     for (st j = 0; j < N+1; ++j)
+        //     //     {
+        //     //         cdbl X = -0.5 + dx * i;
+        //     //         cdbl Y = -0.5 + dy * j;
+        //     //         cdbl R = sqrt(X*X+Y*Y);
+        //     //         cdbl material = ((R < R_in) ? 1.0e5 : 1.0);
+        //     //         a_res[i][j] = solve_andrianov(dealii::Point<2>(X, Y))*solv_cos(X, Y);
+        //     //         // printf("a_res %f\n", a_res[i][j]);
+        //     //     };
+        //     // };
+        //
+        //     cdbl deriver = (N+1)*(N+1);
+        //     dbl temp_sum = 0.0;
+        //     printf("deriver %f\n", deriver);
+        //     for (st i = 0; i < N+1; ++i)
+        //     {
+        //         for (st j = 0; j < N+1; ++j)
+        //         {
+        //             cdbl X = -0.5 + dx * i;
+        //             cdbl Y = -0.5 + dy * j;
+        //             cdbl R = sqrt(X*X+Y*Y);
+        //             cdbl material = ((R < R_in) ? lambda : 1.0);
+        //             // cdbl cos_1 = std::abs(R) > 1e-5 ? ((X+dx/2.0)/R) : 0.0;
+        //             // cdbl cos_2 = std::abs(R) > 1e-5 ? ((X-dx/2.0)/R) : 0.0;
+        //             // auto solv_cos = [] (cdbl px, cdbl py){
+        //             //     cdbl r = sqrt(px*px+py*py);
+        //             //     return std::abs(r) > 1e-5 ? (px/r) : 0.0;
+        //             // };
+        //             // cdbl theta_1 = ((std::abs(R) > 1e-5) ? acos(X / R) : 0.0);
+        //             // cdbl theta_2 = ((std::abs(R) > 1e-5) ? acos((X+dx) / R) : 0.0);
+        //             // printf("%f %f %f %f %f\n", theta_1, theta_2, acos((X+dx) / R), );
+        //
+        //             cdbl x1 = X;
+        //             cdbl x2 = X+dx;
+        //             cdbl x3 = X;
+        //             cdbl x4 = X+dx;
+        //
+        //             cdbl y1 = Y;
+        //             cdbl y2 = Y;
+        //             cdbl y3 = Y+dy;
+        //             cdbl y4 = Y+dy;
+        //
+        //             // cdbl f1 = a_res[i][j];
+        //             // cdbl f2 = a_res[i+1][j];
+        //             // cdbl f3 = a_res[i][j+1];
+        //             // cdbl f4 = a_res[i+1][j+1];
+        //             cdbl f1 = solve_andrianov(dealii::Point<2>(X, Y))*solv_cos(X, Y);
+        //             cdbl f2 = solve_andrianov(dealii::Point<2>(X+dx, Y))*solv_cos(X+dx, Y);
+        //             cdbl f3 = solve_andrianov(dealii::Point<2>(X, Y+dy))*solv_cos(X, Y+dy);
+        //             cdbl f4 = solve_andrianov(dealii::Point<2>(X+dx, Y+dy))*solv_cos(X+dx, Y+dy);
+        //
+        //             cdbl b=-(x1*y1*y2*f3-x1*y1*y2*f4-x1*y1*f3*y4+x1*y1*y4*f2-x1*y1*f2*y3+x1*y1*y3*f4+y3*x3*y2*f4-y2*x3*y3*f1+y3*x4*y4*f2-y3*x4*y4*f1+x3*y3*f1*y4-x3*y3*f2*y4+f3*x2*y2*y4-x2*y2*f1*y4+x2*y2*f1*y3-y3*x2*y2*f4-y1*x4*y4*f2-y1*y3*x3*f4+y1*x2*y2*f4+y1*x3*y3*f2-y1*x2*y2*f3-f3*y2*x4*y4+y1*f3*y4*x4+f1*y2*x4*y4)/(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        //             // cdbl c=(x1*x2*y2*f4-x1*f3*x2*y2+x3*x1*y1*f4-x1*y1*x2*f4+x1*y1*x2*f3-x1*x4*y4*f2+x4*x1*y1*f2+x1*f3*y4*x4-x4*x1*y1*f3+x1*x3*y3*f2-x3*x1*y1*f2-x1*y3*x3*f4-x3*x2*y2*f4+x3*x2*y2*f1-x4*x2*y2*f1+x4*x2*y2*f3-f3*y4*x4*x2+x2*x4*y4*f1+y3*x3*x2*f4-x4*x3*y3*f2-x2*x3*y3*f1+x3*x4*y4*f2-x3*x4*y4*f1+x4*x3*y3*f1)/(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        //             cdbl d=(-x3*y1*f4+x3*y1*f2+y1*f3*x4-x4*y1*f2-x1*y2*f4+x3*y2*f4-x3*f1*y2+y2*x1*f3+f1*y2*x4-f3*y2*x4+x4*y3*f2-x1*y3*f2-x4*y3*f1+x1*y4*f2-x3*y4*f2+x3*y4*f1-x2*f1*y4+f3*x2*y4+x2*f1*y3-y3*x2*f4+x1*y3*f4-x1*f3*y4+y1*x2*f4-y1*x2*f3)/(-y1*y3*x3*x2-x4*x2*y2*y1-x3*y3*x4*y2+x2*y3*x3*y4-x2*y2*x3*y4+x2*y1*x4*y4-x2*y3*x4*y4+y3*x4*x2*y2+y1*x3*x2*y2+y2*x3*x4*y4-y1*x3*x4*y4+x1*y1*x3*y4+y2*x1*y3*x3-x1*y4*x2*y1+x1*x2*y2*y4-y2*x3*x1*y1+y3*y1*x3*x4+x1*y3*x4*y4-x1*y3*x2*y2+x1*y1*y3*x2-x1*x3*y3*y4-x1*y3*x4*y1-x1*y2*x4*y4+y2*x4*x1*y1);
+        //
+        //             cdbl grad = b + d * Y;
+        //
+        //             // andrianov_meta += 
+        //             temp_sum +=
+        //                 (material * grad);// / deriver;
+        //             if (std::abs(temp_sum) > deriver)
+        //             {
+        //                 andrianov_meta += temp_sum / deriver;
+        //                 temp_sum = 0.0;
+        //             };
+        //             // material * 
+        //             //     (solve_andrianov(dealii::Point<2>(X+dx/2.0, Y))*solv_cos(X+dx/2.0, Y) - 
+        //             //     solve_andrianov(dealii::Point<2>(X-dx/2.0, Y))*solv_cos(X-dx/2.0, Y)) / dx; 
+        //             // fprintf(F,"%f %f %f\n", X+0.5, Y+0.5, 
+        //             //     //     material *
+        //             //     // (solve_andrianov(dealii::Point<2>(X+dx/2.0, Y))*cos_1 - 
+        //             //     // solve_andrianov(dealii::Point<2>(X-dx/2.0, Y))*cos_2) / dx); 
+        //             //     solve_andrianov(dealii::Point<2>(X+dx/2.0, Y))*cos_1);
+        //             // fprintf(F,"%f %f %f\n", X+0.5, Y+0.5, a_res[i][j]);
+        //             // fprintf(F,"%f %f %f\n", X+0.5, Y+0.5, material * grad);
+        //             // printf("%f %f %f %f\n", solve_andrianov(dealii::Point<2>(X+dx/2.0, Y)),
+        //             //         solve_andrianov(dealii::Point<2>(X-dx/2.0, Y)),
+        //             //         andrianov_meta, material);
+        //         };
+        //     };
+        //     andrianov_meta += temp_sum / deriver;
+        //     // andrianov_meta /= (N+1)*(N+1);
+        //     printf("andrianov_meta %f %f\n", andrianov_meta, andrianov_meta + meta_coef[y][y]);
+        //     printf("%f %f\n", temp_sum, deriver);
+        //         fclose(F);
+        //     };
+        //     // fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
+        //     // puts("111111111");
+        //     // size+=0.05;
+        //     // puts("2222222");
+        //     // printf("%f %f\n", size, size*size);
         };
             // fclose(F);
     };
@@ -2936,19 +3161,21 @@ int main()
         cdbl nu = 0.25;
         cdbl mu = 0.4;
         vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // vec<arr<typename SourceScalarFeature<2>::Func, 2>> U(2);
         // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
         // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
         // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
         // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
-        U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
+        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
+        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
+        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
+        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
         vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
         tau[0] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
         tau[1] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
         // tau[0] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
@@ -2970,9 +3197,13 @@ int main()
         Nikola::SourceScalar<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
         // auto func = [] (const dealii::Point<2> p) {return -1.0*(p(0)-0.5);};
         // SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
+        SourceScalarFeature<2> element_rhsv1 (U, domain.dof_handler.get_fe());
+        SourceScalarPolyMaterials<2> element_rhsv2 (tau, domain.dof_handler.get_fe());
 
         Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
-        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+        // Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv1, domain.dof_handler);
+        Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv2, domain.dof_handler);
 
         // puts("AAAAAAAAAAAAAAAAAAAAA");
         // vec<BoundaryValueScalar<2>> bound (4);
@@ -3079,7 +3310,7 @@ int main()
             };
         };
 
-        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature-3.gpd");
+        HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature-4.gpd");
         HCPTools ::print_temperature<2> (uber, domain.dof_handler, "uber.gpd");
         HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff-2.gpd");
         // HCPTools ::print_heat_conductions<2> (
@@ -3199,13 +3430,19 @@ int main()
         EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
 
         // T2.2
-        vec<arr<typename Nikola::SourceVector<2>::Func, 2>> U(3);
-        U[0][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
-        U[0][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][y][y][z][z];}; //Uy
-        U[1][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[1][x][x][z][z];}; //Ux
-        U[1][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[1][y][y][z][z];}; //Uy
-        U[2][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[2][x][x][z][z];}; //Ux
-        U[2][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[2][y][y][z][z];}; //Uy
+        vec<arr<arr<typename Nikola::SourceVector<2>::Func, 2>, 2>> U(3);
+        U[0][x][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[0][x][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[0][y][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[0][y][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[1][x][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[1][x][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[1][y][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[1][y][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[2][x][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[2][x][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[2][y][x] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
+        U[2][y][y] = [&element_matrix] (const dealii::Point<2> &p) {return element_matrix.C[0][x][x][z][z];}; //Ux
         vec<arr<typename Nikola::SourceVector<2>::Func, 2>> tau(3);
         tau[0][x] = [] (const dealii::Point<2> &p) {return 0.0;};
         tau[0][y] = [] (const dealii::Point<2> &p) {return 0.0;};
@@ -3214,12 +3451,16 @@ int main()
         tau[2][x] = [] (const dealii::Point<2> &p) {return 0.0;};
         tau[2][y] = [] (const dealii::Point<2> &p) {return 0.0;};
 
-        Nikola::SourceVector<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
+        // Nikola::SourceVector<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
         // SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
+        SourceVectorFeature<2> element_rhsv1 (U, domain.dof_handler.get_fe());
+        SourceVectorPolyMaterials<2> element_rhsv2 (tau, domain.dof_handler.get_fe());
 
         Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
         puts("scsdf");
-        Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+        // Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+        Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv1, domain.dof_handler);
+        Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv2, domain.dof_handler);
 
         dealii::SolverControl solver_control (10000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
@@ -3268,8 +3509,8 @@ int main()
 
         for (st i = 0; i < slae.solution.size(); ++i)
         {
-            integral_x += (i % 2) ? slae.solution(i) * s_values(i) : 0.0;
-            integral_y += !(i % 2) ? slae.solution(i) * s_values(i) : 0.0;
+            integral_x += !(i % 2) ? slae.solution(i) * s_values(i) : 0.0;
+            integral_y += (i % 2) ? slae.solution(i) * s_values(i) : 0.0;
         };
         // printf("Integral %.10f %.10f\n", integral_x, integral_y);
 
@@ -3278,7 +3519,7 @@ int main()
         //     // slae.solution(i) -= (i % 2) ? integral_x : integral_y;
         // };
         // // // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
-        EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
+        EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move-2.gpd");
 
         // cdbl R_1 = 1.0;
         // cdbl R_2 = 2.0;
@@ -3337,13 +3578,14 @@ int main()
     };
 
     //HEAT_CONDUCTION_PROBLEM_3D
-    if (false)
+    if (0)
     {
         Domain<3> domain;
         {
             // dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 2.0);
             // domain.grid.refine_global(1);
             set_cylinder(domain.grid, 0.344827, x, 4);
+            // set_ball(domain.grid, 0.2927, 4);
         };
         debputs();
         dealii::FE_Q<3> fe(1);
@@ -3366,11 +3608,29 @@ int main()
             // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
         };
 
-        auto func = [] (dealii::Point<3>) {return 0.0;};
-        SourceScalar<3> element_rhsv (func, domain.dof_handler.get_fe());
+        // auto func = [] (dealii::Point<3>) {return 0.0;};
+        // SourceScalar<3> element_rhsv (func, domain.dof_handler.get_fe());
+        vec<arr<typename SourceScalarFeature<3>::Func, 3>> U(2);
+        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        U[0][x] = [] (const dealii::Point<3> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
+        U[0][y] = [] (const dealii::Point<3> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
+        U[0][z] = [] (const dealii::Point<3> &p) {return 0.0;}; //Uy
+        U[1][x] = [] (const dealii::Point<3> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
+        U[1][y] = [] (const dealii::Point<3> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
+        U[1][z] = [] (const dealii::Point<3> &p) {return 0.0;};
+        vec<typename SourceScalarPolyMaterials<3>::Func> tau(2);
+        tau[0] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[1] = [] (const dealii::Point<3> &p) {return 0.0;};
+        SourceScalarFeature<3> element_rhsv1 (U, domain.dof_handler.get_fe());
+        SourceScalarPolyMaterials<3> element_rhsv2 (tau, domain.dof_handler.get_fe());
 
         Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler);
-        Assembler::assemble_rhsv<3> (slae.rhsv, element_rhsv, domain.dof_handler);
+        // Assembler::assemble_rhsv<3> (slae.rhsv, element_rhsv, domain.dof_handler);
+        Assembler::assemble_rhsv<3> (slae.rhsv, element_rhsv1, domain.dof_handler);
+        Assembler::assemble_rhsv<3> (slae.rhsv, element_rhsv2, domain.dof_handler);
 
         vec<BoundaryValueScalar<3>> bound (1);
         bound[0].function      = [] (const dealii::Point<3> &p) {return p(1);};
@@ -3415,16 +3675,17 @@ int main()
     };
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL_3D
-    if (false)
+    if (0)
     {
-        FILE *F;
-        F = fopen("square.gpd", "w");
+        // FILE *F;
+        // F = fopen("square.gpd", "w");
         dbl size = 0.05;
         {
             Domain<3> domain;
             {
                 // set_cylinder(domain.grid, 0.475, z, 5);
-                set_ball(domain.grid, 0.4, 5);
+                // set_ball(domain.grid, 0.40057, 7);
+                set_ball(domain.grid, 0.4742, 7);
             };
             dealii::FE_Q<3> fe(1);
             domain.dof_init (fe);
@@ -3436,11 +3697,11 @@ int main()
             LaplacianScalar<3> element_matrix (domain.dof_handler.get_fe());
             // {
             element_matrix.C .resize(2);
-            element_matrix.C[1][x][x] = 0.1;
+            element_matrix.C[1][x][x] = 1.0e4;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
-            element_matrix.C[1][y][y] = 0.1;
-            element_matrix.C[1][z][z] = 0.1;
+            element_matrix.C[1][y][y] = 1.0e4;
+            element_matrix.C[1][z][z] = 1.0e4;
             element_matrix.C[0][x][x] = 1.0;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
@@ -3484,7 +3745,7 @@ int main()
                 //     data_out.write_gnuplot (output);
                 // };
 
-                dealii::SolverControl solver_control (500000, 1e-12);
+                dealii::SolverControl solver_control (5000000, 1e-12);
                 dealii::SolverCG<> solver (solver_control);
                 solver.solve (
                         slae.matrix,
@@ -3527,22 +3788,23 @@ int main()
             // puts("2222222");
             // printf("%f %f\n", size, size*size);
         };
-            fclose(F);
+            // fclose(F);
     };
 
     // ELASSTIC_PROBLEM_3D
-    if (0)
+    if (1)
     {
         cdbl len_rod = 1.0;
         Domain<3> domain;
         {
-            // dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 1.0);
-            // domain.grid.refine_global(2);
+            dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 1.0);
+            domain.grid.refine_global(2);
             // set_cylinder(domain.grid, 0.475, z, 5);
             // set_ball(domain.grid, 0.4, 3);
             // set_long_rod(domain.grid, len_rod, 0.4, 3);
             // domain.grid.refine_global(2);
-            set_speciment(domain.grid, len_rod, 1.0, 1.0, 0.4 / 8.0, 1.0 / 8.0, arr<st,6>({2,2,2,2,2,2}), 5);
+            //
+            // set_speciment(domain.grid, len_rod, 1.0, 1.0, 0.4 / 8.0, 1.0 / 8.0, arr<st,6>({2,2,2,2,2,2}), 5);
         };
         dealii::FESystem<3,3> fe 
             (dealii::FE_Q<3,3>(1), 3);
@@ -3556,23 +3818,46 @@ int main()
         EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.15}(element_matrix.C[0]);
         EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
 
-        const dbl abld = 
-            element_matrix.C[0][x][x][x][x] +
-            // element_matrix.C[0][x][x][x][y] +
-            element_matrix.C[0][y][x][x][x];
-            // element_matrix.C[0][y][x][x][y];
-        printf("AAAAAA %f\n", abld);
-        arr<std::function<dbl (const dealii::Point<3>&)>, 3> func {
-        // [=] (const dealii::Point<2>) {return -2.0*abld;},
-        [] (const dealii::Point<3>) {return 0.0;},
-        [] (const dealii::Point<3>) {return 0.0;},
-        [] (const dealii::Point<3>) {return 0.0;}
-        };
-        // auto func = [] (dealii::Point<2>) {return arr<dbl, 2>{-2.0, 0.0};};
-        SourceVector<3> element_rhsv (func, domain.dof_handler.get_fe());
+        // const dbl abld = 
+        //     element_matrix.C[0][x][x][x][x] +
+        //     // element_matrix.C[0][x][x][x][y] +
+        //     element_matrix.C[0][y][x][x][x];
+        //     // element_matrix.C[0][y][x][x][y];
+        // printf("AAAAAA %f\n", abld);
+        // arr<std::function<dbl (const dealii::Point<3>&)>, 3> func {
+        // // [=] (const dealii::Point<2>) {return -2.0*abld;},
+        // [] (const dealii::Point<3>) {return 0.0;},
+        // [] (const dealii::Point<3>) {return 0.0;},
+        // [] (const dealii::Point<3>) {return 0.0;}
+        // };
+        // // auto func = [] (dealii::Point<2>) {return arr<dbl, 2>{-2.0, 0.0};};
+        // SourceVector<3> element_rhsv (func, domain.dof_handler.get_fe());
+
+        vec<arr<arr<typename Nikola::SourceVector<3>::Func, 3>, 3>> U(2);
+        U[0][x][x] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][x][y] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][x][z] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][y][x] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][y][y] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][y][z] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][z][x] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][z][y] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        U[0][z][z] = [&element_matrix] (const dealii::Point<3> &p) {return 0.0;}; 
+        vec<arr<typename Nikola::SourceVector<3>::Func, 3>> tau(2);
+        tau[0][x] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[0][y] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[0][z] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[1][x] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[1][y] = [] (const dealii::Point<3> &p) {return 0.0;};
+        tau[1][z] = [] (const dealii::Point<3> &p) {return 0.0;};
+
+        SourceVectorFeature<3> element_rhsv1 (U, domain.dof_handler.get_fe());
+        SourceVectorPolyMaterials<3> element_rhsv2 (tau, domain.dof_handler.get_fe());
 
         Assembler ::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler);
-        Assembler ::assemble_rhsv<3> (slae.rhsv, element_rhsv, domain.dof_handler);
+        // Assembler ::assemble_rhsv<3> (slae.rhsv, element_rhsv, domain.dof_handler);
+        Assembler ::assemble_rhsv<3> (slae.rhsv, element_rhsv1, domain.dof_handler);
+        Assembler ::assemble_rhsv<3> (slae.rhsv, element_rhsv2, domain.dof_handler);
 
         vec<BoundaryValueVector<3>> bound (2);
         bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{-1.0, 0.0, 0.0};};
@@ -3591,8 +3876,8 @@ int main()
         // bound[1].boundary_type = TBV::Dirichlet;
         bound[1].boundary_type = TBV::Neumann;
 
-        for (auto b : bound)
-            ATools ::apply_boundary_value_vector<3> (b) .to_slae (slae, domain);
+        // for (auto b : bound)
+        //     ATools ::apply_boundary_value_vector<3> (b) .to_slae (slae, domain);
 
         dealii::SolverControl solver_control (10000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
@@ -3743,6 +4028,7 @@ int main()
                 );
         };
     };
+
 
 
 

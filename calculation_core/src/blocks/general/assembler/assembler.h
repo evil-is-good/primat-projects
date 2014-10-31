@@ -71,9 +71,9 @@ namespace Assembler
 
             FOR (i, 0, dofs_per_cell)
                     rhsv(local_dof_indices[i]) += source(i);
-        puts("111");
+        // puts("111");
         };
-        puts("222");
+        // puts("222");
 
         REPORT_USE( 
                 prmt::Report report;
