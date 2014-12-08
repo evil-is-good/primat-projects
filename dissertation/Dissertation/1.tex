@@ -1,0 +1,243 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage [T2A]{fontenc}
+\usepackage[warn]{mathtext}          % русские буквы в формулах, с предупреждением
+\usepackage[utf8x]{inputenc}
+\usepackage{misccorr}      % точка в номерах заголовков
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage[english,russian]{babel}
+\usepackage{amssymb,amsmath}
+\usepackage{tikz}
+%\usepackage{showkeys} %показывает в pdf имена ссылок
+
+\usepackage[colorlinks,urlcolor=blue,unicode=true,pagebackref=true,backref=true]{hyperref}
+
+\usetikzlibrary{shapes}
+\textheight=25.5cm
+\textwidth=17cm
+\oddsidemargin=0pt
+\topmargin=-1.5cm
+\parskip=0pt
+\tolerance=2000
+\flushbottom
+%\textheight=25cm %высота текста
+%\textwidth=17cm %ширина текста
+%\oddsidemargin=0pt %отступ от левого края
+%\headheight=1pt
+%\headsep=1pt
+%\topmargin=0cm % отступ от верхнего края
+%\parindent=24pt % абзацный отступ
+
+% Нумерация формул, картинок и таблиц по секциям
+%\numberwithin{equation}{section}
+%\numberwithin{table}{section}
+%\numberwithin{figure}{section}
+
+
+\author{Галиев И.М.}
+\title{Обзор литературы по термокомпозитам}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty} % не нумеровать первую страницу
+
+\tableofcontents % сгенерировать оглавление
+\bibliographystyle{gost780s}
+
+%\numberwithin{equation}{section}
+
+\cite{Allaire1992} Allaire 1992
+
+Описан энергетический метод (H-convergence Tartar) для уравнений с периодическими коэффициентами - метод двух масштабной гомогенизации. Очень похож на метод Бахвалова. Используется теорема о среднем по ячейке. Статья математическая, без примеров.
+
+~\\
+\cite{Allaire2002} Allaire G., Jouve F., Toader A-M. 2002
+
+Описан метод, основанный на минимизации некоего функционала, для решения задач упругости с изменяемой геометрией. Метод не использует перестройку сетки. Метод основан на работах:
+ 
+Osher, S., Sethian, J.A. Front propagating with curvature dependent speed: algorithms based on hamilton-jacobi formulations. J. Comp. Phys. 78, 12-49, 1988.
+
+Sethian, J.A. Level Set Methods and fast marching methods: evolving interfaces in computational geometry, fluid
+mechanics, computer vision and materials science, 1999
+
+~\\
+\cite{Allaire2004} Allaire G., Brizzi R.
+
+Этот метод (P2-MSFEM) сравнивается с аналогичным методом (P1-MSFEM), описанным в
+
+T. Y. HOU, X.-H. WU, A multiscale finite element method for elliptic problems in composite materials and porous media, Journal of computational physics 134, 169-189, (1997).
+
+Различие - в переходе от ячейковой задачи к глобальной, введением конечных элементов более высокого порядка. В принципе, метод аналогичен методу Бахвалова. 
+
+~\\
+\cite{Andrianov2003} Andrianov I.V., Awreicewich J., Barantsev R.G.
+
+В введении говорится о применимости асимптотики. Во второй части рассматривается одномерное уравнение. В третьей - нелинейное двумерное уравнение для пологой оболочки. В 6 части рассматривается деформация пластины с квадратными дырами. Задача решается по Бахвалову. Сначала рассматриваются маленькие дыры (первое приближение и квадрат в виде возмущенного круга (от одной переменной)). Далее рассматриваются большие квадраты вводя новую переменную и раскладывая второе приближение в ряд и уже в этом ряде рассматривается первое слагаемое (первое приближение второго приближения). В конце части 6 перечисляются методы решения подобных задач:
+\begin{itemize}
+\item Г-convergence (книга Dal Maso - An Introduction to Г-Convergence 1993 \cite{Maso1993}; лучше книга Andrea Braides - Г-convergence for Beginners 2002 \cite{Braides2002}).
+\item multiple-scale expansions (Бахвалов, Панасенко; Bensoussan A. 1978 Asimptotic methods in periodic structures \cite{Bensoussan1978}; Cioranescu D., Donato P. 1999 An introdaction to homogenization \cite{Cioranescu2000}; Kalamkarov A.L. 1992 Composite and reinforced elements of construction; Khruslov 1995 Homogenized modelling of strongly ingomogeneous media \cite{Marchenko1974}; Kozlov 1999 Asymptotic analysis of fields in multi-structures \cite{Kozlov1999}; Sanchez-Palencia 1980 Non-homogeneous media and vibration theory).
+\item two-scale convergence (Allaire 1992 \cite{Allaire1992}).
+\item Fourier homogenization method (Conca Lund 1999 Fourier homogenisation method and the propagation of acoustic waves through a periodic vortex array \cite{Conca1999}).
+\item Bloch waves decomposition (Allaire G., Conca C. Bloch wave homogenization and spectral asymptotic analysis~1998 \cite{Conca1998}). 
+\item energy methods (Бердичевский 1983 Вариационные принципы механики сплошной среды \cite{Berdichevsky1983}, Berdichevsky 2009 Variational Principles of Continuum Mechanics \cite{Berdichevsky2009}).
+\item wavelet approximations (Brewsler 1995 A multiresolution strategy for numerical homogenisation \cite{Brewsler1995}).
+\item non-standard analysis (Woźniak 1987 A nonstandard method of modelling of thermoelastic periodic composites).
+\item matrix methods (Молотков Л.А. Матричный метод в теории распространения волн в слоистых упругих и жидких средах 1984 201с.;  Молотков Л.А. О новом способе вывода уравнений осредненной эффективной модели периодических сред 1991 \cite{Molotkov1991}).
+\item non-smoth transformations(Pilipchuk \cite{Pilipchuk 1999}, \cite{Pilipchuk1997})
+\end{itemize}
+
+Далее говорится, что обычно используется первый порядок аппроксимации, но есть работы где используются высокие порядки (Boutin 1995, 1996 \cite{Boutin1995}, \cite{Boutin1996}). В 11 части говорится еще о двух методах: power geometry (степенная геометрия, Брюно) и idempotent analysis (Maslov). 
+
+~\\
+\cite{Andrianov2007} Andrianov I.V., Awreicewich J.
+
+Рассматривается решение с помощью аппроксимации Паде уравнения колебаний стержня $\rho F w_{tt}-Tw_{xx}+EIw_{xxxx}=0$. Приводится к виду $w_{\tau \tau}-w_{\xi \xi}+\epsilon w_{\xi\xi\xi\xi}=0$. Диф. оператор
+$-\frac{\partial^2}{\partial\xi^2}+\epsilon \frac{\partial^4}{\partial\xi^4}$ заменяется оператором
+ $\frac{-\partial^2/\partial\xi^2}{(1+\epsilon\partial^2/\partial\xi^2)}$. Далее рассматривается уравнение колебаний мембраны.
+
+~\\
+\cite{Andrianov2010} Andrianov I.V., Awreicewich J., Weichert D.
+
+Ни чего особенного.
+
+~\\
+\cite{Andrianov2002} Andrianov I., Danishevs’kyy V., Weichert D.
+
+
+
+
+\begin{thebibliography}{00} % библиография
+\bibitem{Allaire1992}
+\href{Articles/Allaire 1992.pdf}{Allaire G.} Homogenization and two-scale convergence~//~
+SIAM J. MATH. ANAL.~-~1992.~-~Vol.23, No.6,~-~P.1482-1518.
+
+\bibitem{Allaire2002}
+\href{Articles/Allaire 2002.pdf}{Allaire G., Jouve F., Toader A-M.} A level-set method for shape optimization~//~
+C. R. Acad. Sci. Paris~-~2002.~-~Serie I,~-~P.1-6.
+
+\bibitem{Allaire2004}
+\href{Articles/Allaire Brizzi 2004.pdf}{Allaire G., Brizzi R.} A multiscale finite element method for numerical homogenization~//~
+SIAM MMS.~-~2005.~-~4(3),~-~P.790-812.
+
+\bibitem{Andrianov2003}
+\href{Articles/Andrianov Awreicewich Barantsev 2003.pdf}{Andrianov I.V., Awreicewich J., Barantsev R.G.} Asymptotic approaches in mechanics: New parameters and procedures~//~
+ASME Appl Mech Rev.~-~2003.~-~V.56, №1,~-~P.87-109.
+
+\bibitem{Conca1999}
+\href{Articles/Concav Lund 1999.pdf}{Conca C., Lund F} Fourier homogenization method and the propagation of acoustic waves through a periodic vortex array~//~SIAM Journal on Applied Mathematics~-~1999.~-~V.59, №5,~-~P.1573--1581.  
+
+\bibitem{Conca1998}
+\href{Articles/Allaire Conca 1998.pdf}{Allaire G., Conca C.} Bloch wave homogenization and spectral asymptotic analysis~//~J. Math. Pures Appl.~-~1998.~-~V.77~-~P.153–2081.
+
+\bibitem{Brewsler1995}
+\href{Articles/Brewster Beylkin 1995.pdf}{Brewsler M., Beylkin G.} A multiresolution strategy for numerical homogenistion~//~Appl. Comput. Harmon. Anal.~-~1995.~-~2~-~P.327-349.
+
+\bibitem{Molotkov1991}
+\href{Articles/Russian/Molotkov 1991.pdf}{Молотков Л.А.} О новом способе вывода уравнений осредненной эффективной модели периодических сред~//~Зап. научн. сем. ЛОМИ.~-~1991.~-~т.195~-~С.82–102.
+
+\bibitem{Pilipchuk 1999}
+\href{Articles/Pilipchuk 1999.pdf}{Pilipchuk V.N.} Application of Special Nonsmooth Temporal Transformations to Linear and Nonlinear Systems under Discontinuous and Impulsive Excitation~//~Nonlinear Dynamics~-~1999.~-~Volume 18, Issue 3~-~P.203-234.
+
+\bibitem{Pilipchuk1997}
+\href{Articles/Pilipchuk Starushenko 1997.pdf}{Pilipchuk V.N., Starushenko G.A.} A version of non-smooth transformations for one-dimensional elastic systems with a periodic structure~//~Journal of Applied Mathematics and Mechanics.~-~1997.~-~Volume 61, Issue 2~-~P.265–274.
+
+\bibitem{Boutin1996}
+\href{Articles/Boutin 1996.pdf}{Boutin C.} Microstructural effects in elastic composites.~//~International Journal of Solids and Structures.~-~1996.~-~Volume 33, Issue 7~-~P.1023–1051.
+
+\bibitem{Boutin1995}
+\href{Articles/Boutin 1995.pdf}{Boutin C.}  Microstructural influence on heat conduction.~//~International Journal of Heat and
+Mass Transfer.~-~1995.~-~38 (17)~-~P.3181-319.
+
+\bibitem{Andrianov2007}
+\href{Articles/Andrianov Awrejcewicz 2007.pdf}{Andrianov I., Awrejcewicz J.} Love and Rayleigh Correction Terms and Padé Approximants.~//~Mathematical Problems in Engineering.~-~2007.~-~vol.2007, Article ID 94035, 8 pages. 
+
+\bibitem{Andrianov2010}
+\href{Articles/Andrianov Awrejcewicz Weichert 2010.pdf}{Andrianov I., Awrejcewicz J., Weichert D.} Improved Continuous Models for Discrete Media.~//~Mathematical Problems in Engineering.~-~2010.~-~vol.2010, Article ID 986242, 35 pages. 
+
+\bibitem{Andrianov2002}
+\href{Articles/Andrianov Danishevs’kyy Weichert 2002.pdf}{Andrianov I., Danishevs’kyy V., Weichert D.} Asymptotic determination of effective elastic properties of composite materials with fibrous square-shaped inclusions.~//~Eur. J. Mech. A/Solids.~-~2002.~-~V.21,P.1019-1036.
+
+
+
+
+
+
+
+
+ 
+
+
+
+\bibitem{Maso1993}
+\href{Books/Maso - An_introduction_to_G-convergence 1993.djvu}{Dal Maso G.} An introduction to Г-convergence. - 	Birkhäuser Boston, 1993. - 352c.
+
+\bibitem{Braides2002}
+\href{Books/Braides -Gamma-convergence_for_Beginners 2002.djvu}{Braides A.} Г-convergence for beginners. - 	Oxford University Press, 2002. - 117c. 
+
+\bibitem{Bensoussan1978}
+\href{Books/Bensoussan Lions Papanicolaou - Asymptotic Analysis for Periodic Structures 1978.djvu}{Bensoussan A., Lions J.-L., Papanicolaou G.} Asymptotic Analysis for Periodic Structures. - 	North-Holland Pub. Co.; sole distributors for the U.S.A. and Canada, Elsevier North-Holland, 1978. - 700c.
+
+\bibitem{Cioranescu2000}
+\href{Books/Cioranescu Donato-An Introduction to homogenization 2000.djvu}{Cioranescu D., Donato P.} An Introduction to homogenization. - 	Oxford University Press, USA, 2000. - 270c.
+
+\bibitem{Marchenko1974}
+\href{Books/Marchenko - 1974.djvu}{Марченко В.А., Хруслов Е.Я.} Краевые задачи в областях с мелкозернистой границей. - 	Киев,Наукова Думка, 1974. - 280c.
+
+\bibitem{Kozlov1999}
+\href{Books/Kozlov - Asymptotic Analysis of Fields in Multi-Structures 1999.djvu}{Kozlov V., Maz'ya V., Movchan A.} Asymptotic Analysis of Fields in Multi-Structures. - 	Oxford University Press, USA, 1999. - 304c.
+
+\bibitem{Berdichevsky1983}
+\href{Books/Russian/Berdichevsky _Variacionnuee_principue_mehaniki sploshnoi sredi 1983.djvu}{Бердичевский В.Л.} Вариационные принципы механики сплошной среды. - М.:Наука, 1983. - 448с.
+
+\bibitem{Berdichevsky2009}
+\href{Books/Berdichevsky Variational_Principles_of_Continuum Mechanics 2009.pdf}{Berdichevsky V.} Variational Principles of Continuum Mechanics. - Springer, 2009. - 586с.
+
+.
+\end{thebibliography}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

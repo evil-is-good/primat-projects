@@ -37,3 +37,4 @@ html-doc
 *.toc
 *.nogit
 *.msh
+*.tmp

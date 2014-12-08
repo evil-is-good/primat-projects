@@ -172,7 +172,6 @@ namespace HCPTools
     //! Распечатать в файл тепловые градиенты
     template<u8 dim>
     void print_heat_gradient (const dealii::Vector<dbl> &temperature, 
-                                 arr<arr<vec<dbl>, 2>, 2> &coef,
                                  const Domain<2> &domain,
                                  const str file_name)
     {
@@ -180,7 +179,6 @@ namespace HCPTools
 
     template<>
     void print_heat_gradient<2> (const dealii::Vector<dbl> &temperature, 
-                                    arr<arr<vec<dbl>, 2>, 2> &coef,
                                     const Domain<2> &domain,
                                     const str file_name)
     {
