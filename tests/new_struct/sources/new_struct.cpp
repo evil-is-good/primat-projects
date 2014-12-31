@@ -2152,7 +2152,7 @@ int main()
     // printf("TRUE? %.50f\n", (3.0000000000000007 - 3.0));
 
     //HEAT_CONDUCTION_PROBLEM
-    if (1)
+    if (0)
     {
         Domain<2> domain;
         {
