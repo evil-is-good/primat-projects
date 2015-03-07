@@ -350,7 +350,7 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
 // };
 
 template <u8 dim>
-void solved_heat_problem_on_cell (
+void solve_heat_problem_on_cell_aka_torsion_rod (
         const dealii::Triangulation<dim> &grid,
         const vec<ATools::SecondOrderTensor> &coef,
         OnCell::SystemsLinearAlgebraicEquations<dim> &slae)
@@ -2059,101 +2059,169 @@ void give_circ(
 
 };
 
-int main()
+// template <st dim>
+// class CellHeatProblem
+// {
+//     public:
+//         CellHeatProblem (
+//                 const vec<arr<arr<dbl, dim>, dim>> &coefficient, 
+//                 const Domain<2> &domain;
+//                 );
+//         void calculate_approximate (const arr<st, 3> approximation);
+//
+//         dealii::FE_Q<2> fe(1);
+//         OnCell::SystemsLinearAlgebraicEquations<2> slae;
+//         OnCell::BlackOnWhiteSubstituter bows;
+//
+//         LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+//         OnCell::prepare_system_equations_with_cubic_grid<2, 1> (slae, bows, domain);
+//
+//         arr<arr<arr<dbl, dim>, dim>, dim> meta_coefficient;
+//         OnCell::CellFunctionScalar psi_func;
+// ;
+// template <st dim>
+//     CellHeatProblem<dim>::CellHeatProblem (
+//                 const vec<arr<arr<dbl, dim>, dim>> &coefficient, 
+//                 const Domain<2> &domain;
+//                 ) :
+//         fe(1),
+//         element_matrix (domain.dof_handler.get_fe())
+//     {
+//     };
+//
+//
+// void get_approx_cell_heat (
+//         const arr<st, 3> approximation,
+//         const vec<arr<arr<dbl, dim>, dim>> &coefficient, 
+//         const Domain<2> &domain;
+//         arr<arr<arr<dbl, dim>, dim>, dim> *meta_coefficient,
+//         CellFunctionScalar *psi_func)
+// {
+//     dealii::FE_Q<2> fe(1);
+//     domain.dof_init (fe);
+//
+//     OnCell::SystemsLinearAlgebraicEquations<2> slae;
+//     OnCell::BlackOnWhiteSubstituter bows;
+//     // BlackOnWhiteSubstituter bows;
+//
+//     LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+//     // {
+//     element_matrix.C .resize(2);
+//     element_matrix.C[1][x][x] = lambda;
+//     element_matrix.C[1][x][y] = 0.0;
+//     element_matrix.C[1][y][x] = 0.0;
+//     element_matrix.C[1][y][y] = lambda;
+//     element_matrix.C[0][x][x] = 1.0;
+//     element_matrix.C[0][x][y] = 0.0;
+//     element_matrix.C[0][y][x] = 0.0;
+//     element_matrix.C[0][y][y] = 1.0;
+//     // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+//     // };
+//     const bool scalar_type = 0;
+//     // OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
+//     OnCell::prepare_system_equations_with_cubic_grid<2, 1> (slae, bows, domain);
+//     // {
+//     //     OnCell::BlackOnWhiteSubstituter bows_old;
+//     //     OnCell::BlackOnWhiteSubstituter bows_new;
+//     //
+//     //     {
+//     //         dealii::CompressedSparsityPattern c_sparsity (
+//     //                 domain.dof_handler.n_dofs());
+//     //
+//     //         dealii::DoFTools ::make_sparsity_pattern (
+//     //                 domain.dof_handler, c_sparsity);
+//     //
+//     //         ::OnCell::DomainLooper<2, 0> dl;
+//     //         dl .loop_domain(
+//     //                 domain.dof_handler,
+//     //                 bows_old,
+//     //                 c_sparsity);
+//     //     };
+//     //
+//     //     {
+//     //         dealii::CompressedSparsityPattern c_sparsity (
+//     //                 domain.dof_handler.n_dofs());
+//     //
+//     //         dealii::DoFTools ::make_sparsity_pattern (
+//     //                 domain.dof_handler, c_sparsity);
+//     //
+//     //         ::OnCell::DomainLooperTrivial<2, 1> dl;
+//     //         dl .loop_domain(
+//     //                 domain.dof_handler,
+//     //                 bows_new,
+//     //                 c_sparsity);
+//     //     };
+//     //     printf("Size %ld %ld\n", bows_old.size, bows_new.size);
+//     //     for (st i = 0; i < bows_old.size; ++i)
+//     //     {
+//     //         printf("%ld %ld %ld  %ld %ld %ld\n", 
+//     //                 bows_old.black[i], 
+//     //                 bows_new.black[i],
+//     //                 bows_new.black[i] - bows_old.black[i],
+//     //                 bows_old.white[i], 
+//     //                 bows_new.white[i],
+//     //                 bows_new.white[i] - bows_old.white[i]
+//     //                 );
+//     //     };
+//     // };
+//
+//     OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+//     // FILE *F;
+//     // F = fopen("matrix.gpd", "w");
+//     // for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+//     //     for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+//     //         if (slae.matrix.el(i,j))
+//     //         {
+//     //             fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
+//     //         };
+//     // fclose(F);
+//
+//     FOR(i, 0, 2)
+//     {
+//         vec<arr<dbl, 2>> coef_for_rhs(2);
+//         FOR(j, 0, element_matrix.C.size())
+//         {
+//             FOR(k, 0, 2)
+//             {
+//                 coef_for_rhs[j][k] = element_matrix.C[j][i][k];
+//             };
+//         };
+//         OnCell::SourceScalar<2> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
+//         // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
+//         OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
+//         // for (auto a : slae.rhsv[i])
+//         //     printf("%f\n", a);
+//         {
+//             dealii::DataOut<2> data_out;
+//             data_out.attach_dof_handler (domain.dof_handler);
+//             data_out.add_data_vector (slae.rhsv[0], "xb");
+//             data_out.add_data_vector (slae.rhsv[1], "yb");
+//             data_out.build_patches ();
+//
+//             auto name = "b.gpd";
+//
+//             std::ofstream output (name);
+//             data_out.write_gnuplot (output);
+//         };
+//
+//         dealii::SolverControl solver_control (500000, 1e-12);
+//         dealii::SolverCG<> solver (solver_control);
+//         solver.solve (
+//                 slae.matrix,
+//                 slae.solution[i],
+//                 slae.rhsv[i]
+//                 ,dealii::PreconditionIdentity()
+//                 );
+//         FOR(j, 0, slae.solution[i].size())
+//             slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+//     };
+// };
+//
+void solve_heat_conduction_problem (cst flag)
 {
-    enum {x, y, z};
-    debputs();
-    lmbd<st(cst)> add_i = [](cst i){return i-1;};
-    printf("%ld\n", foo(10, [](cst i){return i-1;}, [](cst i){return i+3;}));
-    arr<dealii::Point<2>, 4> quad;
-    quad[0] = dealii::Point<2>(0.0, 0.0);
-    quad[1] = dealii::Point<2>(1.0, 0.0);
-    quad[2] = dealii::Point<2>(1.0, 1.0);
-    quad[3] = dealii::Point<2>(0.0, 1.0);
-    dealii::Point<2> p = dealii::Point<2>(1.5, 0.5);
-    printf("in quad %d\n", point_in_quadrilateral(p, quad));
-   //  st aa = 1;
-   //  st bb = ++aa;
-   //  printf("%ld %ld %ld %ld\n", 2_pow(0), aa++, ++aa, bb);
-   //  {
-   //  CubeOfNumbers<2, 2> cube(5);
-   //  printf("%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n", 
-   //          cube.number[0][4][0], cube.number[1][4][0], cube.number[2][4][0], cube.number[3][4][0], cube.number[4][4][0],
-   //          cube.number[0][3][0], cube.number[1][3][0], cube.number[2][3][0], cube.number[3][3][0], cube.number[4][3][0],
-   //          cube.number[0][2][0], cube.number[1][2][0], cube.number[2][2][0], cube.number[3][2][0], cube.number[4][2][0],
-   //          cube.number[0][1][0], cube.number[1][1][0], cube.number[2][1][0], cube.number[3][1][0], cube.number[4][1][0],
-   //          cube.number[0][0][0], cube.number[1][0][0], cube.number[2][0][0], cube.number[3][0][0], cube.number[4][0][0]);
-   //  };
-   //  printf("\n");
-   //  {
-   //  CubeOfNumbers<3, 3> cube(1);
-   //  // printf("%ld %ld\n%ld %ld\n\n%ld %ld\n%ld %ld\n", 
-   //  //         cube.number[0][1][1][0], cube.number[1][1][1][0],
-   //  //         cube.number[0][0][1][0], cube.number[1][0][1][0],
-   //  //         cube.number[0][1][0][0], cube.number[1][1][0][0],
-   //  //         cube.number[0][0][0][0], cube.number[1][0][0][0]);
-   // printf("%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n \n%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n \n%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n\n ", 
-   //         cube.number[0][0][0][0], cube.number[1][0][0][0], cube.number[2][0][0][0],
-   //         cube.number[0][1][0][0], cube.number[1][1][0][0], cube.number[2][1][0][0],
-   //         cube.number[0][2][0][0], cube.number[1][2][0][0], cube.number[2][2][0][0],
-   //
-   //         cube.number[0][0][1][0], cube.number[1][0][1][0], cube.number[2][0][1][0],
-   //         cube.number[0][1][1][0], cube.number[1][1][1][0], cube.number[2][1][1][0],
-   //         cube.number[0][2][1][0], cube.number[1][2][1][0], cube.number[2][2][1][0],
-   //
-   //         cube.number[0][0][2][0], cube.number[1][0][2][0], cube.number[2][0][2][0],
-   //         cube.number[0][1][2][0], cube.number[1][1][2][0], cube.number[2][1][2][0],
-   //         cube.number[0][2][2][0], cube.number[1][2][2][0], cube.number[2][2][2][0]);
-   //  //printf("%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n", 
-   //    //      cube.number[0][4][0], cube.number[1][4][0], cube.number[2][4][0], cube.number[3][4][0], cube.number[4][4][0],
-   //      //    cube.number[0][3][0], cube.number[1][3][0], cube.number[2][3][0], cube.number[3][3][0], cube.number[4][3][0],
-   //        //  cube.number[0][2][0], cube.number[1][2][0], cube.number[2][2][0], cube.number[3][2][0], cube.number[4][2][0],
-   //        //  cube.number[0][1][0], cube.number[1][1][0], cube.number[2][1][0], cube.number[3][1][0], cube.number[4][1][0],
-   //        //  cube.number[0][0][0], cube.number[1][0][0], cube.number[2][0][0], cube.number[3][0][0], cube.number[4][0][0]);
-   //  };
-   //  debputs();
+    if (flag)
     {
-        Domain<3> domain;
-        {
-            dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 2.0);
-            domain.grid.refine_global(1);
-        };
-    printf("level %d\n", domain.grid.n_global_levels());
-    };
-
-    // {
-    //     dealii::Triangulation<2> tria;
-    //     vec<prmt::Point<2>> outer(4);//3,0000000000000004440892098500626161694527
-    //     vec<prmt::Point<2>> inner(4);
-
-    //     outer[0].x() = 0.0; outer[0].y() = 0.0;
-    //     outer[1].x() = 3.0; outer[1].y() = 0.0;
-    //     outer[2].x() = 3.0; outer[2].y() = 3.0;
-    //     outer[3].x() = 0.0; outer[3].y() = 3.0;
-
-    //     inner[0].x() = 2.9; inner[0].y() = 2.7;
-    //     inner[1].x() = 3.0; inner[1].y() = 2.74;
-    //     inner[2].x() = 3.0000000000000003; inner[2].y() = 3.0;
-    //     inner[3].x() = 2.77; inner[3].y() = 3.0;
-    //     set_grid (tria, outer, inner)0;
-    //     {
-    //         std::ofstream out ("grid-igor.eps");
-    //         dealii::GridOut grid_out;
-    //         grid_out.write_eps (tria, out);
-    //     };
-    // };
-
-    // printf("TRUE? %d\n", 9.0000000000000006 == 9.0000000000000008);
-    // puts("TRUE? 0.000000000000000");
-    // printf("TRUE? %.50f\n", 3.0);
-    // printf("TRUE? %.50f\n", 3.000000000000007);
-    // printf("TRUE? %.50f\n", 3.0000000000000007);
-    // printf("TRUE? %.50f\n", 3.0000000000000007);
-    // printf("TRUE? %.50f\n", (3.0000000000000007 - 3.0));
-
-    //HEAT_CONDUCTION_PROBLEM
-    if (0)
-    {
+        enum {x, y, z};
         Domain<2> domain;
         {
             dealii::GridGenerator::hyper_cube(domain.grid);
@@ -2298,19 +2366,22 @@ int main()
         // HCPTools ::print_heat_conductions<2> (
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         HCPTools ::print_heat_gradient<2> (
-                slae.solution, domain, "heat_gradient");
+                slae.solution, domain, "heat_gradient.gpd");
     };
+};
 
-
-    //HEAT_CONDUCTION_PROBLEM_ON_CELL
-    if (0)
+void solve_heat_conduction_problem_on_cell (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         // FILE *F;
         // F = fopen("square.gpd", "w");
         cdbl c = 0.78;
         cdbl lambda = 2.0e1;
         cdbl R_in = sqrt((c / dealii::numbers::PI));
         dbl size = sqrt(c);
+        size = 0.5;
         // while (size*size < 0.6)
         // for (st i = 0; i < 7; ++i)
         {
@@ -2355,7 +2426,7 @@ int main()
                 // domain.grid .refine_global (1);
                 set_rect(domain.grid,
                         dealii::Point<2>((0.5 - size / 2.0),(0.5 - size / 2.0)),
-                        dealii::Point<2>((0.5 + size / 2.0),(0.5 + size / 2.0)), 6);
+                        dealii::Point<2>((0.5 + size / 2.0),(0.5 + size / 2.0)), 3);
                 // set_circ(domain.grid, R_in, 6); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
@@ -2743,10 +2814,13 @@ int main()
         };
             // fclose(F);
     };
+};
 
-    //ELASSTIC_PROBLEM
-    if (false)
+void solve_elastic_problem (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         Domain<2> domain;
         {
             // // vec<prmt::Point<2>> boundary_of_segments;
@@ -2907,10 +2981,13 @@ int main()
         // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
         EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
     };
+};
 
-    // ELASSTIC_PROBLEM_ON_CELL
-    if (false)
+void solve_elastic_problem_on_cell (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         // FILE* F;
         // F = fopen("isotropic_test.gpd", "w");
         // F = fopen("isotropic/circ.gpd", "a");
@@ -3010,7 +3087,7 @@ int main()
                 coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
                 coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
             };
-            solved_heat_problem_on_cell<2> (
+            solve_heat_problem_on_cell_aka_torsion_rod<2> (
                     domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
 
             arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
@@ -3165,11 +3242,15 @@ int main()
         //     // size += 0.005;
         // };
         // fclose(F);
+
     };
-    
-    //HEAT_CONDUCTION_NIKOLA_PROBLEM
-    if (0)
+};
+
+void solve_heat_conduction_nikola_problem (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         Domain<2> domain;
         // {
         //     vec<prmt::Point<2>> boundary_of_segments;
@@ -3247,10 +3328,16 @@ int main()
 
             // domain.grid .refine_global (4);
             
-        set_quadrate<2> (domain.grid, 
-                    0.0, 1.0/3.0, 2.0/3.0, 1.0, 
-                    -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
-                    4);
+        // set_quadrate<2> (domain.grid, 
+        //             0.0, 1.0/3.0, 2.0/3.0, 1.0, 
+        //             -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
+        //             4);
+            // set_tube(domain.grid, str("grid-igor_ss8.40749_h1_rho0.4.msh"), 
+            //         dealii::Point<2>(4.0,4.0), 1.0, 2.0, 1);
+            dealii::GridIn<2> gridin;
+            gridin.attach_triangulation(domain.grid);
+            std::ifstream f("grid-igor_ss8.40749_h1_rho0.4.msh");
+            gridin.read_msh(f);
             // set_quadrate<2> (domain.grid, 
             //         0.0, 1.0/3.0, 2.0/4.0, 1.0, 
             //         -0.5, 1.0/3.0-0.5, 2.0/3.0-0.5, 0.5,
@@ -3280,53 +3367,53 @@ int main()
         };
 
         // T1.1
-        // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return 1.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
+        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        U[0][x] = [] (const dealii::Point<2> &p) {return 1.0;}; //Ux
+        U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        U[1][x] = [] (const dealii::Point<2> &p) {return 1.0;};
+        U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        tau[0] = [] (const dealii::Point<2> &p) {return 0.0;};
+        tau[1] = [] (const dealii::Point<2> &p) {return 0.0;};
 
         // T1.2
-        cdbl c0 = 0.5;
-        cdbl E = 1.0;
-        cdbl nu = 0.25;
-        cdbl mu = 0.4;
-        vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // vec<arr<typename SourceScalarFeature<2>::Func, 2>> U(2);
-        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
-        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
-        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
-        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
-        // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
-        U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
-        U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
-        U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
-        U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
-        vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        tau[0] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
-        tau[1] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
-        // tau[0] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[1] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
-        // tau[0] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
-        // tau[1] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
-        // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
-        // tau[1] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
-
+        // cdbl c0 = 0.5;
+        // cdbl E = 1.0;
+        // cdbl nu = 0.25;
+        // cdbl mu = 0.4;
         // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
-        // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
-        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
-        // U[1][x] = [] (const dealii::Point<2> &p) {return 0.0;};
-        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // // vec<arr<typename SourceScalarFeature<2>::Func, 2>> U(2);
+        // // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));}; //Ux
+        // // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);}; //Uy
+        // // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*0.5*(std::pow(p(0)-c0,2.0)-std::pow(p(1),2.0));};
+        // // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return mu*nu*(p(0)-c0)*p(1);};
+        // // U[0][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // // U[0][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // // U[1][x] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // // U[1][y] = [mu, nu, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // U[0][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;}; //Ux
+        // U[0][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);}; //Uy
+        // U[1][x] = [] (const dealii::Point<2> &p) {return (p(0)*p(0)-p(1)*p(1))*0.25/2.0*0.4 - 1.0 * p(0) * p(0) / 2.0;};
+        // U[1][y] = [] (const dealii::Point<2> &p) {return 0.25*p(0)*p(1) - 1.0 * p(1) * p(0);};
         // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
-        // tau[0] = [] (const dealii::Point<2> &p) {return -2.0;};
-        // tau[1] = [] (const dealii::Point<2> &p) {return -2.0;};
+        // // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // tau[0] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
+        // tau[1] = [E, c0] (const dealii::Point<2> &p) {return E*(p(0)-c0);};
+        // // tau[0] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // // tau[1] = [E, c0] (const dealii::Point<2> &p) {return 0.0;};
+        // // tau[0] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
+        // // tau[1] = [] (const dealii::Point<2> &p) {return 1.0*p(0);};
+        // // tau[0] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
+        // // tau[1] = [] (const dealii::Point<2> &p) {return -1+0.4*0.25*p(0)+0.25*p(0);};
+        //
+        // // vec<arr<typename Nikola::SourceScalar<2>::Func, 2>> U(2);
+        // // U[0][x] = [] (const dealii::Point<2> &p) {return 0.0;}; //Ux
+        // // U[0][y] = [] (const dealii::Point<2> &p) {return 0.0;}; //Uy
+        // // U[1][x] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // // U[1][y] = [] (const dealii::Point<2> &p) {return 0.0;};
+        // // vec<typename Nikola::SourceScalar<2>::Func> tau(2);
+        // // tau[0] = [] (const dealii::Point<2> &p) {return -2.0;};
+        // // tau[1] = [] (const dealii::Point<2> &p) {return -2.0;};
         
         Nikola::SourceScalar<2> element_rhsv (U, tau, domain.dof_handler.get_fe());
         // auto func = [] (const dealii::Point<2> p) {return -1.0*(p(0)-0.5);};
@@ -3379,7 +3466,7 @@ int main()
         // };
         // printf("Integral %f\n", sum);
 
-        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverControl solver_control (100000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
         solver.solve (
                 slae.matrix,
@@ -3447,6 +3534,7 @@ int main()
         HCPTools ::print_temperature<2> (slae.solution, domain.dof_handler, "temperature-4.gpd");
         HCPTools ::print_temperature<2> (uber, domain.dof_handler, "uber.gpd");
         HCPTools ::print_temperature<2> (diff, domain.dof_handler, "uber-diff-2.gpd");
+        HCPTools ::print_heat_gradient<2> (slae.solution, domain, "gradient-4.gpd");
         // HCPTools ::print_heat_conductions<2> (
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         // HCPTools ::print_heat_gradient<2> (
@@ -3461,11 +3549,15 @@ int main()
             (uber_function(dealii::Point<2>(1.0+0.001, 0), 1) - 
             uber_function(dealii::Point<2>(1.0-0.001, 0), 1)) / (0.002);
         printf("Border %f %f\n", d, 0.4 * (d + 0.125 * (0.5*0.5 + 0.5 * 0.5)));
-    };
 
-    //NIKOLA_ELASSTIC_PROBLEM
-    if (0)
+    };
+};
+
+void solve_nikola_elastic_problem (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         Domain<2> domain;
         {
             // std::vector< dealii::Point< 2 > > v (6);
@@ -3709,11 +3801,15 @@ int main()
         // EPTools ::print_move<2> (diff, domain.dof_handler, "diff.gpd");
         // EPTools ::print_move<2> (slae.rhsv, domain.dof_handler, "rhsv.gpd");
 
-    };
 
-    //HEAT_CONDUCTION_PROBLEM_3D
-    if (0)
-    {
+    };
+};
+
+void solve_heat_conduction_problem_3d (cst flag)
+{
+    if (flag)
+    {       
+        enum {x, y, z};
         Domain<3> domain;
         {
             // dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 2.0);
@@ -3817,11 +3913,15 @@ int main()
         //         slae.solution, element_matrix.C, domain, "heat_conductions");
         // HCPTools ::print_heat_gradient<2> (
         //         slae.solution, element_matrix.C, domain, "heat_gradient");
-    };
 
-    //HEAT_CONDUCTION_PROBLEM_ON_CELL_3D
-    if (0)
-    {
+    };
+};
+
+void solve_heat_conduction_problem_on_cell_3d (cst flag)
+{
+    if (flag)
+    {  
+        enum {x, y, z};
         // FILE *F;
         // F = fopen("square.gpd", "w");
         dbl size = 0.05;
@@ -3934,11 +4034,15 @@ int main()
             // printf("%f %f\n", size, size*size);
         };
             // fclose(F);
-    };
 
-    // ELASSTIC_PROBLEM_3D
-    if (0)
+    };
+};
+
+void solve_elastic_problem_3d (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         cdbl len_rod = 1.0;
         Domain<3> domain;
         {
@@ -4056,13 +4160,16 @@ int main()
                 };
             };
         };
-        printf("%f %f %d %d %f %f E=%f nu=%f\n", 
+        printf("%f %f %ld %ld %f %f E=%f nu=%f\n", 
                 sum_x, sum_y, n_x, n_y, sum_x/n_x*2.0, sum_y/n_y*2.0, 0.5/(sum_x/n_x), (sum_y/n_y)/(sum_x/n_x));
+    };
 };
 
-    // ELASSTIC_PROBLEM_ON_CELL_3D
-    if (0)
+void solve_elastic_problem_on_cell_3d (cst flag)
+{
+    if (flag)
     {
+        enum {x, y, z};
         Domain<3> domain;
         {
             // set_cylinder(domain.grid, 0.475, z, 4);
@@ -4172,7 +4279,402 @@ int main()
                 meta_coef[0][2][0][2]
                 );
         };
+
     };
+};
+
+void solve_approx_cell_heat_problem (cst flag)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+        // FILE *F;
+        // F = fopen("square.gpd", "w");
+        cdbl c = 0.78;
+        cdbl lambda = 2.0e0;
+        cdbl R_in = sqrt((c / dealii::numbers::PI));
+        dbl size = sqrt(c);
+        size = 0.5;
+        // while (size*size < 0.6)
+        // for (st i = 0; i < 7; ++i)
+        {
+            Domain<2> domain;
+            {
+                // vec<prmt::Point<2>> outer(4);
+                // vec<prmt::Point<2>> inner(4);
+
+                // outer[0].x() = 0.0; outer[0].y() = 0.0;
+                // outer[1].x() = 1.0; outer[1].y() = 0.0;
+                // outer[2].x() = 1.0; outer[2].y() = 1.0;
+                // outer[3].x() = 0.0; outer[3].y() = 1.0;
+
+                // inner[0].x() = 0.25; inner[0].y() = 0.25;
+                // inner[1].x() = 0.75; inner[1].y() = 0.25;
+                // inner[2].x() = 0.75; inner[2].y() = 0.75;
+                // inner[3].x() = 0.25; inner[3].y() = 0.75;
+
+                // // inner[0].x() = 0.0; inner[0].y() = 0.0;
+                // // inner[1].x() = 0.5; inner[1].y() = 0.0;
+                // // inner[2].x() = 0.5; inner[2].y() = 1.0;
+                // // inner[3].x() = 0.0; inner[3].y() = 1.0;
+
+                // set_grid (domain.grid, outer, inner);
+
+                const size_t material_id[4][4] =
+                {
+                    {0, 0, 0, 0},
+                    {0, 0, 0, 0},
+                    {0, 0, 0, 0},
+                    {0, 0, 0, 0}
+                };
+                const double dot[5] = 
+                {
+                    (0.0),
+                    (0.5 - size / 2.0),
+                    (0.5),
+                    (0.5 + size / 2.0),
+                    (1.0)
+                };
+                // ::set_tria <5> (domain.grid, dot, material_id);
+                // domain.grid .refine_global (1);
+                set_rect(domain.grid,
+                        dealii::Point<2>((0.5 - size / 2.0),(0.5 - 1.5 / 2.0)),
+                        dealii::Point<2>((0.5 + size / 2.0),(0.5 + 1.5 / 2.0)), 2);
+                // set_circ(domain.grid, R_in, 4); //0.344827, 2);
+                // set_circ_in_hex(domain.grid, 0.3, 6);
+                // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
+            // set_tube(domain.grid, str("grid-igor_ss8.40749_h1_rho0.4.msh"), 
+            //         dealii::Point<2>(4.0,4.0), 1.0, 2.0, 1);
+                // domain.grid .refine_global (1);
+                {
+                    std::ofstream out ("grid-igor.eps");
+                    dealii::GridOut grid_out;
+                    grid_out.write_eps (domain.grid, out);
+                };
+            };
+            dealii::FE_Q<2> fe(1);
+            domain.dof_init (fe);
+
+            OnCell::SystemsLinearAlgebraicEquations<1> slae;
+            OnCell::BlackOnWhiteSubstituter bows;
+
+            LaplacianScalar<2> element_matrix (domain.dof_handler.get_fe());
+            element_matrix.C .resize(2);
+            element_matrix.C[1][x][x] = lambda;
+            element_matrix.C[1][x][y] = 0.0;
+            element_matrix.C[1][y][x] = 0.0;
+            element_matrix.C[1][y][y] = lambda;
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
+
+            const bool scalar_type = 0;
+            OnCell::prepare_system_equations_with_cubic_grid<2, 1> (slae, bows, domain);
+
+            OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+            st number_of_approx = 3; // Начиная с нулевой
+            arr<arr<i32, 3>, 3> approximations = {
+                arr<i32, 3>{1, 0, 0},
+                arr<i32, 3>{0, 1, 0},
+                arr<i32, 3>{2, 0, 0}};
+            OnCell::ArrayWithAccessToVector<dbl> meta_coefficient(number_of_approx);
+            OnCell::ArrayWithAccessToVector<dealii::Vector<dbl>> psi_func (number_of_approx);
+            OnCell::ArrayWithAccessToVector<dealii::Vector<dbl>> N_func (number_of_approx);
+            for (auto &&a : meta_coefficient.content)
+                for (auto &&b : a)
+                    for (auto &&c : b)
+                        c = 0.0;
+            for (auto &&a : psi_func.content)
+                for (auto &&b : a)
+                    for (auto &&c : b)
+                        c .reinit (slae.solution[0].size());
+            psi_func[arr<i32, 3>{0, 0, 0}] = 1.0; // Нулевое приближение ячейковой функции равно 1.0
+            for (auto &&a : N_func.content)
+                for (auto &&b : a)
+                    for (auto &&c : b)
+                        c .reinit (slae.solution[0].size());
+
+            dealii::Vector<dbl> v(0);
+            // printf("%d\n", v == dealii::Vector<dbl>(0));
+            auto mean_coefficient = 
+                OnCell::calculate_mean_coefficients<2> (domain.dof_handler, element_matrix.C);
+            auto area_of_domain = 
+                OnCell::calculate_area_of_domain<2> (domain.dof_handler);
+            // puts("123234234");
+            // auto approximation = approximations[0];
+            for (auto &&approximation : approximations)
+            {
+                slae.solution[0] = 0.0;
+                slae.rhsv[0] = 0.0;
+
+                OnCell::SourceScalarApprox<2> element_rhsv (approximation,
+                        element_matrix.C, 
+                        meta_coefficient,
+                        &psi_func,
+                        domain.dof_handler.get_fe());
+                // printf("%d\n", slae.rhsv[0].size());
+                OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[0], element_rhsv, domain.dof_handler, bows);
+
+                // dealii::SolverControl solver_control (500000, 1e-12);
+                // dealii::SolverCG<> solver (solver_control);
+                // solver.solve (
+                //         slae.matrix,
+                //         slae.solution[0],
+                //         slae.rhsv[0]
+                //         ,dealii::PreconditionIdentity()
+                //         );
+                FOR(i, 0, slae.solution[0].size())
+                    slae.solution[0][i] = slae.solution[0][bows.subst (i)];
+
+                if (approximation[0] == 1)
+                {
+                    st len_vector_solution = domain.dof_handler.n_dofs();
+                    dbl mean_heat_flow;
+
+                    mean_heat_flow = 0.0;
+
+                    // for (st k = 0; k < len_vector_solution; ++k)
+                    //     mean_heat_flow += slae.solution[0](k) * (-slae.rhsv[0](k));
+
+                    mean_heat_flow /= area_of_domain;
+
+                    meta_coefficient[approximations[2]] = mean_coefficient[x][x] + mean_heat_flow;
+                };
+
+                psi_func[approximation] = slae.solution[0];
+                N_func[approximation] = slae.rhsv[0];
+                printf("Integ %f\n", element_rhsv.tmp);
+                printf("META %f\n", meta_coefficient[approximations[2]]);
+            };
+
+            {
+            arr<str, 3> vr = {
+                "temperature_approx_x.gpd", 
+                "temperature_approx_y.gpd",
+                "temperature_approx_2x.gpd"};
+            FOR(i, 0, approximations.size())
+                HCPTools ::print_temperature<2> (
+                        psi_func[approximations[i]], 
+                        domain.dof_handler, vr[i]);
+            }; 
+            {
+            arr<str, 3> vr = {
+                "rhsv_approx_x.gpd", 
+                "rhsv_approx_y.gpd",
+                "rhsv_approx_2x.gpd"};
+            FOR(i, 0, approximations.size())
+                HCPTools ::print_temperature<2> (
+                        N_func[approximations[i]],
+                        domain.dof_handler, vr[i]);
+            };
+            {
+            arr<str, 3> vr = {
+                "grad_approx_x.gpd", 
+                "grad_approx_y.gpd",
+                "grad_approx_2x.gpd"};
+            FOR(i, 0, approximations.size())
+                HCPTools ::print_heat_gradient<2> (
+                        psi_func[approximations[i]], 
+                        domain, vr[i]);
+            }; 
+            {
+            arr<str, 3> vr = {
+                "heat_conductions_approx_x.gpd", 
+                "heat_conductions_approx_y.gpd",
+                "heat_conductions_approx_2x.gpd"};
+            FOR(i, 0, approximations.size())
+                HCPTools ::print_heat_conductions<2> (
+                        psi_func[approximations[i]], 
+                        element_matrix.C,
+                        domain, vr[i]);
+            }; 
+
+            // auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
+            //         domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
+            // printf("META %.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+
+        };
+            // fclose(F);
+    };
+};
+
+int main()
+{
+
+    //HEAT_CONDUCTION_PROBLEM
+    solve_heat_conduction_problem (0);
+
+    //HEAT_CONDUCTION_PROBLEM_ON_CELL
+    solve_heat_conduction_problem_on_cell (0);
+
+    //ELASSTIC_PROBLEM
+    solve_elastic_problem (0);
+
+    // ELASSTIC_PROBLEM_ON_CELL
+    solve_elastic_problem_on_cell (0);
+    
+    //HEAT_CONDUCTION_NIKOLA_PROBLEM
+    solve_heat_conduction_nikola_problem (0);
+
+    //NIKOLA_ELASSTIC_PROBLEM
+    solve_nikola_elastic_problem (0);
+    
+
+    //HEAT_CONDUCTION_PROBLEM_3D
+    solve_heat_conduction_problem_3d (0);
+
+    //HEAT_CONDUCTION_PROBLEM_ON_CELL_3D
+    solve_heat_conduction_problem_on_cell_3d (0);
+
+    // ELASSTIC_PROBLEM_3D
+    solve_elastic_problem_3d (0);
+
+    // ELASSTIC_PROBLEM_ON_CELL_3D
+    solve_elastic_problem_on_cell_3d (0);
+
+    solve_approx_cell_heat_problem (1);
+
+    //
+    // {
+    //     arr<prmt::Point<2>, 4> points = {
+    //         // prmt::Point<2>(0.0, 0.0),
+    //         // prmt::Point<2>(0.5, 0.5),
+    //         // prmt::Point<2>(0.0, 1.0),
+    //         // prmt::Point<2>(-0.5, 0.5)};
+    //         prmt::Point<2>(-0.5, -0.5),
+    //         prmt::Point<2>(0.5, -0.5),
+    //         prmt::Point<2>(1.0, 1.0),
+    //         prmt::Point<2>(0.0, 1.0)};
+    //     arr<dbl, 4> values = {
+    //         0.0, 1.0, 0.0, 1.0};
+    //
+    //     Scalar4PointsFunc<2> f(points, values);
+    //
+    //     FILE *F;
+    //
+    //     F = fopen("test_4_point_value.gpd", "w");
+    //     fprintf(F, "%lf %lf %lf\n", points[0].x(), points[0].y(), f(points[0]));
+    //     fprintf(F, "%lf %lf %lf\n", points[1].x(), points[1].y(), f(points[1]));
+    //     fprintf(F, "%lf %lf %lf\n", points[2].x(), points[2].y(), f(points[2]));
+    //     fprintf(F, "%lf %lf %lf\n", points[3].x(), points[3].y(), f(points[3]));
+    //     fclose(F);
+    //
+    //     F = fopen("test_value.gpd", "w");
+    //     for (st i = 0; i < 100; ++i)
+    //         for (st j = 0; j < 100; ++j)
+    //         {
+    //             fprintf(F, "%lf %lf %lf\n", -1.0+0.03*i, -1.0+0.03*j, f(-1.0+0.03*i,-1.0+0.03*j));
+    //         };
+    //     fclose(F);
+    //
+    //     F = fopen("test_4_point_grad.gpd", "w");
+    //     fprintf(F, "%lf %lf %lf\n", points[0].x(), points[0].y(), f.dx(points[0]));
+    //     fprintf(F, "%lf %lf %lf\n", points[1].x(), points[1].y(), f.dx(points[1]));
+    //     fprintf(F, "%lf %lf %lf\n", points[2].x(), points[2].y(), f.dx(points[2]));
+    //     fprintf(F, "%lf %lf %lf\n", points[3].x(), points[3].y(), f.dx(points[3]));
+    //     fclose(F);
+    //
+    //     F = fopen("test_grad.gpd", "w");
+    //     for (st i = 0; i < 100; ++i)
+    //         for (st j = 0; j < 100; ++j)
+    //         {
+    //             fprintf(F, "%lf %lf %lf\n", -1.0+0.03*i, -1.0+0.03*j, f.dx(-1.0+0.03*i,-1.0+0.03*j));
+    //         };
+    //     fclose(F);
+    // };
+
+
+    enum {x, y, z};
+    debputs();
+    lmbd<st(cst)> add_i = [](cst i){return i-1;};
+    printf("%ld\n", foo(10, [](cst i){return i-1;}, [](cst i){return i+3;}));
+    arr<dealii::Point<2>, 4> quad;
+    quad[0] = dealii::Point<2>(0.0, 0.0);
+    quad[1] = dealii::Point<2>(1.0, 0.0);
+    quad[2] = dealii::Point<2>(1.0, 1.0);
+    quad[3] = dealii::Point<2>(0.0, 1.0);
+    dealii::Point<2> p = dealii::Point<2>(1.5, 0.5);
+    printf("in quad %d\n", point_in_quadrilateral(p, quad));
+   //  st aa = 1;
+   //  st bb = ++aa;
+   //  printf("%ld %ld %ld %ld\n", 2_pow(0), aa++, ++aa, bb);
+   //  {
+   //  CubeOfNumbers<2, 2> cube(5);
+   //  printf("%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n", 
+   //          cube.number[0][4][0], cube.number[1][4][0], cube.number[2][4][0], cube.number[3][4][0], cube.number[4][4][0],
+   //          cube.number[0][3][0], cube.number[1][3][0], cube.number[2][3][0], cube.number[3][3][0], cube.number[4][3][0],
+   //          cube.number[0][2][0], cube.number[1][2][0], cube.number[2][2][0], cube.number[3][2][0], cube.number[4][2][0],
+   //          cube.number[0][1][0], cube.number[1][1][0], cube.number[2][1][0], cube.number[3][1][0], cube.number[4][1][0],
+   //          cube.number[0][0][0], cube.number[1][0][0], cube.number[2][0][0], cube.number[3][0][0], cube.number[4][0][0]);
+   //  };
+   //  printf("\n");
+   //  {
+   //  CubeOfNumbers<3, 3> cube(1);
+   //  // printf("%ld %ld\n%ld %ld\n\n%ld %ld\n%ld %ld\n", 
+   //  //         cube.number[0][1][1][0], cube.number[1][1][1][0],
+   //  //         cube.number[0][0][1][0], cube.number[1][0][1][0],
+   //  //         cube.number[0][1][0][0], cube.number[1][1][0][0],
+   //  //         cube.number[0][0][0][0], cube.number[1][0][0][0]);
+   // printf("%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n \n%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n \n%ld %ld %ld\n%ld %ld %ld\n%ld %ld %ld\n\n ", 
+   //         cube.number[0][0][0][0], cube.number[1][0][0][0], cube.number[2][0][0][0],
+   //         cube.number[0][1][0][0], cube.number[1][1][0][0], cube.number[2][1][0][0],
+   //         cube.number[0][2][0][0], cube.number[1][2][0][0], cube.number[2][2][0][0],
+   //
+   //         cube.number[0][0][1][0], cube.number[1][0][1][0], cube.number[2][0][1][0],
+   //         cube.number[0][1][1][0], cube.number[1][1][1][0], cube.number[2][1][1][0],
+   //         cube.number[0][2][1][0], cube.number[1][2][1][0], cube.number[2][2][1][0],
+   //
+   //         cube.number[0][0][2][0], cube.number[1][0][2][0], cube.number[2][0][2][0],
+   //         cube.number[0][1][2][0], cube.number[1][1][2][0], cube.number[2][1][2][0],
+   //         cube.number[0][2][2][0], cube.number[1][2][2][0], cube.number[2][2][2][0]);
+   //  //printf("%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n%ld %ld %ld %ld %ld \n", 
+   //    //      cube.number[0][4][0], cube.number[1][4][0], cube.number[2][4][0], cube.number[3][4][0], cube.number[4][4][0],
+   //      //    cube.number[0][3][0], cube.number[1][3][0], cube.number[2][3][0], cube.number[3][3][0], cube.number[4][3][0],
+   //        //  cube.number[0][2][0], cube.number[1][2][0], cube.number[2][2][0], cube.number[3][2][0], cube.number[4][2][0],
+   //        //  cube.number[0][1][0], cube.number[1][1][0], cube.number[2][1][0], cube.number[3][1][0], cube.number[4][1][0],
+   //        //  cube.number[0][0][0], cube.number[1][0][0], cube.number[2][0][0], cube.number[3][0][0], cube.number[4][0][0]);
+   //  };
+   //  debputs();
+    {
+        Domain<3> domain;
+        {
+            dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 2.0);
+            domain.grid.refine_global(1);
+        };
+    printf("level %d\n", domain.grid.n_global_levels());
+    };
+
+    // {
+    //     dealii::Triangulation<2> tria;
+    //     vec<prmt::Point<2>> outer(4);//3,0000000000000004440892098500626161694527
+    //     vec<prmt::Point<2>> inner(4);
+
+    //     outer[0].x() = 0.0; outer[0].y() = 0.0;
+    //     outer[1].x() = 3.0; outer[1].y() = 0.0;
+    //     outer[2].x() = 3.0; outer[2].y() = 3.0;
+    //     outer[3].x() = 0.0; outer[3].y() = 3.0;
+
+    //     inner[0].x() = 2.9; inner[0].y() = 2.7;
+    //     inner[1].x() = 3.0; inner[1].y() = 2.74;
+    //     inner[2].x() = 3.0000000000000003; inner[2].y() = 3.0;
+    //     inner[3].x() = 2.77; inner[3].y() = 3.0;
+    //     set_grid (tria, outer, inner)0;
+    //     {
+    //         std::ofstream out ("grid-igor.eps");
+    //         dealii::GridOut grid_out;
+    //         grid_out.write_eps (tria, out);
+    //     };
+    // };
+
+    // printf("TRUE? %d\n", 9.0000000000000006 == 9.0000000000000008);
+    // puts("TRUE? 0.000000000000000");
+    // printf("TRUE? %.50f\n", 3.0);
+    // printf("TRUE? %.50f\n", 3.000000000000007);
+    // printf("TRUE? %.50f\n", 3.0000000000000007);
+    // printf("TRUE? %.50f\n", 3.0000000000000007);
+    // printf("TRUE? %.50f\n", (3.0000000000000007 - 3.0));
 
 
 

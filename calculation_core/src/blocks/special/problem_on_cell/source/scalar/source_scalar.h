@@ -2,6 +2,7 @@
 #define SOURCE_SCALAR_ON_CELL
  
 #include "../../../../general/source/scalar/source_scalar.h"
+#include "../../problem_on_cell_tools/problem_on_cell_tools.h"
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -125,6 +126,240 @@ namespace OnCell
 
     template <u8 dim>
         u8 SourceScalar<dim>::get_dofs_per_cell ()
+        {
+            return dofs_per_cell;
+        };
+
+
+
+
+    template <u8 dim>
+        class SourceScalarApprox : public ::SourceInterface<dim>
+    {
+        public:
+
+            SourceScalarApprox (const dealii::FiniteElement<dim> &fe);
+            SourceScalarApprox (const arr<i32, 3> approximation,
+                    const vec<arr<arr<dbl, 3>, 3>> &coefficient, 
+                    const ArrayWithAccessToVector<dbl> &meta_coefficient,
+                    ArrayWithAccessToVector<dealii::Vector<dbl>> *psi_func,
+                    const dealii::FiniteElement<dim> &fe);
+
+            virtual void update_on_cell (
+                    typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
+
+            virtual dbl operator() (cst i) override;
+
+            virtual u8 get_dofs_per_cell () override;
+
+            static cst x = 0;
+            static cst y = 1;
+            static cst z = 2;
+
+            vec<arr<arr<dbl, 3>, 3>> coef; //!< Коэффициенты материла, например теплопроводность.
+            ArrayWithAccessToVector<dbl> meta_coef; //!< Массив коэффициентов метаматериала.
+            ArrayWithAccessToVector<dealii::Vector<dbl>> *psi; //!< Массив ячейкивых функций.
+            arr<i32, 3> k; //!< Номер приближения в векторной форме записи.
+            dealii::QGauss<dim>        quadrature_formula; //!< Формула интегрирования в квадратурах.
+            dealii::FEValues<dim, dim> fe_values; //!< Тип функций формы.
+            vec<u32>                   global_dof_indices; //!< Список глобальных значений индексов с ячейки.
+            cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
+            cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
+            u8                         material_id = 0; //!< Идентефикатор материала ячейки.
+
+            dbl tmp = 0.0;
+            arr<st, 4> indx;
+
+    };
+
+    template <u8 dim>
+        SourceScalarApprox<dim>::SourceScalarApprox (const dealii::FiniteElement<dim> &fe) :
+            quadrature_formula (2),
+            fe_values (fe, quadrature_formula,
+                    dealii::update_values | dealii::update_gradients | dealii::update_quadrature_points | 
+                    dealii::update_JxW_values),
+            dofs_per_cell (fe.dofs_per_cell),
+            global_dof_indices (fe.dofs_per_cell),
+            num_quad_points (quadrature_formula.size())
+    {};
+
+    template <u8 dim>
+        SourceScalarApprox<dim>::SourceScalarApprox (
+                    const arr<i32, 3> approximation,
+                    const vec<arr<arr<dbl, 3>, 3>> &coefficient, 
+                    const ArrayWithAccessToVector<dbl> &meta_coefficient,
+                    ArrayWithAccessToVector<dealii::Vector<dbl>> *psi_func,
+                    const dealii::FiniteElement<dim> &fe) :
+            SourceScalarApprox<dim>(fe)
+    {
+        k[x] = approximation[x];
+        k[y] = approximation[y];
+        k[z] = approximation[z];
+
+        coef .resize (coefficient.size());
+        for (st i = 0; i < coefficient.size(); ++i)
+        {
+            for (st j = 0; j < dim; ++j)
+            {
+                for (st k = 0; k < dim; ++k)
+                {
+                    coef[i][j][k] = coefficient[i][j][k];
+                };
+            };
+        };
+
+        meta_coef .reinit (meta_coefficient.size);
+        meta_coef = meta_coefficient;
+
+        // cst size = meta_coefficient.size();
+        // meta_coef .resize (size);
+        // for (st i = 0; i < size; ++i)
+        // {
+        //     meta_coef[i] .resize (size);
+        //     for (st j = 0; j < size; ++j)
+        //     {
+        //         meta_coef[i][j] .resize (size);
+        //         for (st k = 0; k < size; ++k)
+        //         {
+        //             meta_coef[i][j][k]  = meta_coefficient[i][j][k];
+        //
+        //         };
+        //     };
+        // };
+
+        psi = psi_func;
+    };
+
+    template <u8 dim>
+        void SourceScalarApprox<dim>::update_on_cell (
+                typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
+        {
+            fe_values .reinit (cell);
+            material_id = cell->material_id();
+            cell->get_dof_indices (global_dof_indices);
+            indx[0] = cell->vertex_dof_index(0, 0);
+            indx[1] = cell->vertex_dof_index(1, 0);
+            indx[2] = cell->vertex_dof_index(2, 0);
+            indx[3] = cell->vertex_dof_index(3, 0);
+        };
+
+    template <u8 dim>
+        dbl SourceScalarApprox<dim>::operator () (cst i)
+        {
+            const uint8_t num_quad_points = this->quadrature_formula.size();
+
+            dbl res = 0.0;
+            dbl summ = 0.0;
+
+            dbl f1 = 0.0;
+            dbl f2 = 0.0;
+            dbl f3 = 0.0;
+
+            for (st q_point = 0; q_point < num_quad_points; ++q_point)
+            {
+                for (st l = 0; l < dim; ++l)
+                {
+                    for (st m = 0; m < dim; ++m)
+                    {
+                        for (st n = 0; n < dofs_per_cell; ++n)
+                        {
+                            arr<i32, 3> km = {k[x], k[y], k[z]}; // k - э_m
+                            km[m]--;
+                            arr<i32, 3> klm = {km[x], km[y], km[z]}; // k - э_l - э_m
+                            klm[l]--;
+                            // printf("size %d %d %f\n", psi[0][km].size(), global_dof_indices[n], psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0);
+                            dbl psi_km = 0.0;
+                            // printf("%d %d %d %f\n", km[x], km[y], km[z], psi[0][km][0]);
+                            // psi[0][km];
+                            if (psi[0][km] == dealii::Vector<dbl>(1))
+                                psi_km = 0.0;
+                            else
+                                psi_km = psi[0][km][global_dof_indices[n]];
+                                // psi_km = psi[0][km][indx[n]];
+                            dbl psi_klm = 0.0;
+                            if (psi[0][klm] == dealii::Vector<dbl>(1))
+                                psi_klm = 0.0;
+                            else
+                                psi_klm = psi[0][klm][global_dof_indices[n]];
+                                // psi_klm = psi[0][klm][indx[n]];
+
+                            // cdbl psi_km = psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0;
+                            // cdbl psi_klm = psi[0][klm] != dealii::Vector<dbl>(0) ? psi[0][klm][global_dof_indices[n]] : 0.0;
+                            f1 += 
+                                this->coef[this->material_id][l][m] * 
+                                psi_km *
+                                // this->psi[0][km][global_dof_indices[n]] * 
+                                this->fe_values.shape_value (n, q_point) *
+                                this->fe_values.shape_grad (i, q_point)[l] *
+                                this->fe_values.JxW(q_point);
+                            // cdbl f2 = 
+                            //     (this->meta_coef[k] -
+                            //      this->coef[this->material_id][l][m] *
+                            //      // (this->psi[0][km][global_dof_indices[n]] *
+                            //      (psi_km *
+                            //       this->fe_values.shape_grad (n, q_point)[m] +
+                            //       // this->psi[0][klm][global_dof_indices[n]] *
+                            //       psi_klm *
+                            //       this->fe_values.shape_value (n, q_point)
+                            //      )
+                            //     ) *
+                            //     this->fe_values.shape_value (i, q_point) *
+                            //     this->fe_values.JxW(q_point);
+                            f3 += 
+                                 (this->coef[this->material_id][l][m] *
+                                 (psi_km *
+                                  this->fe_values.shape_grad (n, q_point)[m] +
+                                  psi_klm //*
+                                  // this->fe_values.shape_value (n, q_point)
+                                 )
+                                ) *
+                                this->fe_values.shape_value (i, q_point) *
+                                this->fe_values.JxW(q_point);
+                            
+                                // if (k[x] == 2)
+                                // res += 
+                                // - f1;
+                                // // - (f1 + f2);
+                                // else
+                               //  res += 
+                               //  // - f2;
+                               //  // - (f1 + f2);
+                               //  // f2 - f1;
+                               // -f1-f2-f3;
+                               //  tmp += f2 - f3;//-f3;
+                               //  summ += f3;
+                        };
+                    };
+                };
+                f2 = +
+                    this->meta_coef[k] *
+                    this->fe_values.shape_value (i, q_point) *
+                    this->fe_values.JxW(q_point);
+                // tmp += res;
+            };
+            tmp += f2;//-f3;
+            printf("%f %f %f %f %ld\n", f2, f3, tmp, this->meta_coef[k], k[0]);
+        //         {
+        // // res +=  
+        // //     fe_values.shape_value (i, q_point) *
+        // //     fe_values.JxW(q_point);
+    //                 // fe_values.shape_grad (0, 0);// *
+        //             // res += 
+        //             //     -(this->fe_values.shape_grad (i, q_point)[ort]) *
+        //             //     coef[this->material_id][ort] *
+        //             //     this->fe_values.JxW(q_point);
+        //         // res +=  
+        //         //     fe_values.shape_grad (i, q_point)[0] *
+        //         //     fe_values.shape_grad (i, q_point)[0] *
+        //         //     fe_values.JxW(q_point);
+        //         };
+        //     };
+
+            return f1;// + f2 - f3;
+        };
+
+    template <u8 dim>
+        u8 SourceScalarApprox<dim>::get_dofs_per_cell ()
         {
             return dofs_per_cell;
         };

@@ -98,7 +98,7 @@ namespace HCPTools
     //! Распечатать в файл тепловые потоки
     template<u8 dim>
     void print_heat_conductions (const dealii::Vector<dbl> &temperature, 
-                                 arr<arr<vec<dbl>, 2>, 2> &coef,
+                                 vec<arr<arr<dbl, 3>, 3>> &coef,
                                  const Domain<2> &domain,
                                  const str file_name)
     {
@@ -106,7 +106,7 @@ namespace HCPTools
 
     template<>
     void print_heat_conductions<2> (const dealii::Vector<dbl> &temperature, 
-                                    arr<arr<vec<dbl>, 2>, 2> &coef,
+                                    vec<arr<arr<dbl, 3>, 3>> &coef,
                                     const Domain<2> &domain,
                                     const str file_name)
     {
@@ -121,20 +121,27 @@ namespace HCPTools
         hc[0] .reinit (domain.dof_handler.n_dofs());
         hc[1] .reinit (domain.dof_handler.n_dofs());
 
+        vec<st> N(domain.dof_handler.n_dofs());
+
         for (
                 auto cell = domain.dof_handler.begin_active(); 
                 cell     != domain.dof_handler.end(); 
                 ++cell
             )
         {
+            /* Точки 3 и 2 переставленны местами, потому что в диле у них
+             * порядок зигзагом, а мне надо по кругу
+            */
             arr<prmt::Point<2>, 4> points = {
-                cell->vertex(0), cell->vertex(1), 
-                cell->vertex(2), cell->vertex(3)};
+                prmt::Point<2>(cell->vertex(0)(0), cell->vertex(0)(1)),
+                prmt::Point<2>(cell->vertex(1)(0), cell->vertex(1)(1)),
+                prmt::Point<2>(cell->vertex(3)(0), cell->vertex(3)(1)),
+                prmt::Point<2>(cell->vertex(2)(0), cell->vertex(2)(1))};
             arr<dbl, 4> values = {
                 temperature(cell->vertex_dof_index (0, 0)),
                 temperature(cell->vertex_dof_index (1, 0)),
-                temperature(cell->vertex_dof_index (2, 0)),
-                temperature(cell->vertex_dof_index (3, 0))};
+                temperature(cell->vertex_dof_index (3, 0)),
+                temperature(cell->vertex_dof_index (2, 0))};
 
             Scalar4PointsFunc<2> function_on_cell(points, values);
 
@@ -142,16 +149,29 @@ namespace HCPTools
             {
                 auto indx = cell->vertex_dof_index(i, 0);
 
-                grad[0][indx] = function_on_cell.dx(cell->vertex(i));
-                grad[1][indx] = function_on_cell.dy(cell->vertex(i));
+                grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                ++(N[indx]); 
 
                 hc[0][indx] = 
-                    coef[0][0][cell->material_id()] * grad[0][indx] +
-                    coef[0][1][cell->material_id()] * grad[1][indx];
+                    coef[cell->material_id()][0][0] * grad[0][indx] +
+                    coef[cell->material_id()][0][1] * grad[1][indx];
                 hc[1][indx] = 
-                    coef[1][0][cell->material_id()] * grad[0][indx] +
-                    coef[1][1][cell->material_id()] * grad[1][indx];
+                    coef[cell->material_id()][1][0] * grad[0][indx] +
+                    coef[cell->material_id()][1][1] * grad[1][indx];
+
+                // hc[0][indx] = grad[0][indx];
+                //     // coef[cell->material_id()][0][0] * grad[0][indx] +
+                //     // coef[cell->material_id()][0][1] * grad[1][indx];
+                // hc[1][indx] = grad[1][indx];
+                //     // coef[cell->material_id()][1][0] * grad[0][indx] +
+                //     // coef[cell->material_id()][1][1] * grad[1][indx];
             };
+        };
+        for (st i = 0; i < N.size(); ++i)
+        {
+            hc[0][i] /= N[i];
+            hc[1][i] /= N[i];
         };
 
         {
@@ -159,10 +179,12 @@ namespace HCPTools
             data_out.attach_dof_handler (domain.dof_handler);
             data_out.add_data_vector (hc[0], "hc_dx");
             data_out.add_data_vector (hc[1], "hc_dy");
+            // data_out.add_data_vector (grad[0], "grad_dx");
+            // data_out.add_data_vector (grad[1], "drad_dy");
             data_out.build_patches ();
 
             auto name = file_name;
-            name += ".gpd";
+            // name += ".gpd";
 
             std::ofstream output (name);
             data_out.write_gnuplot (output);
@@ -189,20 +211,20 @@ namespace HCPTools
         grad[0] .reinit (domain.dof_handler.n_dofs());
         grad[1] .reinit (domain.dof_handler.n_dofs());
 
-        dealii::Vector<dbl> T(domain.dof_handler.n_dofs());
-        vec<bool> flg(domain.dof_handler.n_dofs());
-        for (st i = 0; i < flg.size(); ++i)
-        {
-            flg[i] = false;
-        };
+        // dealii::Vector<dbl> T(domain.dof_handler.n_dofs());
+        // vec<bool> flg(domain.dof_handler.n_dofs());
+        // for (st i = 0; i < flg.size(); ++i)
+        // {
+        //     flg[i] = false;
+        // };
 
-        vec<dbl> gradx;
-        vec<prmt::Point<2>> ps;
+        // vec<dbl> gradx;
+        // vec<prmt::Point<2>> ps;
 
         vec<st> N(domain.dof_handler.n_dofs());
 
-        FILE *F;
-        F = fopen("test_iso_3.gpd", "w");
+        // FILE *F;
+        // F = fopen("test_iso_3.gpd", "w");
         for (
                 auto cell = domain.dof_handler.begin_active(); 
                 cell     != domain.dof_handler.end(); 
@@ -225,40 +247,40 @@ namespace HCPTools
 
             Scalar4PointsFunc<2> function_on_cell(points, values);
 
-            dbl midl_x = (cell->vertex(0)(0) + cell->vertex(1)(0) + cell->vertex(2)(0) + cell->vertex(3)(0)) / 4.0;
-            dbl midl_y = (cell->vertex(0)(1) + cell->vertex(1)(1) + cell->vertex(2)(1) + cell->vertex(3)(1)) / 4.0;
-
-            gradx .push_back (function_on_cell.dy(midl_x, midl_y));
-            ps .push_back (prmt::Point<2>(midl_x, midl_y));
-            st n = 5;
-            for (st i = 0; i < n+1; ++i)
-            {
-                cdbl s = 1.0 / n * i;
-                for (st j = 0; j < n+1; ++j)
-                {
-                    cdbl r = 1.0 / n * j;
-                    cdbl x = function_on_cell.a_x +
-                             function_on_cell.b_x*s +
-                             function_on_cell.c_x*r +
-                             function_on_cell.d_x*s*r;
-                    cdbl y = function_on_cell.a_y +
-                             function_on_cell.b_y*s +
-                             function_on_cell.c_y*r +
-                             function_on_cell.d_y*s*r;
-                    cdbl f = function_on_cell.f_(s, r);
-                    cdbl dx = function_on_cell.f_.dx(
-                              x,
-                              y,
-                              function_on_cell.s.dx(x, y)[0],
-                              function_on_cell.r.dx(x, y)[1]);
-                    cdbl dy = function_on_cell.f_.dy(
-                              x,
-                              y,
-                              function_on_cell.s.dy(x, y)[0],
-                              function_on_cell.r.dy(x, y)[1]);
-                    fprintf(F, "%f %f %f %f %f\n", x, y, f, dx, dy);
-                };
-            };
+            // dbl midl_x = (cell->vertex(0)(0) + cell->vertex(1)(0) + cell->vertex(2)(0) + cell->vertex(3)(0)) / 4.0;
+            // dbl midl_y = (cell->vertex(0)(1) + cell->vertex(1)(1) + cell->vertex(2)(1) + cell->vertex(3)(1)) / 4.0;
+            //
+            // gradx .push_back (function_on_cell.dy(midl_x, midl_y));
+            // ps .push_back (prmt::Point<2>(midl_x, midl_y));
+            // st n = 5;
+            // for (st i = 0; i < n+1; ++i)
+            // {
+            //     cdbl s = 1.0 / n * i;
+            //     for (st j = 0; j < n+1; ++j)
+            //     {
+            //         cdbl r = 1.0 / n * j;
+            //         cdbl x = function_on_cell.a_x +
+            //                  function_on_cell.b_x*s +
+            //                  function_on_cell.c_x*r +
+            //                  function_on_cell.d_x*s*r;
+            //         cdbl y = function_on_cell.a_y +
+            //                  function_on_cell.b_y*s +
+            //                  function_on_cell.c_y*r +
+            //                  function_on_cell.d_y*s*r;
+            //         cdbl f = function_on_cell.f_(s, r);
+            //         cdbl dx = function_on_cell.f_.dx(
+            //                   x,
+            //                   y,
+            //                   function_on_cell.s.dx(x, y)[0],
+            //                   function_on_cell.r.dx(x, y)[1]);
+            //         cdbl dy = function_on_cell.f_.dy(
+            //                   x,
+            //                   y,
+            //                   function_on_cell.s.dy(x, y)[0],
+            //                   function_on_cell.r.dy(x, y)[1]);
+            //         fprintf(F, "%f %f %f %f %f\n", x, y, f, dx, dy);
+            //     };
+            // };
             // if (std::abs(function_on_cell.dy(midl_x, midl_y)) > 1e-5)
             //     fprintf(F, "%f %f %f %f %f %f %f %f %f\n",
             //             cell->vertex(0)(0), cell->vertex(0)(1),
@@ -279,33 +301,33 @@ namespace HCPTools
                 grad[1][indx] += function_on_cell.dy(cell->vertex(i));
                 ++(N[indx]); 
 
-                if (!flg[indx])
-                {
-                T[indx] = 
-                    // temperature(cell->vertex_dof_index (i, 0));
-                    // function_on_cell(cell->vertex(i));
-                    // function_on_cell(prmt::Point<2>(cell->vertex(i)(0), cell->vertex(i)(1)));
-                    // cell->vertex(i)(0) * cell->vertex(i)(0);
-                    function_on_cell(prmt::Point<2>(cell->vertex(i)(0), cell->vertex(i)(1)))-
-                temperature(cell->vertex_dof_index (i, 0));
-                // if (std::abs(T[indx]) > 1e-5)
-                //     fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %d\n",
-                //             cell->vertex(0)(0), cell->vertex(0)(1),
-                //             cell->vertex(1)(0), cell->vertex(1)(1),
-                //             cell->vertex(3)(0), cell->vertex(3)(1),
-                //             cell->vertex(2)(0), cell->vertex(2)(1),
-                //             temperature(cell->vertex_dof_index (0, 0)),
-                //             temperature(cell->vertex_dof_index (1, 0)),
-                //             temperature(cell->vertex_dof_index (3, 0)),
-                //             temperature(cell->vertex_dof_index (2, 0)),
-                //             T[indx],
-                //             i
-                //             );
-                flg[indx] = true;
-                };
+                // if (!flg[indx])
+                // {
+                // T[indx] = 
+                //     // temperature(cell->vertex_dof_index (i, 0));
+                //     // function_on_cell(cell->vertex(i));
+                //     // function_on_cell(prmt::Point<2>(cell->vertex(i)(0), cell->vertex(i)(1)));
+                //     // cell->vertex(i)(0) * cell->vertex(i)(0);
+                //     function_on_cell(prmt::Point<2>(cell->vertex(i)(0), cell->vertex(i)(1)))-
+                // temperature(cell->vertex_dof_index (i, 0));
+                // // if (std::abs(T[indx]) > 1e-5)
+                // //     fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %d\n",
+                // //             cell->vertex(0)(0), cell->vertex(0)(1),
+                // //             cell->vertex(1)(0), cell->vertex(1)(1),
+                // //             cell->vertex(3)(0), cell->vertex(3)(1),
+                // //             cell->vertex(2)(0), cell->vertex(2)(1),
+                // //             temperature(cell->vertex_dof_index (0, 0)),
+                // //             temperature(cell->vertex_dof_index (1, 0)),
+                // //             temperature(cell->vertex_dof_index (3, 0)),
+                // //             temperature(cell->vertex_dof_index (2, 0)),
+                // //             T[indx],
+                // //             i
+                // //             );
+                // flg[indx] = true;
+                // };
             };
         };
-        fclose(F);
+        // fclose(F);
         for (st i = 0; i < N.size(); ++i)
         {
             // printf("%d\n", N[i]);
@@ -319,22 +341,22 @@ namespace HCPTools
             data_out.attach_dof_handler (domain.dof_handler);
             data_out.add_data_vector (grad[0], "grad_dx");
             data_out.add_data_vector (grad[1], "drad_dy");
-            data_out.add_data_vector (T, "T");
+            // data_out.add_data_vector (T, "T");
             data_out.build_patches ();
 
             auto name = file_name;
-            name += ".gpd";
+            // name += ".gpd";
 
             std::ofstream output (name);
             data_out.write_gnuplot (output);
         };
-        FILE *F1;
-        F1 = fopen("gradx.gpd", "w");
-        for (st i = 0; i < ps.size(); ++i)
-        {
-            fprintf(F1, "%lf %lf %lf\n", ps[i].x(), ps[i].y(), gradx[i]);
-        };
-        fclose(F1);
+        // FILE *F1;
+        // F1 = fopen("gradx.gpd", "w");
+        // for (st i = 0; i < ps.size(); ++i)
+        // {
+        //     fprintf(F1, "%lf %lf %lf\n", ps[i].x(), ps[i].y(), gradx[i]);
+        // };
+        // fclose(F1);
     }
 };
 
