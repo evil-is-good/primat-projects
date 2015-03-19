@@ -43,7 +43,7 @@ Sources    := $(ProjectName).cpp
 
 DebugLibraryes    := deal_II.g tbb_debug CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt
 
-ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp boost_thread-mt z
+ReleaseLibraryes  := deal_II tbb gomp pthread CGAL_Core CGAL gmpxx mpfr gmp z #boost_thread-mt 
 
 #linux-vdso.so.1 =>  (0x00007fff80fff000)
 #libgomp.so.1 => /usr/lib/x86_64-linux-gnu/libgomp.so.1 (0x00007fd324f64000)
@@ -113,7 +113,7 @@ $(Executable): $(Objects)
 
 $(ObjDir)/%.o: $(SourcesDir)/%.cpp
 	mkdir -p $(dir $@)
-	$(CXX) -c $(CFlags) $< -o $@ $(IncDirs) $(LibDirs) $(Libs)  
+	$(CXX) -c $(CFlags) $< -o $@ $(IncDirs) $(LibDirs) $(Libs) 2> /home/primat/projects/code.log  
 
 analysis: $(Sources)
 	$(CXX) $(AnalysisFlags) $^ $(IncDirs) $(LibDirs) $(Libs)  

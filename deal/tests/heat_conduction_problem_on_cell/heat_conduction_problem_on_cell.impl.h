@@ -118,6 +118,7 @@ set_coefficient (const std::array<std::vector<double>, dim> &coef)
         for (size_t j = 0; j < coef[i].size(); ++j)
             this->coefficient[i] .push_back (coef[i][j]);
     };
+    printf("rhs_coef %f %f\n",  this->coefficient[0][1], this->coefficient[1][1]);
 };
 
 template<uint8_t dim>
@@ -223,6 +224,8 @@ prmt::Report HeatConductionProblemOnCell<dim>::solved ()
             for(size_t k = 0; k < coefficient[conver(i,j)].size(); ++k)
                 coef_for_rhs[j][k] = coefficient[conver(i,j)][k];
         };
+
+        // printf("rhs_coef %f %f\n", coef_for_rhs[0][0], coef_for_rhs[1][0]);
         
         solution[i]  = 0;
         heat_flow[i] = 0;
@@ -1387,13 +1390,13 @@ template<uint8_t dim>
 prmt::Report HeatConductionProblemOnCell<dim>:: output_results ()
 {
     {
-        dealii::DataOut<dim> data_out;
-        data_out.attach_dof_handler (this->domain.dof_handler);
-
         char suffix[3] = {'x', 'y', 'z'};
 
         for (uint8_t i = 0; i < dim; ++i)
         {
+            dealii::DataOut<dim> data_out;
+            data_out.attach_dof_handler (this->domain.dof_handler);
+
             data_out.add_data_vector (/* heat_flow[i] */   solution[i], "solution");
             data_out.build_patches ();
 
@@ -1407,13 +1410,13 @@ prmt::Report HeatConductionProblemOnCell<dim>:: output_results ()
     };
 
     {
-        dealii::DataOut<dim> data_out;
-        data_out.attach_dof_handler (this->domain.dof_handler);
-
         char suffix[3] = {'x', 'y', 'z'};
 
         for (uint8_t i = 0; i < dim; ++i)
         {
+            dealii::DataOut<dim> data_out;
+            data_out.attach_dof_handler (this->domain.dof_handler);
+
             data_out.add_data_vector (heat_flow[i]  /* solution[i] */, "solution");
             data_out.build_patches ();
 

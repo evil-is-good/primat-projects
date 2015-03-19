@@ -9,6 +9,7 @@
 //#include <ctime>
 #include "./head.h"
 #include <projects/deal/tests/heat_conduction_problem_on_cell/heat_conduction_problem_on_cell.h>
+#include "../../../calculation_core/src/blocks/general/4_points_function/4_points_function.h"
 
 // typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 // typedef CGAL::Triangulation_vertex_base_2<K> Vb;
@@ -1410,8 +1411,137 @@ std::array<double, 3> solved (dealii::Triangulation<dim> &triangulation,
 
     printf("meta %lf %lf %lf\n", meta[0], meta[1], meta[2]);
 
+    complete_solution (problem);
+
     return meta;
 
+};
+
+void complete_solution (HeatConductionProblemOnCell<2> &problem)
+{
+    enum {x, y, z}; 
+
+    dbl l_xx = problem.meta_coefficient[0];
+    dbl l_yy = problem.meta_coefficient[1];
+    dbl l_xy = problem.meta_coefficient[2];
+
+    dbl T0_dx = 1.0/(l_xx-(l_xy*l_xy)/l_yy);
+    dbl T0_dy = (-l_xy/l_xx)/(l_xx-(l_xy*l_xy)/l_yy);
+
+    dealii::Vector<double> temperature(problem.solution[0].size());
+    dealii::Vector<double> heat_conduction[2];
+    heat_conduction[x].reinit(problem.solution[0].size());
+    heat_conduction[y].reinit(problem.solution[0].size());
+
+    for (st i = 0; i < problem.solution[0].size(); ++i)
+    {
+        temperature(i) = problem.solution[x](i) * T0_dx + problem.solution[y](i) * T0_dy;
+    };
+
+    {
+        dealii::DataOut<2> data_out;
+        data_out.attach_dof_handler (problem.domain.dof_handler);
+
+        data_out.add_data_vector (temperature, "complete_temperature");
+        data_out.build_patches ();
+
+        std::string file_name = "complete_temperature.gpd";
+
+        std::ofstream output (file_name.data());
+        data_out.write_gnuplot (output);
+    };
+
+    vec<dbl> coef_xx(problem.coefficient[0].size());
+    vec<dbl> coef_yy(problem.coefficient[0].size());
+    vec<dbl> coef_xy(problem.coefficient[0].size());
+    vec<dbl> coef_yx(problem.coefficient[0].size());
+    for (st i = 0; i < coef_xx.size(); ++i)
+    {
+        coef_xx[i] = problem.coefficient[0][i];
+        coef_yy[i] = problem.coefficient[0][i];
+        coef_xy[i] = problem.coefficient[0][i];
+        coef_yx[i] = problem.coefficient[0][i];
+    };
+
+    {
+        typename dealii::DoFHandler<2>::active_cell_iterator cell =
+            problem.domain.dof_handler.begin_active();
+
+        typename dealii::DoFHandler<2>::active_cell_iterator endc =
+            problem.domain.dof_handler.end();
+
+        vec<st> divider(problem.solution[0].size());
+
+        for (; cell != endc; ++cell)
+        {
+            size_t mat_id = cell->material_id();
+
+            arr<prmt::Point<2>, 4> points = {
+                cell->vertex(0),
+                cell->vertex(1),
+                cell->vertex(3),
+                cell->vertex(2)};
+            arr<dbl, 4> values_x = {
+                problem.solution[x](cell->vertex_dof_index (0, 0)),
+                problem.solution[x](cell->vertex_dof_index (1, 0)),
+                problem.solution[x](cell->vertex_dof_index (3, 0)),
+                problem.solution[x](cell->vertex_dof_index (2, 0))};
+            arr<dbl, 4> values_y = {
+                problem.solution[y](cell->vertex_dof_index (0, 0)),
+                problem.solution[y](cell->vertex_dof_index (1, 0)),
+                problem.solution[y](cell->vertex_dof_index (3, 0)),
+                problem.solution[y](cell->vertex_dof_index (2, 0))};
+
+            Scalar4PointsFunc<2> psi_x(points, values_x);
+            Scalar4PointsFunc<2> psi_y(points, values_y);
+
+            for (st i = 0; i < 4; ++i)
+            {
+                heat_conduction[x](cell->vertex_dof_index(i, 0)) += 
+                    (coef_xx[mat_id] * psi_x.dx(points[i]) +
+                    coef_xy[mat_id] * psi_x.dy(points[i]) +
+                    coef_xx[mat_id]) * T0_dx +
+                    (coef_xx[mat_id] * psi_y.dx(points[i]) +
+                    coef_xy[mat_id] * psi_y.dy(points[i]) +
+                    coef_xy[mat_id]) * T0_dy;
+
+                heat_conduction[y](cell->vertex_dof_index(i, 0)) += 
+                    (coef_yx[mat_id] * psi_x.dx(points[i]) +
+                    coef_yy[mat_id] * psi_x.dy(points[i]) +
+                    coef_yx[mat_id]) * T0_dx +
+                    (coef_yx[mat_id] * psi_y.dx(points[i]) +
+                    coef_yy[mat_id] * psi_y.dy(points[i]) +
+                    coef_yy[mat_id]) * T0_dy;
+
+                ++divider[cell->vertex_dof_index(i, 0)];
+            };
+        };
+        for (st i = 0; i < divider.size(); ++i)
+        {
+            heat_conduction[x](i) /= divider[i];
+            heat_conduction[y](i) /= divider[i];
+        };
+    };
+
+    {
+        dealii::DataOut<2> data_out;
+        data_out.attach_dof_handler (problem.domain.dof_handler);
+
+        char suffix[3] = {'x', 'y', 'z'};
+
+        for (uint8_t i = 0; i < 2; ++i)
+        {
+            data_out.add_data_vector (heat_conduction[x], "h_c");
+            data_out.build_patches ();
+
+            std::string file_name = "complete_heat_conduction_";
+            file_name += suffix[i];
+            file_name += ".gpd";
+
+            std::ofstream output (file_name.data());
+            data_out.write_gnuplot (output);
+        };
+    };
 };
 
 int main(int argc, char *argv[])
@@ -1431,10 +1561,10 @@ int main(int argc, char *argv[])
 
     const size_t material_id_for_quadrate[4][4] =
     {
-        {1, 1, 0, 0},
-        {1, 1, 0, 0},
-        {1, 1, 0, 0},
-        {1, 1, 0, 0}
+        {0, 0, 0, 0},
+        {0, 1, 1, 0},
+        {0, 1, 1, 0},
+        {0, 0, 0, 0}
     };
 
     const size_t material_id_for_cross[5][5] =
@@ -1457,7 +1587,7 @@ int main(int argc, char *argv[])
     };
 
     time_t time_1 = time(NULL);
-    FOR_J(1, 2)
+    FOR_J(4, 5)
     {
 
     // cdbl coef_2 = 393.1;
@@ -1508,7 +1638,7 @@ int main(int argc, char *argv[])
 ////                        set_band<2> (tria, 64.0 - 128.0 / 6.0, 64.0 + 128.0 / 6.0, 0);
 ////                        set_band<2> (tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
 //                        //                ::set_quadrate<2>(tria, 64.0 - i / 2.0, 64.0 + i / 2.0, 0);
-                       // tria .refine_global (1);
+                       tria .refine_global (2);
 
                         // ::set_grid(tria);
                         {
@@ -1656,7 +1786,7 @@ int main(int argc, char *argv[])
                     double coefic[2] = {1.0, 2.0};
                         dealii::Triangulation<2> tria;
 
-                        ::set_circ(tria, radius, 6); // /sqrt(3.1415926535), 6);
+                        ::set_circ(tria, radius, 5); // /sqrt(3.1415926535), 6);
 
                         auto res = ::solved<2>(tria, coefic[0], coefic[1]);
 
