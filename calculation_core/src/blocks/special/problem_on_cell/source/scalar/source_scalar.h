@@ -192,9 +192,9 @@ namespace OnCell
                     const ArrayWithAccessToVector<dbl> &meta_coefficient,
                     // ArrayWithAccessToVector<dealii::Vector<dbl>> *psi_func,
                     ArrayWithAccessToVector<dealii::Vector<dbl>> &psi_func,
-                    const dealii::FiniteElement<dim> &fe) :
+                    const dealii::FiniteElement<dim> &fe) : 
             SourceScalarApprox<dim>(fe)
-    {
+               {
         k[x] = approximation[x];
         k[y] = approximation[y];
         k[z] = approximation[z];
@@ -231,13 +231,14 @@ namespace OnCell
         // };
 
         // psi = psi_func;
-        psi.content.resize(psi_func.content.size());
+        psi.reinit(psi_func.content.size());
+        // psi.content.resize(psi_func.content.size());
         for (st i = 0; i < psi_func.content.size(); ++i)
         {
-            psi.content[i].resize(psi_func.content[i].size());
+            // psi.content[i].resize(psi_func.content[i].size());
             for (st j = 0; j < psi_func.content[i].size(); ++j)
             {
-                psi.content[i][j].resize(psi_func.content[i][j].size());
+                // psi.content[i][j].resize(psi_func.content[i][j].size());
                 for (st k = 0; k < psi_func.content[i][j].size(); ++k)
                 {
                     psi.content[i][j][k].reinit(psi_func.content[i][j][k].size());
@@ -282,87 +283,123 @@ namespace OnCell
                 {
                     for (st m = 0; m < dim; ++m)
                     {
-                        for (st n = 0; n < dofs_per_cell; ++n)
+                        arr<i32, 3> km = {k[x], k[y], k[z]}; // k - э_m
+                        if (k[m] > 0)
                         {
-                            arr<i32, 3> km = {k[x], k[y], k[z]}; // k - э_m
-                            bool psi_km_exist = true;
-                            if (k[m] == 0)
-                                psi_km_exist = false;
-                            else
-                                km[m]--;
-                            bool psi_klm_exist = true;
+                            km[m]--;
+                            for (st n = 0; n < dofs_per_cell; ++n)
+                            {
+                                cdbl psi_km = psi[km][global_dof_indices[n]];
+                                f1 += 
+                                    this->coef[this->material_id][l][m] * 
+                                    psi_km *
+                                    // this->psi[0][km][global_dof_indices[n]] * 
+                                    this->fe_values.shape_value (n, q_point) *
+                                    this->fe_values.shape_grad (i, q_point)[l] *
+                                    this->fe_values.JxW(q_point);
+                            };
                             arr<i32, 3> klm = {km[x], km[y], km[z]}; // k - э_l - э_m
-                            if (km[l] == 0)
-                                psi_klm_exist = false;
-                            else
+                            if (klm[l] > 0)
+                            {
                                 klm[l]--;
-                            printf("k[m]=%d km=%d k[l]=%d klm=%d %d %d\n",
-                                    k[m], km[m], k[l], klm[l], psi_km_exist, psi_klm_exist);
-                            // printf("size %d %d %f\n", psi[0][km].size(), global_dof_indices[n], psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0);
-                            dbl psi_km = 0.0;
-                            // printf("%d %d %d %f\n", km[x], km[y], km[z], psi[0][km][0]);
-                            // if (psi[0][km] == dealii::Vector<dbl>(1))
-                            // if ((km[x] > -1) and (km[y] > -1) and (km[z] > -1))
-                            if (psi_km_exist)
-                                psi_km = psi[km][global_dof_indices[n]];
-                            else
-                                psi_km = 0.0;
-                                // psi_km = psi[0][km][indx[n]];
-                            dbl psi_klm = 0.0;
-                            // if (psi[0][klm] == dealii::Vector<dbl>(1))
-                            // if ((klm[x] > -1) and (klm[y] > -1) and (klm[z] > -1))
-                            if (psi_klm_exist)
-                                psi_klm = psi[klm][global_dof_indices[n]];
-                            else
-                                psi_klm = 0.0;
-                                // psi_klm = psi[0][klm][indx[n]];
-
-                            // cdbl psi_km = psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0;
-                            // cdbl psi_klm = psi[0][klm] != dealii::Vector<dbl>(0) ? psi[0][klm][global_dof_indices[n]] : 0.0;
-                            f1 += 
-                                this->coef[this->material_id][l][m] * 
-                                psi_km *
-                                // this->psi[0][km][global_dof_indices[n]] * 
-                                this->fe_values.shape_value (n, q_point) *
-                                this->fe_values.shape_grad (i, q_point)[l] *
-                                this->fe_values.JxW(q_point);
-                            // cdbl f2 = 
-                            //     (this->meta_coef[k] -
-                            //      this->coef[this->material_id][l][m] *
-                            //      // (this->psi[0][km][global_dof_indices[n]] *
-                            //      (psi_km *
-                            //       this->fe_values.shape_grad (n, q_point)[m] +
-                            //       // this->psi[0][klm][global_dof_indices[n]] *
-                            //       psi_klm *
-                            //       this->fe_values.shape_value (n, q_point)
-                            //      )
-                            //     ) *
-                            //     this->fe_values.shape_value (i, q_point) *
-                            //     this->fe_values.JxW(q_point);
-                            f3 += 
-                                 (this->coef[this->material_id][l][m] *
-                                 (psi_km *
-                                  this->fe_values.shape_grad (n, q_point)[m] +
-                                  psi_klm *
-                                  this->fe_values.shape_value (n, q_point)
-                                 )
-                                ) *
-                                this->fe_values.shape_value (i, q_point) *
-                                this->fe_values.JxW(q_point);
-                            
-                                // if (k[x] == 2)
-                                // res += 
-                                // - f1;
-                                // // - (f1 + f2);
-                                // else
-                               //  res += 
-                               //  // - f2;
-                               //  // - (f1 + f2);
-                               //  // f2 - f1;
-                               // -f1-f2-f3;
-                               //  tmp += f2 - f3;//-f3;
-                               //  summ += f3;
+                                for (st n = 0; n < dofs_per_cell; ++n)
+                                {
+                                    cdbl psi_km = psi[km][global_dof_indices[n]];
+                                    cdbl psi_klm = psi[klm][global_dof_indices[n]];
+                                    f3 += 
+                                        (this->coef[this->material_id][l][m] *
+                                         (psi_km *
+                                          this->fe_values.shape_grad (n, q_point)[m] +
+                                          psi_klm *
+                                          this->fe_values.shape_value (n, q_point)
+                                         )
+                                        ) *
+                                        this->fe_values.shape_value (i, q_point) *
+                                        this->fe_values.JxW(q_point);
+                                };
+                            };
                         };
+                        // for (st n = 0; n < dofs_per_cell; ++n)
+                        // {
+                        //     arr<i32, 3> km = {k[x], k[y], k[z]}; // k - э_m
+                        //     bool psi_km_exist = true;
+                        //     if (k[m] == 0)
+                        //         psi_km_exist = false;
+                        //     else
+                        //         km[m]--;
+                        //     bool psi_klm_exist = true;
+                        //     arr<i32, 3> klm = {km[x], km[y], km[z]}; // k - э_l - э_m
+                        //     if (km[l] == 0)
+                        //         psi_klm_exist = false;
+                        //     else
+                        //         klm[l]--;
+                        //     // printf("k[m]=%d km=%d k[l]=%d klm=%d %d %d\n",
+                        //     //         k[m], km[m], k[l], klm[l], psi_km_exist, psi_klm_exist);
+                        //     // printf("size %d %d %f\n", psi[0][km].size(), global_dof_indices[n], psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0);
+                        //     dbl psi_km = 0.0;
+                        //     dbl psi_klm = 0.0;
+                        //     // printf("%d %d %d %f\n", km[x], km[y], km[z], psi[0][km][0]);
+                        //     // if (psi[0][km] == dealii::Vector<dbl>(1))
+                        //     // if ((km[x] > -1) and (km[y] > -1) and (km[z] > -1))
+                        //     if (psi_km_exist)
+                        //         psi_km = psi[km][global_dof_indices[n]];
+                        //     else
+                        //         psi_km = 0.0;
+                        //         // psi_km = psi[0][km][indx[n]];
+                        //     // if (psi[0][klm] == dealii::Vector<dbl>(1))
+                        //     // if ((klm[x] > -1) and (klm[y] > -1) and (klm[z] > -1))
+                        //     if (psi_klm_exist)
+                        //         psi_klm = psi[klm][global_dof_indices[n]];
+                        //     else
+                        //         psi_klm = 0.0;
+                        //         // psi_klm = psi[0][klm][indx[n]];
+                        //
+                        //     // cdbl psi_km = psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0;
+                        //     // cdbl psi_klm = psi[0][klm] != dealii::Vector<dbl>(0) ? psi[0][klm][global_dof_indices[n]] : 0.0;
+                        //     f1 += 
+                        //         this->coef[this->material_id][l][m] * 
+                        //         psi_km *
+                        //         // this->psi[0][km][global_dof_indices[n]] * 
+                        //         this->fe_values.shape_value (n, q_point) *
+                        //         this->fe_values.shape_grad (i, q_point)[l] *
+                        //         this->fe_values.JxW(q_point);
+                        //     // cdbl f2 = 
+                        //     //     (this->meta_coef[k] -
+                        //     //      this->coef[this->material_id][l][m] *
+                        //     //      // (this->psi[0][km][global_dof_indices[n]] *
+                        //     //      (psi_km *
+                        //     //       this->fe_values.shape_grad (n, q_point)[m] +
+                        //     //       // this->psi[0][klm][global_dof_indices[n]] *
+                        //     //       psi_klm *
+                        //     //       this->fe_values.shape_value (n, q_point)
+                        //     //      )
+                        //     //     ) *
+                        //     //     this->fe_values.shape_value (i, q_point) *
+                        //     //     this->fe_values.JxW(q_point);
+                        //     f3 += 
+                        //          (this->coef[this->material_id][l][m] *
+                        //          (psi_km *
+                        //           this->fe_values.shape_grad (n, q_point)[m] +
+                        //           psi_klm *
+                        //           this->fe_values.shape_value (n, q_point)
+                        //          )
+                        //         ) *
+                        //         this->fe_values.shape_value (i, q_point) *
+                        //         this->fe_values.JxW(q_point);
+                        //     
+                        //         // if (k[x] == 2)
+                        //         // res += 
+                        //         // - f1;
+                        //         // // - (f1 + f2);
+                        //         // else
+                        //        //  res += 
+                        //        //  // - f2;
+                        //        //  // - (f1 + f2);
+                        //        //  // f2 - f1;
+                        //        // -f1-f2-f3;
+                        //        //  tmp += f2 - f3;//-f3;
+                        //        //  summ += f3;
+                        // };
                     };
                 };
                 f2 = 5.0 *
@@ -373,7 +410,7 @@ namespace OnCell
             };
             tmp += f3;
             // tmp += f2-f3;
-            // printf("%f %f %f %f %ld\n", f2, f3, tmp, this->meta_coef[k], k[0]);
+            printf("%f %f %f %f %ld\n", f2, f3, tmp, this->meta_coef[k], k[0]);
         //         {
         // // res +=  
         // //     fe_values.shape_value (i, q_point) *
@@ -390,7 +427,7 @@ namespace OnCell
         //         };
         //     };
 
-            return +(f1 + f3 - f2);
+            return -(f1 + f3 - f2);
         };
 
     template <u8 dim>
