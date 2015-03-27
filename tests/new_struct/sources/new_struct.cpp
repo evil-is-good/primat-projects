@@ -4339,8 +4339,8 @@ void solve_approx_cell_heat_problem (cst flag)
                 // ::set_tria <5> (domain.grid, dot, material_id);
                 // domain.grid .refine_global (1);
                 set_rect(domain.grid,
-                        dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
-                        dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 1.5 / 2.0)), 2);
+                        dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 0.5 / 2.0)),
+                        dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 0.5 / 2.0)), 5);
                 // set_circ(domain.grid, R_in, 4); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
@@ -4375,11 +4375,13 @@ void solve_approx_cell_heat_problem (cst flag)
 
             OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
-            st number_of_approx = 3; // Начиная с нулевой
-            arr<arr<i32, 3>, 3> approximations = {
+            cst number_of_approx = 5; // Начиная с нулевой
+            arr<arr<i32, 3>, number_of_approx> approximations = {
                 arr<i32, 3>{1, 0, 0},
                 arr<i32, 3>{0, 1, 0},
-                arr<i32, 3>{2, 0, 0}};
+                arr<i32, 3>{2, 0, 0},
+                arr<i32, 3>{0, 2, 0},
+                arr<i32, 3>{1, 1, 0}};
             OnCell::ArrayWithAccessToVector<dbl> meta_coefficient(number_of_approx);
             OnCell::ArrayWithAccessToVector<dealii::Vector<dbl>> psi_func (number_of_approx);
             OnCell::ArrayWithAccessToVector<dealii::Vector<dbl>> N_func (number_of_approx);
@@ -4432,7 +4434,10 @@ void solve_approx_cell_heat_problem (cst flag)
                 FOR(i, 0, slae.solution[0].size())
                     slae.solution[0][i] = slae.solution[0][bows.subst (i)];
 
-                if (approximation[0] == 1)
+                psi_func[approximation] = slae.solution[0];
+                N_func[approximation] = slae.rhsv[0];
+
+                if ((approximation[0] == 1) and (approximation[1] == 0))
                 {
                     st len_vector_solution = domain.dof_handler.n_dofs();
                     dbl mean_heat_flow;
@@ -4442,59 +4447,94 @@ void solve_approx_cell_heat_problem (cst flag)
                     //     printf("%f\n", slae.rhsv[0](k));
 
                     for (st k = 0; k < len_vector_solution; ++k)
-                        mean_heat_flow += slae.solution[0](k) * (-slae.rhsv[0](k));
+                        mean_heat_flow += psi_func[approximations[x]](k) * (-N_func[approximations[x]](k));
 
                     mean_heat_flow /= area_of_domain;
 
                     meta_coefficient[approximations[2]] = mean_coefficient[x][x] + mean_heat_flow;
                 };
 
-                psi_func[approximation] = slae.solution[0];
-                N_func[approximation] = slae.rhsv[0];
-                printf("META %f\n", meta_coefficient[approximations[2]]);
+                if ((approximation[0] == 0) and (approximation[1] == 1))
+                {
+                    st len_vector_solution = domain.dof_handler.n_dofs();
+                    dbl mean_heat_flow;
+
+                    mean_heat_flow = 0.0;
+
+                    for (st k = 0; k < len_vector_solution; ++k)
+                        mean_heat_flow += psi_func[approximations[y]](k) * (-N_func[approximations[y]](k));
+
+
+                    mean_heat_flow /= area_of_domain;
+
+                    meta_coefficient[approximations[3]] = mean_coefficient[y][y] + mean_heat_flow;
+                };
+
+                if ((approximation[0] == 2) and (approximation[1] == 0))
+                {
+                    st len_vector_solution = domain.dof_handler.n_dofs();
+                    dbl mean_heat_flow;
+
+                    mean_heat_flow = 0.0;
+
+                    for (st k = 0; k < len_vector_solution; ++k)
+                        mean_heat_flow += psi_func[approximations[x]](k) * (-N_func[approximations[y]](k));
+
+
+                    mean_heat_flow /= area_of_domain;
+
+                    meta_coefficient[approximations[4]] = mean_coefficient[x][y] + mean_heat_flow;
+                };
+
+                printf("META %f %f %f\n", 
+                        meta_coefficient[approximations[2]], 
+                        meta_coefficient[approximations[3]], 
+                        meta_coefficient[approximations[4]]);
             };
 
             {
-            arr<str, 3> vr = {
+            arr<str, number_of_approx> vr = {
                 "temperature_approx_x.gpd", 
                 "temperature_approx_y.gpd",
-                "temperature_approx_2x.gpd"};
+                "temperature_approx_2x.gpd",
+                "temperature_approx_2y.gpd",
+                "temperature_approx_xy.gpd"};
             FOR(i, 0, approximations.size())
                 HCPTools ::print_temperature<2> (
                         psi_func[approximations[i]], 
                         domain.dof_handler, vr[i]);
             }; 
-            {
-            arr<str, 3> vr = {
-                "rhsv_approx_x.gpd", 
-                "rhsv_approx_y.gpd",
-                "rhsv_approx_2x.gpd"};
-            FOR(i, 0, approximations.size())
-                HCPTools ::print_temperature<2> (
-                        N_func[approximations[i]],
-                        domain.dof_handler, vr[i]);
-            };
-            {
-            arr<str, 3> vr = {
-                "grad_approx_x.gpd", 
-                "grad_approx_y.gpd",
-                "grad_approx_2x.gpd"};
-            FOR(i, 0, approximations.size())
-                HCPTools ::print_heat_gradient<2> (
-                        psi_func[approximations[i]], 
-                        domain, vr[i]);
-            }; 
-            {
-            arr<str, 3> vr = {
-                "heat_conductions_approx_x.gpd", 
-                "heat_conductions_approx_y.gpd",
-                "heat_conductions_approx_2x.gpd"};
-            FOR(i, 0, approximations.size())
-                HCPTools ::print_heat_conductions<2> (
-                        psi_func[approximations[i]], 
-                        element_matrix.C,
-                        domain, vr[i]);
-            }; 
+            // {
+            // arr<str, 3> vr = {
+            //     "rhsv_approx_x.gpd", 
+            //     "rhsv_approx_y.gpd",
+            //     "rhsv_approx_2x.gpd"};
+            // FOR(i, 0, approximations.size())
+            //     HCPTools ::print_temperature<2> (
+            //             N_func[approximations[i]],
+            //             domain.dof_handler, vr[i]);
+            // };
+            // {
+            // arr<str, 3> vr = {
+            //     "grad_approx_x.gpd", 
+            //     "grad_approx_y.gpd",
+            //     "grad_approx_2x.gpd"};
+            // FOR(i, 0, approximations.size())
+            //     HCPTools ::print_heat_gradient<2> (
+            //             psi_func[approximations[i]], 
+            //             domain, vr[i]);
+            // }; 
+            // {
+            // arr<str, 3> vr = {
+            //     "heat_conductions_approx_x.gpd", 
+            //     "heat_conductions_approx_y.gpd",
+            //     "heat_conductions_approx_2x.gpd"};
+            // FOR(i, 0, approximations.size())
+            //     HCPTools ::print_heat_conductions<2> (
+            //             psi_func[approximations[i]], 
+            //             element_matrix.C,
+            //             domain, vr[i]);
+            // }; 
 
             // auto meta_coef = OnCell::calculate_meta_coefficients_scalar<2> (
             //         domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
@@ -4504,6 +4544,181 @@ void solve_approx_cell_heat_problem (cst flag)
             // fclose(F);
     };
 };
+
+void solve_approx_cell_elastic_problem (cst flag)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+        Domain<2> domain;
+        {
+            // const size_t material_id[4][4] =
+            // {
+            //     {0, 0, 0, 0},
+            //     {0, 1, 1, 0},
+            //     {0, 1, 1, 0},
+            //     {0, 0, 0, 0}
+            // };
+            // const double dot[5] = 
+            // {
+            //     (0.0),
+            //     (0.5 - size / 2.0),
+            //     (0.5),
+            //     (0.5 + size / 2.0),
+            //     (1.0)
+            // };
+            // ::set_tria <5> (domain.grid, dot, material_id);
+            // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
+            set_circ(domain.grid, 0.475, 4);
+            // domain.grid .refine_global (3);
+            {
+                std::ofstream out ("grid-igor.eps");
+                dealii::GridOut grid_out;
+                grid_out.write_eps (domain.grid, out);
+            };
+        };
+        dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+        domain.dof_init (fe);
+
+        OnCell::SystemsLinearAlgebraicEquations<4> slae;
+        OnCell::BlackOnWhiteSubstituter bows;
+
+        LaplacianVectoroApprox<2> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (2);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+        EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+
+        u8 dim = 2;
+
+        const bool vector_type = 1;
+        OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+
+        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+        cst number_of_approx = 3; // Начиная с нулевой
+        arr<arr<i32, 3>, number_of_approx> approximations = {
+            arr<i32, 3>{1, 0, 0},
+            arr<i32, 3>{0, 1, 0},
+            arr<i32, 3>{2, 0, 0}};
+        OnCell::ArrayWithAccessToVector<dbl> meta_coefficient(number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> psi_func (number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> N_func (number_of_approx);
+        for (auto &&a : meta_coefficient.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    c = 0.0;
+        for (auto &&a : psi_func.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    c .reinit (slae.solution[0].size());
+        psi_func[arr<i32, 3>{0, 0, 0}] = 1.0; // Нулевое приближение ячейковой функции равно 1.0
+        for (auto &&a : N_func.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    c .reinit (slae.solution[0].size());
+
+        auto mean_coefficient = 
+            OnCell::calculate_mean_coefficients<2> (domain.dof_handler, element_matrix.C);
+        auto area_of_domain = 
+            OnCell::calculate_area_of_domain<2> (domain.dof_handler);
+
+        arr<u8, 4> theta  = {x, y, z, x};
+        arr<u8, 4> lambda = {x, y, z, y};
+
+#pragma omp parallel for
+        for (st n = 0; n < 4; ++n)
+        {
+            vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+
+            for (auto i : {x, y})
+                for (auto j : {x, y})
+                    for(st k = 0; k < element_matrix.C.size(); ++k)
+                    {
+                        coef_for_rhs[k][i][j] = 
+                            element_matrix.C[k][i][j][theta[n]][lambda[n]];
+                    };
+
+            slae.solution[n] = 0;
+            slae.rhsv[n] = 0;
+
+            OnCell::SourceVector<2> element_rhsv (
+                    coef_for_rhs, domain.dof_handler.get_fe());
+            OnCell::Assembler::assemble_rhsv<2> (
+                    slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+
+            dealii::SolverControl solver_control (10000, 1e-12);
+            dealii::SolverCG<> solver (solver_control);
+            solver.solve (
+                    slae.matrix,
+                    slae.solution[n],
+                    slae.rhsv[n]
+                    ,dealii::PreconditionIdentity()
+                    );
+            FOR(i, 0, slae.solution[n].size())
+                slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+        };
+
+        OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+        vec<ATools::SecondOrderTensor> coef_for_potr(2);
+        for (st i = 0; i < 2; ++i)
+        {
+            coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+            coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+            coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+            coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+        };
+        solve_heat_problem_on_cell_aka_torsion_rod<2> (
+                domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+
+        arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
+        for (st i = 0; i < 4; ++i)
+        {
+            EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+        };
+
+        auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
+                domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+
+        for (size_t i = 0; i < 9; ++i)
+        {
+            uint8_t im = i / (dim + 1);
+            uint8_t in = i % (dim + 1);
+
+            for (size_t j = 0; j < 9; ++j)
+            {
+                uint8_t jm = j / (dim + 1);
+                uint8_t jn = j % (dim + 1);
+
+                if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                    printf("\x1B[31m%f\x1B[0m   ", 
+                            meta_coef[im][in][jm][jn]);
+                else
+                    printf("%f   ", 
+                            meta_coef[im][in][jm][jn]);
+            };
+            for (size_t i = 0; i < 2; ++i)
+                printf("\n");
+        };
+        // print_tensor<6*6>(meta_coef);
+        {
+            auto newcoef = unphysical_to_physicaly (meta_coef);
+            // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+            printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+                    newcoef[0][0][0][0],
+                    newcoef[0][0][1][1],
+                    newcoef[0][0][2][2],
+                    newcoef[1][1][0][0],
+                    newcoef[1][1][1][1],
+                    newcoef[1][1][2][2],
+                    newcoef[2][2][0][0],
+                    newcoef[2][2][1][1],
+                    newcoef[2][2][2][2],
+                    meta_coef[0][1][0][1],
+                    meta_coef[0][2][0][2]
+                  );
+        };
+    };
+    };
 
 int main()
 {
