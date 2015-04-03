@@ -83,6 +83,56 @@ namespace OnCell
         return  mean_coefficient;
     };
 
+    //! Расчет среднего коэффициентов
+    template<u8 dim>
+    ATools::FourthOrderTensor calculate_mean_coefficients(
+            const dealii::DoFHandler<dim> &dof_handler,
+            const vec<ATools::FourthOrderTensor> &coef)
+    {
+        ATools::FourthOrderTensor mean_coefficient;
+        for (st i = 0; i < dim; ++i)
+            for (st j = 0; j < dim; ++j)
+                for (st k = 0; k < dim; ++k)
+                    for (st l = 0; l < dim; ++l)
+                        mean_coefficient[i][j][k][l] = 0.0;
+        dbl area_of_domain = 0.0;
+
+        {
+            dealii::QGauss<dim>  quadrature_formula(2);
+
+            dealii::FEValues<dim> fe_values (dof_handler.get_fe(), quadrature_formula,
+                    dealii::update_quadrature_points | dealii::update_JxW_values);
+
+            cst n_q_points = quadrature_formula.size();
+
+            auto cell = dof_handler.begin_active();
+            auto endc = dof_handler.end();
+            for (; cell != endc; ++cell)
+            {
+                fe_values .reinit (cell);
+
+                for (st q_point = 0; q_point < n_q_points; ++q_point)
+                    for (st i = 0; i < dim; ++i)
+                        for (st j = 0; j < dim; ++j)
+                            for (st k = 0; k < dim; ++k)
+                                for (st l = 0; l < dim; ++l)
+                                    mean_coefficient[i][j][k][l] += 
+                                        coef[cell->material_id()][i][j][k][l] *
+                                        fe_values.JxW(q_point);
+
+                for (st q_point = 0; q_point < n_q_points; ++q_point)
+                    area_of_domain += fe_values.JxW(q_point);
+            };
+
+            for (st i = 0; i < dim; ++i)
+                for (st j = 0; j < dim; ++j)
+                    for (st k = 0; k < dim; ++k)
+                        for (st l = 0; l < dim; ++l)
+                            mean_coefficient[i][j][k][l] /= area_of_domain;
+        };
+        return  mean_coefficient;
+    };
+
     //! Расчет метакоэффициентов, скалярный случай
     template<u8 dim>
     ATools::SecondOrderTensor calculate_meta_coefficients_scalar(

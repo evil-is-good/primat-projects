@@ -1,7 +1,7 @@
 #ifndef problem_on_cell_tools_def
 #define problem_on_cell_tools_def 1
 
-#include </home/primat/projects/prmt_sintactic_addition/prmt_sintactic_addition.h>
+#include "../../../../../../prmt_sintactic_addition/prmt_sintactic_addition.h"
 #include <deal.II/lac/vector.h>
 
 namespace OnCell
@@ -14,7 +14,7 @@ namespace OnCell
         public:
             ArrayWithAccessToVector () : size(0) {};
 
-            ArrayWithAccessToVector (cst a_size) : size (a_size), empty(1)
+            ArrayWithAccessToVector (cst a_size) : size (a_size)//, empty(1)
             {
                 content .resize (a_size);
                 for (auto &&a : content)
@@ -41,7 +41,7 @@ namespace OnCell
                 //     };
                 // };
             };
-            ArrayWithAccessToVector (ArrayWithAccessToVector &a) : size (a.size), empty(1)
+            ArrayWithAccessToVector (ArrayWithAccessToVector &a) : size (a.size)//, empty(1)
             {
                 content .resize (a.size);
                 for (auto &&a : content)

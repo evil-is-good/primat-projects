@@ -327,6 +327,14 @@ namespace OnCell
                                 psi_km_exist = false;
                             else
                                 km[m]--;
+
+                            arr<i32, 3> kl = {k[x], k[y], k[z]}; // k - э_l
+                            bool psi_kl_exist = true;
+                            if (k[l] == 0)
+                                psi_kl_exist = false;
+                            else
+                                kl[l]--;
+
                             bool psi_klm_exist = true;
                             arr<i32, 3> klm = {km[x], km[y], km[z]}; // k - э_l - э_m
                             if (km[l] == 0)
@@ -337,6 +345,7 @@ namespace OnCell
                             //         k[m], km[m], k[l], klm[l], psi_km_exist, psi_klm_exist);
                             // printf("size %d %d %f\n", psi[0][km].size(), global_dof_indices[n], psi[0][km] != dealii::Vector<dbl>(0) ? psi[0][km][global_dof_indices[n]] : 0.0);
                             dbl psi_km = 0.0;
+                            dbl psi_kl = 0.0;
                             dbl psi_klm = 0.0;
                             // printf("%d %d %d %f\n", km[x], km[y], km[z], psi[0][km][0]);
                             // if (psi[0][km] == dealii::Vector<dbl>(1))
@@ -345,6 +354,11 @@ namespace OnCell
                                 psi_km = psi[km][global_dof_indices[n]];
                             else
                                 psi_km = 0.0;
+
+                            if (psi_kl_exist)
+                                psi_kl = psi[kl][global_dof_indices[n]];
+                            else
+                                psi_kl = 0.0;
                                 // psi_km = psi[0][km][indx[n]];
                             // if (psi[0][klm] == dealii::Vector<dbl>(1))
                             // if ((klm[x] > -1) and (klm[y] > -1) and (klm[z] > -1))
@@ -378,7 +392,7 @@ namespace OnCell
                             //     this->fe_values.JxW(q_point);
                             f3 += 
                                  (this->coef[this->material_id][l][m] *
-                                 (psi_km *
+                                 (psi_kl *
                                   this->fe_values.shape_grad (n, q_point)[m] +
                                   psi_klm *
                                   this->fe_values.shape_value (n, q_point)

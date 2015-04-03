@@ -50,6 +50,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/grid/grid_reordering.h>
 #include <deal.II/grid/grid_in.h>
+// #include <deal.II/base/geometry_info.h>
 
 extern void make_grid(
         dealii::Triangulation< 2 >&,
@@ -1036,6 +1037,19 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             const dealii::Point<2> p1, const dealii::Point<2> p2, const size_t n_refine)
     {
         dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
+        // triangulation .refine_global (1);
+        // {
+        //     for (st i = 0; i < 1; ++i)
+        //     {
+        //         auto cell = triangulation .begin_active();
+        //         auto endc = triangulation .end();
+        //         for (; cell != endc; ++cell)
+        //         {
+        //         cell ->set_refine_flag(dealii::RefinementCase<2>::cut_axis(0));
+        //         };
+        //         triangulation.execute_coarsening_and_refinement ();
+        //     };
+        // };
         triangulation .refine_global (n_refine);
         {
             dealii::Point<2> center (0.5, 0.5);
@@ -1053,6 +1067,65 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
                 };
                 midle_p(0) /= 4.0;
                 midle_p(1) /= 4.0;
+
+               // printf("%f %f\n", midle_p(0), midle_p(1));
+
+                if 
+                    (
+                    (
+                    (midle_p(0) > p1(0)) and
+                    (midle_p(0) < p2(0))
+                    ) and
+                    (
+                    (midle_p(1) > p1(1)) and
+                    (midle_p(1) < p2(1))
+                    )
+                    )
+                {
+                    cell->set_material_id(1);
+                   // puts("adf");
+                }
+                else
+                    cell->set_material_id(0);
+            };
+        };
+    };
+
+    void set_rect_3d(dealii::Triangulation<3> &triangulation, 
+            const dealii::Point<2> p1,
+            const dealii::Point<2> p2,
+            const size_t n_refine)
+    {
+        dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
+        // triangulation .refine_global (1);
+        // {
+        //     for (st i = 0; i < 1; ++i)
+        //     {
+        //         auto cell = triangulation .begin_active();
+        //         auto endc = triangulation .end();
+        //         for (; cell != endc; ++cell)
+        //         {
+        //         cell ->set_refine_flag(dealii::RefinementCase<2>::cut_axis(0));
+        //         };
+        //         triangulation.execute_coarsening_and_refinement ();
+        //     };
+        // };
+        triangulation .refine_global (n_refine);
+        {
+            dealii::Triangulation<3>::active_cell_iterator
+                cell = triangulation .begin_active(),
+                     end_cell = triangulation .end();
+            for (; cell != end_cell; ++cell)
+            {
+                dealii::Point<2> midle_p(0.0, 0.0);
+
+                for (size_t i = 0; i < 8; ++i)
+                {
+                    midle_p(0) += cell->vertex(i)(0);
+                    midle_p(1) += cell->vertex(i)(1);
+                };
+                midle_p(0) /= 8.0;
+                midle_p(1) /= 8.0;
 
                // printf("%f %f\n", midle_p(0), midle_p(1));
 
@@ -4173,8 +4246,11 @@ void solve_elastic_problem_on_cell_3d (cst flag)
         enum {x, y, z};
         Domain<3> domain;
         {
-            // set_cylinder(domain.grid, 0.475, z, 4);
-            set_ball(domain.grid, 0.4, 4);
+            set_cylinder(domain.grid, 0.4, z, 3);
+            // set_ball(domain.grid, 0.4, 4);
+                // set_rect_3d(domain.grid,
+                //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
+                //         dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 1.5 / 2.0)), 3);
         };
         dealii::FESystem<3,3> fe (dealii::FE_Q<3,3>(1), 3);
         domain.dof_init (fe);
@@ -4233,11 +4309,14 @@ void solve_elastic_problem_on_cell_3d (cst flag)
                 slae.solution[n][i] = slae.solution[n][bows.subst (i)];
         };
 
-        // arr<str, 6> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd", "move_xz", "move_yz"};
-        // for (st i = 0; i < 6; ++i)
-        // {
-        //     EPTools ::print_move<3> (slae.solution[i], domain.dof_handler, vr[i]);
-        // };
+        arr<str, 6> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd", "move_xz.gpd", "move_yz.gpd"};
+        for (st i = 0; i < 6; ++i)
+        {
+            // EPTools ::print_move<3> (slae.solution[i], domain.dof_handler, vr[i]);
+            EPTools ::print_move_slice (slae.solution[i], domain.dof_handler, vr[i], z, 0.5);
+        };
+        // EPTools ::print_move_slice (slae.solution[0], domain.dof_handler, "move_slice.gpd", z, 0.5);
+        // EPTools ::print_move_slice (slae.rhsv[0], domain.dof_handler, "move_slice.gpd", z, 0.5);
 
         auto meta_coef = OnCell::calculate_meta_coefficients_3d_elastic<3> (
                 domain.dof_handler, slae, element_matrix.C);
@@ -4340,18 +4419,18 @@ void solve_approx_cell_heat_problem (cst flag)
                 // domain.grid .refine_global (1);
                 set_rect(domain.grid,
                         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 0.5 / 2.0)),
-                        dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 0.5 / 2.0)), 5);
+                        dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 0.5 / 2.0)), 3);
                 // set_circ(domain.grid, R_in, 4); //0.344827, 2);
                 // set_circ_in_hex(domain.grid, 0.3, 6);
                 // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
             // set_tube(domain.grid, str("grid-igor_ss8.40749_h1_rho0.4.msh"), 
             //         dealii::Point<2>(4.0,4.0), 1.0, 2.0, 1);
                 // domain.grid .refine_global (1);
-                // {
-                //     std::ofstream out ("grid-igor.eps");
-                //     dealii::GridOut grid_out;
-                //     grid_out.write_eps (domain.grid, out);
-                // };
+                {
+                    std::ofstream out ("grid-igor.eps");
+                    dealii::GridOut grid_out;
+                    grid_out.write_eps (domain.grid, out);
+                };
             };
             dealii::FE_Q<2> fe(1);
             domain.dof_init (fe);
@@ -4550,173 +4629,225 @@ void solve_approx_cell_elastic_problem (cst flag)
     if (flag)
     {
         enum {x, y, z};
-        Domain<2> domain;
+        Domain<3> domain;
         {
-            // const size_t material_id[4][4] =
-            // {
-            //     {0, 0, 0, 0},
-            //     {0, 1, 1, 0},
-            //     {0, 1, 1, 0},
-            //     {0, 0, 0, 0}
-            // };
-            // const double dot[5] = 
-            // {
-            //     (0.0),
-            //     (0.5 - size / 2.0),
-            //     (0.5),
-            //     (0.5 + size / 2.0),
-            //     (1.0)
-            // };
-            // ::set_tria <5> (domain.grid, dot, material_id);
-            // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
-            set_circ(domain.grid, 0.475, 4);
-            // domain.grid .refine_global (3);
-            {
-                std::ofstream out ("grid-igor.eps");
-                dealii::GridOut grid_out;
-                grid_out.write_eps (domain.grid, out);
-            };
+            set_cylinder(domain.grid, 0.4, z, 3);
+            // set_ball(domain.grid, 0.4, 4);
+            // set_rect_3d(domain.grid,
+            //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
+            //         dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 1.5 / 2.0)), 3);
         };
-        dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+        dealii::FESystem<3,3> fe (dealii::FE_Q<3,3>(1), 3);
         domain.dof_init (fe);
 
-        OnCell::SystemsLinearAlgebraicEquations<4> slae;
+        OnCell::SystemsLinearAlgebraicEquations<1> slae;
         OnCell::BlackOnWhiteSubstituter bows;
 
-        LaplacianVectoroApprox<2> element_matrix (domain.dof_handler.get_fe());
+        LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
         element_matrix.C .resize (2);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+        // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+        EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.25}(element_matrix.C[0]);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
 
-        u8 dim = 2;
+        OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
 
-        const bool vector_type = 1;
-        OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+        OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
-        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
-
-        cst number_of_approx = 3; // Начиная с нулевой
+        cst number_of_approx = 2; // Начиная с нулевой
         arr<arr<i32, 3>, number_of_approx> approximations = {
-            arr<i32, 3>{1, 0, 0},
-            arr<i32, 3>{0, 1, 0},
-            arr<i32, 3>{2, 0, 0}};
-        OnCell::ArrayWithAccessToVector<dbl> meta_coefficient(number_of_approx);
-        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> psi_func (number_of_approx);
+            arr<i32, 3>({1, 0, 0}),
+            arr<i32, 3>({0, 1, 0})};
+            // arr<i32, 3>{2, 0, 0}};
+        OnCell::ArrayWithAccessToVector<arr<arr<dbl, 3>, 3>> meta_coefficient(number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> cell_func (number_of_approx);
         OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> N_func (number_of_approx);
+        printf("dfdfvdfv %d\n", slae.solution[0].size());
         for (auto &&a : meta_coefficient.content)
             for (auto &&b : a)
                 for (auto &&c : b)
-                    c = 0.0;
-        for (auto &&a : psi_func.content)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            e = 0.0;
+        for (auto &&a : cell_func.content)
             for (auto &&b : a)
                 for (auto &&c : b)
-                    c .reinit (slae.solution[0].size());
-        psi_func[arr<i32, 3>{0, 0, 0}] = 1.0; // Нулевое приближение ячейковой функции равно 1.0
+                    for (auto &&d : c)
+                        d .reinit (slae.solution[0].size());
+        printf("dfdfvdfv %d\n", cell_func.content[0][0][0][0].size());
+        // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        for (st i = 0; i < slae.solution[0].size(); ++i)
+        {
+            if ((i % 3) == x) cell_func[arr<i32, 3>{0, 0, 0}][x][i] = 1.0;
+            if ((i % 3) == y) cell_func[arr<i32, 3>{0, 0, 0}][y][i] = 1.0;
+            if ((i % 3) == z) cell_func[arr<i32, 3>{0, 0, 0}][z][i] = 1.0;
+        };
+        // cell_func[arr<i32, 3>{0, 0, 0}][x][x] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        // cell_func[arr<i32, 3>{0, 0, 0}][y][y] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        // cell_func[arr<i32, 3>{0, 0, 0}][z][z] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
         for (auto &&a : N_func.content)
             for (auto &&b : a)
                 for (auto &&c : b)
-                    c .reinit (slae.solution[0].size());
+                    for (auto &&d : c)
+                        d .reinit (slae.solution[0].size());
 
         auto mean_coefficient = 
-            OnCell::calculate_mean_coefficients<2> (domain.dof_handler, element_matrix.C);
+            OnCell::calculate_mean_coefficients<3> (domain.dof_handler, element_matrix.C);
         auto area_of_domain = 
-            OnCell::calculate_area_of_domain<2> (domain.dof_handler);
+            OnCell::calculate_area_of_domain<3> (domain.dof_handler);
 
-        arr<u8, 4> theta  = {x, y, z, x};
-        arr<u8, 4> lambda = {x, y, z, y};
-
-#pragma omp parallel for
-        for (st n = 0; n < 4; ++n)
+        for (auto &&approximation : approximations)
         {
-            vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+            // auto approximation = approximations[0];
+            for (st nu = 0; nu < 3; ++nu)
+            {
+            slae.solution[0] = 0.0;
+            slae.rhsv[0] = 0.0;
+            // printf("scsdcdfvdf %d\n", approximation);
 
-            for (auto i : {x, y})
-                for (auto j : {x, y})
-                    for(st k = 0; k < element_matrix.C.size(); ++k)
-                    {
-                        coef_for_rhs[k][i][j] = 
-                            element_matrix.C[k][i][j][theta[n]][lambda[n]];
-                    };
+            OnCell::SourceVectorApprox<3> element_rhsv (approximation, nu,
+                    element_matrix.C, 
+                    meta_coefficient,
+                    cell_func,
+                    // &psi_func,
+                    domain.dof_handler.get_fe());
+            // printf("%d\n", slae.rhsv[0].size());
+            OnCell::Assembler::assemble_rhsv<3> (slae.rhsv[0], element_rhsv, domain.dof_handler, bows);
+            // printf("Integ %f\n", element_rhsv.tmp);
 
-            slae.solution[n] = 0;
-            slae.rhsv[n] = 0;
-
-            OnCell::SourceVector<2> element_rhsv (
-                    coef_for_rhs, domain.dof_handler.get_fe());
-            OnCell::Assembler::assemble_rhsv<2> (
-                    slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
-
-            dealii::SolverControl solver_control (10000, 1e-12);
+            dealii::SolverControl solver_control (500000, 1e-12);
             dealii::SolverCG<> solver (solver_control);
             solver.solve (
                     slae.matrix,
-                    slae.solution[n],
-                    slae.rhsv[n]
+                    slae.solution[0],
+                    slae.rhsv[0]
                     ,dealii::PreconditionIdentity()
                     );
-            FOR(i, 0, slae.solution[n].size())
-                slae.solution[n][i] = slae.solution[n][bows.subst (i)];
-        };
+            FOR(i, 0, slae.solution[0].size())
+                slae.solution[0][i] = slae.solution[0][bows.subst (i)];
+            FOR(i, 0, slae.rhsv[0].size())
+                slae.rhsv[0][i] = slae.rhsv[0][bows.subst (i)];
 
-        OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
-        vec<ATools::SecondOrderTensor> coef_for_potr(2);
-        for (st i = 0; i < 2; ++i)
-        {
-            coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
-            coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
-            coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
-            coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
-        };
-        solve_heat_problem_on_cell_aka_torsion_rod<2> (
-                domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
-
-        arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
-        for (st i = 0; i < 4; ++i)
-        {
-            EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
-        };
-
-        auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
-                domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
-
-        for (size_t i = 0; i < 9; ++i)
-        {
-            uint8_t im = i / (dim + 1);
-            uint8_t in = i % (dim + 1);
-
-            for (size_t j = 0; j < 9; ++j)
-            {
-                uint8_t jm = j / (dim + 1);
-                uint8_t jn = j % (dim + 1);
-
-                if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
-                    printf("\x1B[31m%f\x1B[0m   ", 
-                            meta_coef[im][in][jm][jn]);
-                else
-                    printf("%f   ", 
-                            meta_coef[im][in][jm][jn]);
+            cell_func[approximation][nu] = slae.solution[0];
+            N_func[approximation][nu] = slae.rhsv[0];
             };
-            for (size_t i = 0; i < 2; ++i)
-                printf("\n");
         };
-        // print_tensor<6*6>(meta_coef);
+
+        OnCell::ArrayWithAccessToVector<arr<str, 3>> file_name (number_of_approx);
+        file_name[arr<i32, 3>{1, 0, 0}][x] = "move_slice_approx_xx.gpd";
+        file_name[arr<i32, 3>{1, 0, 0}][y] = "move_slice_approx_xy.gpd";
+        file_name[arr<i32, 3>{1, 0, 0}][z] = "move_slice_approx_xz.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][x] = "move_slice_approx_yx.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][y] = "move_slice_approx_yy.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][z] = "move_slice_approx_yz.gpd";
+        for (auto &&approximation : approximations)
         {
-            auto newcoef = unphysical_to_physicaly (meta_coef);
-            // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
-            printf("%f %f %f %f %f %f %f %f %f %f %f\n",
-                    newcoef[0][0][0][0],
-                    newcoef[0][0][1][1],
-                    newcoef[0][0][2][2],
-                    newcoef[1][1][0][0],
-                    newcoef[1][1][1][1],
-                    newcoef[1][1][2][2],
-                    newcoef[2][2][0][0],
-                    newcoef[2][2][1][1],
-                    newcoef[2][2][2][2],
-                    meta_coef[0][1][0][1],
-                    meta_coef[0][2][0][2]
-                  );
+            for (st nu = 0; nu < 3; ++nu)
+            {
+                EPTools ::print_move_slice (cell_func[approximation][nu], domain.dof_handler, 
+                        file_name[approximation][nu], z, 0.5);
+            };
         };
+
+            // EPTools ::print_move<2> (slae.solution[0], domain.dof_handler, "move_approx");
+        // EPTools ::print_move_slice (slae.solution[0], domain.dof_handler, "move_slice_approx.gpd", z, 0.5);
+        // EPTools ::print_move_slice (slae.rhsv[0], domain.dof_handler, "move_slice_approx.gpd", z, 0.5);
+
+//         arr<u8, 4> theta  = {x, y, z, x};
+//         arr<u8, 4> lambda = {x, y, z, y};
+//
+// #pragma omp parallel for
+//         for (st n = 0; n < 4; ++n)
+//         {
+//             vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+//
+//             for (auto i : {x, y})
+//                 for (auto j : {x, y})
+//                     for(st k = 0; k < element_matrix.C.size(); ++k)
+//                     {
+//                         coef_for_rhs[k][i][j] = 
+//                             element_matrix.C[k][i][j][theta[n]][lambda[n]];
+//                     };
+//
+//             slae.solution[n] = 0;
+//             slae.rhsv[n] = 0;
+//
+//             OnCell::SourceVector<2> element_rhsv (
+//                     coef_for_rhs, domain.dof_handler.get_fe());
+//             OnCell::Assembler::assemble_rhsv<2> (
+//                     slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+//
+//             dealii::SolverControl solver_control (10000, 1e-12);
+//             dealii::SolverCG<> solver (solver_control);
+//             solver.solve (
+//                     slae.matrix,
+//                     slae.solution[n],
+//                     slae.rhsv[n]
+//                     ,dealii::PreconditionIdentity()
+//                     );
+//             FOR(i, 0, slae.solution[n].size())
+//                 slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+//         };
+//
+//         OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+//         vec<ATools::SecondOrderTensor> coef_for_potr(2);
+//         for (st i = 0; i < 2; ++i)
+//         {
+//             coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+//             coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+//             coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+//             coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+//         };
+//         solve_heat_problem_on_cell_aka_torsion_rod<2> (
+//                 domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+//
+//         arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
+//         for (st i = 0; i < 4; ++i)
+//         {
+//             EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+//         };
+//
+//         auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
+//                 domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+//
+//         for (size_t i = 0; i < 9; ++i)
+//         {
+//             uint8_t im = i / (dim + 1);
+//             uint8_t in = i % (dim + 1);
+//
+//             for (size_t j = 0; j < 9; ++j)
+//             {
+//                 uint8_t jm = j / (dim + 1);
+//                 uint8_t jn = j % (dim + 1);
+//
+//                 if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+//                     printf("\x1B[31m%f\x1B[0m   ", 
+//                             meta_coef[im][in][jm][jn]);
+//                 else
+//                     printf("%f   ", 
+//                             meta_coef[im][in][jm][jn]);
+//             };
+//             for (size_t i = 0; i < 2; ++i)
+//                 printf("\n");
+//         };
+//         // print_tensor<6*6>(meta_coef);
+//         // {
+//         //     auto newcoef = unphysical_to_physicaly (meta_coef);
+//         //     // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+//         //     printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+//         //             newcoef[0][0][0][0],
+//         //             newcoef[0][0][1][1],
+//         //             newcoef[0][0][2][2],
+//         //             newcoef[1][1][0][0],
+//         //             newcoef[1][1][1][1],
+//         //             newcoef[1][1][2][2],
+//         //             newcoef[2][2][0][0],
+//         //             newcoef[2][2][1][1],
+//         //             newcoef[2][2][2][2],
+//         //             meta_coef[0][1][0][1],
+//         //             meta_coef[0][2][0][2]
+//         //           );
+//         // };
     };
     };
 
@@ -4752,11 +4883,13 @@ int main()
     solve_elastic_problem_3d (0);
 
     // ELASSTIC_PROBLEM_ON_CELL_3D
-    solve_elastic_problem_on_cell_3d (0);
+    solve_elastic_problem_on_cell_3d (1);
 
-    solve_heat_conduction_problem_on_cell (1);
-    solve_approx_cell_heat_problem (1);
+    // solve_heat_conduction_problem_on_cell (1);
+    solve_approx_cell_heat_problem (0);
     printf(" \n");
+
+    solve_approx_cell_elastic_problem (1);
 
     //
     // {

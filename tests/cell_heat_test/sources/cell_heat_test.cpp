@@ -1322,6 +1322,44 @@ std::array<double, 3> solved (dealii::Triangulation<dim> &triangulation,
         if (i > max_s)
             max_s = i;
 
+    // dealii::Vector<dealii::Point<2>> coor(problem.solution[0].size());
+    // auto cell = dof_handler.begin_active();
+    // auto endc = dof_handler.end();
+    // for (; cell != endc; ++cell)
+    // {
+    //     for (st i = 0; i < 4; ++i)
+    //     {
+    //         coor[cell->vertex_dof_index(i,0)] = cell->vertex(i);
+    //     };
+    // };
+
+    // {
+    //     dbl integ = 0.0;
+    //
+    //     {
+    //         dealii::QGauss<dim>  quadrature_formula(2);
+    //
+    //         dealii::FEValues<dim> fe_values (dof_handler.get_fe(), quadrature_formula,
+    //                 dealii::update_quadrature_points | dealii::update_JxW_values);
+    //
+    //         cst n_q_points = quadrature_formula.size();
+    //
+    //         auto cell = problem.domain.dof_handler.begin_active();
+    //         auto endc = problem.domain.dof_handler.end();
+    //         for (; cell != endc; ++cell)
+    //         {
+    //             fe_values .reinit (cell);
+    //
+    //             for (st q_point = 0; q_point < n_q_points; ++q_point)
+    //                 for (st i = 0; i < 4; ++i)
+    //                 {
+    //                     integ += 
+    //                         proble.solution[0](cell->vertex_dof_index(i,0)) *
+    //                         fe_values.JxW(q_point);
+    //                 };
+    //         };
+    //     };
+    // };
 //    printf("%f %f %f\n", problem.meta_coefficient[0],
 //                         problem.meta_coefficient[1],
 //                         problem.meta_coefficient[2]);
