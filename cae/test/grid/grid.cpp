@@ -940,6 +940,47 @@ void create_grid_using_cgal_1 (CDT &cdt,
     extract_border (cdt, border_on_cdt);
 };
 
+void create_grid_using_cgal_1 (CDT &cdt,
+        vec<CDT::Point> &border_on_cdt,
+        const vec<prmt::Point<2>> &outer_border,
+        const vec<vec<prmt::Point<2>>> &inner_border)
+{
+    std::vector<std::vector<Vertex_handle> > vec_of_domains;
+
+    auto add_border_to_domain = [&vec_of_domains, &cdt] (vec<prmt::Point<2>> border)
+    {
+        std::vector<Vertex_handle> vec_of_vertices;
+        for(auto p : border)
+            vec_of_vertices.push_back(cdt.insert(CDT::Point(p.x(), p.y())));
+
+        vec_of_domains.push_back(vec_of_vertices);
+    };
+
+    for (st i = 0; i < inner_border.size(); ++i)
+    {
+        add_border_to_domain (inner_border[i]);
+    };
+    add_border_to_domain (outer_border);
+    // 
+    for(auto it = vec_of_domains.begin(); it != vec_of_domains.end(); ++it) 
+    {
+       for(auto vit = it->begin() + 1; vit != it->end(); ++vit)
+       {
+          cdt.insert_constraint( *(vit - 1), *vit );
+       }
+       cdt.insert_constraint( *( it->end() - 1), *( it->begin() ) );
+    }
+
+    std::list<CDT::Point> list_of_seeds;
+    list_of_seeds.push_back(CDT::Point(0.5, 0.5));
+
+    CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+                               Criteria(/*  0.125, 0.1 */), true);
+    CGAL::refine_Delaunay_mesh_2(cdt, list_of_seeds.begin(), list_of_seeds.end(),
+                               Criteria(/* 0.125, 0.1 */));
+    extract_border (cdt, border_on_cdt);
+};
+
 void create_grid_using_cgal_2 (CDT &cdt,
         vec<CDT::Point> &border_on_cdt,
         const vec<prmt::Point<2>> &outer_border)
@@ -1029,6 +1070,21 @@ void set_grid(
     // };
     // 
     // std::cout << "Number of faces in the mesh domain: " << mesh_faces_counter << std::endl;
+    
+    convert_to_dealii_format(cdt, border_on_cdt,
+            triangulation, outer_border, type_outer_border);
+};
+
+void set_grid(
+        dealii::Triangulation< 2 > &triangulation,
+        vec<prmt::Point<2>> outer_border,
+        vec<vec<prmt::Point<2>>> inner_border,
+        vec<st> type_outer_border)
+{
+    CDT cdt;
+    vec<CDT::Point> border_on_cdt;
+    create_grid_using_cgal_1(cdt, border_on_cdt,
+            outer_border, inner_border);
     
     convert_to_dealii_format(cdt, border_on_cdt,
             triangulation, outer_border, type_outer_border);

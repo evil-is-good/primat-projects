@@ -62,6 +62,18 @@ extern void set_grid(
         vec<prmt::Point<2>>,
         vec<prmt::Point<2>>);
 
+extern void set_grid(
+        dealii::Triangulation< 2 >&,
+        vec<prmt::Point<2>>,
+        vec<prmt::Point<2>>,
+        vec<st>);
+
+extern void set_grid(
+        dealii::Triangulation< 2 >&,
+        vec<prmt::Point<2>>,
+        vec<vec<prmt::Point<2>>>,
+        vec<st>);
+
 void debputs()
 {
     static int n = 0;
@@ -2098,6 +2110,39 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
 
     };
 
+void give_rectangle_with_border_condition(
+        vec<prmt::Point<2>> &curve,
+        vec<st> &type_edge,
+        const arr<st, 4> type_border,
+        cst num_points_on_edge,
+        const prmt::Point<2> first,
+        const prmt::Point<2> second)
+{
+    give_line_without_end_point(curve, num_points_on_edge,
+            first,
+            prmt::Point<2>(first.x(), second.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(first.x(), second.y()),
+            second);
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            second,
+            prmt::Point<2>(second.x(), first.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(second.x(), first.y()),
+            first);
+
+    cst n_edge_on_border = curve.size() / 4;
+    // printf("type %d\n", n_edge_on_border);
+    type_edge.resize(curve.size());
+
+    FOR(i, 0, 4)
+        FOR(j, 0 + n_edge_on_border * i, n_edge_on_border + n_edge_on_border * i)
+        type_edge[j] = type_border[i];
+};
+
     void give_circ(
             vec<prmt::Point<2>> &curve,
             cst num_points_on_tip,
@@ -2297,7 +2342,7 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             enum {x, y, z};
             Domain<2> domain;
             {
-                dealii::GridGenerator::hyper_cube(domain.grid);
+                // dealii::GridGenerator::hyper_cube(domain.grid);
                 // dealii::GridGenerator::hyper_ball(domain.grid, dealii::Point<2>(0.0,0.0), 2.0);
                 // dealii::GridGenerator::hyper_shell(domain.grid, dealii::Point<2>(0.0,0.0), 0.0, 2.0);
                 // vec<prmt::Point<2>> boundary_of_segments;
@@ -2312,9 +2357,24 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
                 //         types_boundary, num_segments, p1, p2);
                 // debputs();
                 // make_grid (domain.grid, boundary_of_segments, types_boundary_segments);
-                domain.grid.refine_global(3);
+                // domain.grid.refine_global(3);
                 // set_tube(domain.grid, dealii::Point<2>(0.0,0.0), 1.0, 2.0, 2);
                 // set_tube(domain.grid, str("circle_R2.msh"), dealii::Point<2>(0.0,0.0), 1.0, 2.0, 1);
+                    vec<prmt::Point<2>> border;
+                    vec<st> type_border;
+                    give_rectangle_with_border_condition(
+                            border,
+                            type_border,
+                            arr<st, 4>{1,3,2,4},
+                            1,
+                            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                    vec<vec<prmt::Point<2>>> inclusion(2);
+                    give_rectangle(inclusion[0], 1,
+                            prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.45, 0.45));
+                    give_rectangle(inclusion[1], 1,
+                            prmt::Point<2>(0.65, 0.65), prmt::Point<2>(0.75, 0.75));
+// 
+                    ::set_grid(domain.grid, border, inclusion, type_border);
 
             };
             debputs();
@@ -2334,16 +2394,25 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
                 // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
             };
 
-            auto func = [] (dealii::Point<2>) {return -2.0;};
+            auto func = [] (dealii::Point<2>) {return 0.0;};
             SourceScalar<2> element_rhsv (func, domain.dof_handler.get_fe());
 
             Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
             Assembler::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
 
-            vec<BoundaryValueScalar<2>> bound (1);
-            bound[0].function      = [] (const dealii::Point<2> &p) {return p(0) * p(0);};
-            bound[0].boundary_id   = 0;
+            vec<BoundaryValueScalar<2>> bound (4);
+            bound[0].function      = [] (const dealii::Point<2> &p) {return 1;};
+            bound[0].boundary_id   = 1;
             bound[0].boundary_type = TBV::Dirichlet;
+            bound[1].function      = [] (const dealii::Point<2> &p) {return 2;};
+            bound[1].boundary_id   = 2;
+            bound[1].boundary_type = TBV::Dirichlet;
+            bound[2].function      = [] (const dealii::Point<2> &p) {return 3;};
+            bound[2].boundary_id   = 3;
+            bound[2].boundary_type = TBV::Dirichlet;
+            bound[3].function      = [] (const dealii::Point<2> &p) {return 4;};
+            bound[3].boundary_id   = 4;
+            bound[3].boundary_type = TBV::Dirichlet;
 
             for (auto b : bound)
                 ATools ::apply_boundary_value_scalar<2> (b) .to_slae (slae, domain);
@@ -2970,8 +3039,36 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
                 // domain.grid .create_triangulation_compatibility (v, c, b);
                 //
                 // // domain.grid.refine_global(2);
-                dealii::GridGenerator::hyper_cube(domain.grid);
-                domain.grid.refine_global(2);
+
+                // dealii::GridGenerator::hyper_cube(domain.grid);
+                // domain.grid.refine_global(2);
+
+                    vec<prmt::Point<2>> border;
+                    vec<st> type_border;
+                    // give_rectangle(border, 2,
+                    //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                    give_rectangle_with_border_condition(
+                            border,
+                            type_border,
+                            arr<st, 4>{1,3,2,4},
+                            1,
+                            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                    // for (auto i : type_border)
+                    //     printf("type %d\n", i);
+//                         vec<prmt::LoopCondition<2>> loop_border;
+//                         // give_rectangle_for_loop_borders(border, loop_border, 8,
+//                         //         prmt::Point<2>(0., 0.), prmt::Point<2>(1., 1.));
+                    // vec<prmt::Point<2>> inclusion;
+                    // give_rectangle(inclusion, 1,
+                    //         prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
+                    vec<vec<prmt::Point<2>>> inclusion(2);
+                    give_rectangle(inclusion[0], 1,
+                            prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.45, 0.45));
+                    give_rectangle(inclusion[1], 1,
+                            prmt::Point<2>(0.65, 0.65), prmt::Point<2>(0.75, 0.75));
+//                         give_crack<t_rounded_tip, 1>(inclusion, 30);
+// 
+                    ::set_grid(domain.grid, border, inclusion, type_border);
             };
             dealii::FESystem<2,2> fe 
                 (dealii::FE_Q<2,2>(1), 2);
@@ -3001,10 +3098,10 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
             Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
 
-            vec<BoundaryValueVector<2>> bound (1);
-            bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{p(0), 0.0};};
-            bound[0].boundary_id   = 0;
-            bound[0].boundary_type = TBV::Dirichlet;
+            vec<BoundaryValueVector<2>> bound (4);
+            // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{p(0), 0.0};};
+            // bound[0].boundary_id   = 0;
+            // bound[0].boundary_type = TBV::Dirichlet;
             // bound[0].boundary_type = TBV::Neumann;
             // bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
             // bound[1].boundary_id   = 1;
@@ -3016,6 +3113,18 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             // // bound[2].boundary_type = TBV::Neumann;
         // printf("CCCC %f\n",element_matrix.C[0][1][1][1][1]);
         // print_tensor<6*6>(element_matrix.C[0]);
+            bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{1.0, 0.0};};
+            bound[0].boundary_id   = 1;
+            bound[0].boundary_type = TBV::Dirichlet;
+            bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{2.0, 0.0};};
+            bound[1].boundary_id   = 2;
+            bound[1].boundary_type = TBV::Dirichlet;
+            bound[2].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{3.0, 0.0};};
+            bound[2].boundary_id   = 3;
+            bound[2].boundary_type = TBV::Dirichlet;
+            bound[3].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{4.0, 0.0};};
+            bound[3].boundary_id   = 4;
+            bound[3].boundary_type = TBV::Dirichlet;
 
             for (auto b : bound)
                 ATools ::apply_boundary_value_vector<2> (b) .to_slae (slae, domain);
@@ -4691,10 +4800,12 @@ void solve_approx_cell_elastic_problem (cst flag)
                     for (auto &&d : c)
                         d .reinit (slae.solution[0].size());
 
-        auto mean_coefficient = 
-            OnCell::calculate_mean_coefficients<3> (domain.dof_handler, element_matrix.C);
-        auto area_of_domain = 
-            OnCell::calculate_area_of_domain<3> (domain.dof_handler);
+        // auto mean_coefficient = 
+        //     OnCell::calculate_mean_coefficients<3> (domain.dof_handler, element_matrix.C);
+        // auto area_of_domain = 
+        //     OnCell::calculate_area_of_domain<3> (domain.dof_handler);
+
+        // OnCell::MetaCoefficientElasticCalculator mc_calculator (domain.dof_handler, element_matrix.C);
 
         for (auto &&approximation : approximations)
         {
@@ -4729,7 +4840,10 @@ void solve_approx_cell_elastic_problem (cst flag)
                 slae.rhsv[0][i] = slae.rhsv[0][bows.subst (i)];
 
             cell_func[approximation][nu] = slae.solution[0];
-            N_func[approximation][nu] = slae.rhsv[0];
+            // N_func[approximation][nu] = slae.rhsv[0];
+
+            // meta_coefficient[approximation][nu] = mc_calculator .calculate (approximation, nu,
+            //         domain.dof_handler, cell_function);
             };
         };
 
@@ -4855,7 +4969,7 @@ int main()
 {
 
     //HEAT_CONDUCTION_PROBLEM
-    solve_heat_conduction_problem (0);
+    solve_heat_conduction_problem (1);
 
     //HEAT_CONDUCTION_PROBLEM_ON_CELL
     solve_heat_conduction_problem_on_cell (0);
@@ -4883,13 +4997,13 @@ int main()
     solve_elastic_problem_3d (0);
 
     // ELASSTIC_PROBLEM_ON_CELL_3D
-    solve_elastic_problem_on_cell_3d (1);
+    solve_elastic_problem_on_cell_3d (0);
 
     // solve_heat_conduction_problem_on_cell (1);
     solve_approx_cell_heat_problem (0);
     printf(" \n");
 
-    solve_approx_cell_elastic_problem (1);
+    solve_approx_cell_elastic_problem (0);
 
     //
     // {
