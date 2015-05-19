@@ -91,7 +91,7 @@ namespace OnCell
             virtual dbl operator() (cst i) override;
 
             virtual void update_on_cell (
-                    typename dealii::DoFHandler<dim>::active_cell_iterator &cell) override;
+                    typename dealii::DoFHandler<dim>::active_cell_iterator &cell_p) override;
 
             virtual u8 get_dofs_per_cell () override;
 
@@ -111,6 +111,8 @@ namespace OnCell
             cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
             u8                         material_id = 0; //!< Идентефикатор материала ячейки.
             st                         nu;
+            typename dealii::DoFHandler<dim>::active_cell_iterator cell;
+            dbl tmp = 0.0;
     };
 
     template <u8 dim>
@@ -152,7 +154,6 @@ namespace OnCell
                         for (st m = 0; m < 3; ++m)
                         {
                             coef[i][j][k][l][m] = coefficient[i][j][k][l][m];
-
                         };
                     };
                 };
@@ -198,22 +199,23 @@ namespace OnCell
             };
         };
         // printf("dfdfvdfv %d\n", cell_func.content[0][0][0][0].size());
-        printf("1111111111111111111\n");
+        // printf("1111111111111111111\n");
     };
 
     template <u8 dim>
         void SourceVectorApprox<dim>::update_on_cell (
-                typename dealii::DoFHandler<dim>::active_cell_iterator &cell)
+                typename dealii::DoFHandler<dim>::active_cell_iterator &cell_p)
         {
-            fe_values .reinit (cell);
-            material_id = cell->material_id();
-            cell->get_dof_indices (global_dof_indices);
+            fe_values .reinit (cell_p);
+            material_id = cell_p->material_id();
+            cell_p->get_dof_indices (global_dof_indices);
+            cell = cell_p;
         };
 
     template <u8 dim>
         dbl SourceVectorApprox<dim>::operator () (cst i)
         {
-            const uint8_t num_quad_points = this->quadrature_formula.size();
+            // const uint8_t num_quad_points = this->quadrature_formula.size();
 
             dbl res = 0.0;
             dbl summ = 0.0;
@@ -227,10 +229,12 @@ namespace OnCell
             for (st q_point = 0; q_point < num_quad_points; ++q_point)
             {
                 for (st beta = 0; beta < dim; ++beta)
+                    // for (st phi = 0; phi < 3; ++phi)
                 {
                     for (st m = 0; m < dofs_per_cell; ++m)
                     {
                         cst phi = m % dim;
+                            // cst beta = m % 3;
                         for (st psi = 0; psi < dim; ++psi)
                         {
                             arr<i32, 3> k_psi = {k[x], k[y], k[z]}; // k - э_psi
@@ -301,6 +305,11 @@ namespace OnCell
                     };
                 };
                 f2 += 1.0 *(
+                        // (std::sin(2*M_PI*this->fe_values.quadrature_point(q_point)(0)) + 1.0) *
+                        // (2.0*(cell->vertex(i)(0))) *
+                        // 2.0*this->fe_values.quadrature_point(q_point)(0)*
+                        // 3.0*this->fe_values.quadrature_point(q_point)(0)*this->fe_values.quadrature_point(q_point)(0)*
+                        // 00.0*
                     this->meta_coef[k][nu][alpha] *
                     this->fe_values.shape_value (i, q_point) *
                     this->fe_values.JxW(q_point));
@@ -308,6 +317,7 @@ namespace OnCell
             // tmp += f3-f2;
             // tmp += f2-f3;
             // printf("%f %f %f %f %ld\n", f2, f3, tmp, this->meta_coef[k], k[0]);
+            tmp += f3-f2-f1;
 
             return f3-f2-f1;
             // return -f3;

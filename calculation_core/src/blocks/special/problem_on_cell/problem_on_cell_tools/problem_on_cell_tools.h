@@ -125,6 +125,20 @@ namespace OnCell
                 // return content.at(k[x]).at(k[y]).at(k[z]);
             };
 
+            const T& operator [] (const arr<i32, 3> k) const
+            {
+                // printf("%d %d %d, %ld\n", k[x], k[y], k[z], size);
+                if ((k[x] >=   0) and (k[y] >=   0) and (k[z] >=   0) and
+                    (k[x] < size) and (k[y] < size) and (k[z] < size))
+                {
+                    // puts("da");
+                    return content[k[x]][k[y]][k[z]];
+                } 
+                else
+                    return empty;
+                // return content.at(k[x]).at(k[y]).at(k[z]);
+            };
+
             vec<vec<vec<T>>> content;
             st size;
             T empty;

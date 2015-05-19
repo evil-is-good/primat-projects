@@ -39,3 +39,4 @@ html-doc
 *.msh
 *.tmp
 *.so
+*.bin

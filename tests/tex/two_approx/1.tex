@@ -1,0 +1,72 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+\usepackage[pdftex]{lscape}
+\begin{document}
+
+% \begin{figure}[h]
+%     \begin{minipage}[h]{0.49\linewidth}
+%         \center{\includegraphics[width=0.72\linewidth]{bw_Ez} \\ Тетрагональная}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}[h]{0.49\linewidth}
+%         \center{\includegraphics[width=0.72\linewidth]{bw_Nzx} \\ Гексагональная}
+%     \end{minipage}
+% \end{figure}
+\begin{landscape}
+$$
+\left(f^{\nu}_{\alpha}\right)^{\bar{k}}=
+\left(C^{\nu}_{\alpha}\right)^{\bar{k}}-
+\sum\limits_{\beta\phi\psi} E_{\alpha\beta\phi\psi} 
+\left(\frac{\partial\left(U^{\nu}_{\phi}\right)^{\bar{k}-\bar{e}_{\beta}}}{\partial \psi} + \left(U^{\nu}_{\phi}\right)^{\bar{k}-\bar{e}_{\beta}-\bar{e}_{\psi}}\right)
+-\sum\limits_{\beta}\frac{\partial}{\partial\beta}\sum\limits_{\phi\psi}
+E_{\alpha\beta\phi\psi}\left(U^{\nu}_{\phi}\right)^{\bar{k}-\bar{e}_{\psi}}
+$$
+$$
+\bar{k}=2\bar{e}_x, \nu = x:
+$$
+$$
+\left(f^{x}_{\alpha}\right)^{2\bar{e}_x}=
+\left(C^{x}_{\alpha}\right)^{2\bar{e}_x}-
+\sum\limits_{\phi\psi} E_{\alpha x \phi\psi}
+\frac{\partial\left(U^{\nu}_{\phi}\right)^{e_x}}{\partial \psi}-
+E_{x x x x}
+-\sum\limits_{\beta}\frac{\partial}{\partial\beta}\sum\limits_{\phi}
+E_{\alpha\beta\phi x}\left(U^{\nu}_{\phi}\right)^{\bar{e}_x}
+$$
+$$
+\left(\tau^{x}_{\alpha\beta}\right)^{2\bar{e}_x}=
+\sum\limits_{\phi\psi} E_{\alpha\beta\phi\psi}
+\left(\frac{\partial\left(U^{x}_{\phi}\right)^{2\bar{e}_x}}{\partial \psi} + \left(U^{x}_{\phi}\right)^{2\bar{e}_x-\bar{e}_{\psi}}\right)
+$$
+$$
+\sum\limits_{\beta}\frac{\partial}{\partial\beta}\sum\limits_{\phi\psi}
+E_{\alpha\beta\phi\psi}
+\left(\frac{\partial\left(U^{x}_{\phi}\right)^{2\bar{e}_x}}{\partial \psi} + \left(U^{x}_{\phi}\right)^{2\bar{e}_x-\bar{e}_{\psi}}\right)
+=
+\left(C^{x}_{\alpha}\right)^{2\bar{e}_x}-
+\sum\limits_{\phi\psi} E_{\alpha x \phi\psi}
+\frac{\partial\left(U^{\nu}_{\phi}\right)^{e_x}}{\partial \psi}
+-E_{x x x x}
+$$
+\end{landscape}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
