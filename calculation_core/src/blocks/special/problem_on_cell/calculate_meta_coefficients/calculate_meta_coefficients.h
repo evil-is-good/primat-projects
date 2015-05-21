@@ -805,7 +805,7 @@ namespace OnCell
                 // stress[global_dof_indices[i*3]] += component[0];
                 // stress[global_dof_indices[i*3+1]] += component[1];
                 // stress[global_dof_indices[i*3+2]] += component[2];
-                stress[global_dof_indices[i*3+beta]] += tmp / cell_area;
+                stress[global_dof_indices[i*3+beta]] += (tmp / cell_area) / N[i];
             };
 
             // stress[global_dof_indices[0]] += (tmp[0] + tmp[2] + tmp[4] + tmp[6])/ (cell_area);
@@ -820,10 +820,10 @@ namespace OnCell
         };
         // puts("333");
 
-        for (st i = 0; i < stress.size(); ++i)
-        {
-            stress[i] /= N[i];
-        };
+        // for (st i = 0; i < stress.size(); ++i)
+        // {
+        //     stress[i] /= N[i];
+        // };
 
     };
 };
