@@ -788,19 +788,19 @@ void print_elastic_stress (const dealii::Vector<dbl> &move,
             {
                 auto indx = cell->vertex_dof_index(i, component);
 
-                if ((cell->material_id() == 0) or (cell->material_id() == 2))
-                    // if (cell->material_id() == 0)
-                {
+                // if ((cell->material_id() == 0) or (cell->material_id() == 2))
+                //     // if (cell->material_id() == 0)
+                // {
                     grad[0][indx] += function_on_cell.dx(cell->vertex(i));
                     grad[1][indx] += function_on_cell.dy(cell->vertex(i));
                     // grad[0][indx] = 1.0;
                     // grad[1][indx] = 1.0;
-                }
-                else
-                {
-                    grad[0][indx] = 0.0;
-                    grad[1][indx] = 0.0;
-                };
+                // }
+                // else
+                // {
+                //     grad[0][indx] = 0.0;
+                //     grad[1][indx] = 0.0;
+                // };
                 ++(N[indx]); 
             };
         };
@@ -906,7 +906,7 @@ void print_elastic_stress (const dealii::Vector<dbl> &move,
                 for (st q_point = 0; q_point < num_quad_points; ++q_point)
                 {
                     Int += 
-                        stress[0](indx_1) *
+                        stress[1](indx_1) *
                         // move(indx_1) *
                         // 1.0 *
                         // fe_values.shape_grad (i, q_point)[0] *
@@ -1025,8 +1025,8 @@ void print_elastic_deformation_2 (const dealii::Vector<dbl> &move,
                     {
                         auto indx = cell->vertex_dof_index(i, component);
 
-                        // if ((cell->material_id() == 0) or (std::abs(grad[0][indx]) < 1e-5))
-                        if (cell->material_id() == 0)
+                        if ((cell->material_id() == 0) or (std::abs(grad[0][indx]) < 1e-5))
+                        // if (cell->material_id() == 0)
                         {
                             grad_2[g_comp][0][indx] += function_on_cell.dx(cell->vertex(i));
                             grad_2[g_comp][1][indx] += function_on_cell.dy(cell->vertex(i));

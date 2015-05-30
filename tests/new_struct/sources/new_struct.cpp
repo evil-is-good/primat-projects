@@ -3174,7 +3174,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 // domain.grid .create_triangulation_compatibility (v, c, b);
                 domain.grid .create_triangulation (v, c, b);
 
-                domain.grid.refine_global(7);
+                domain.grid.refine_global(6);
 
                 // dealii::GridGenerator::hyper_cube(domain.grid);
                 // domain.grid.refine_global(2);
@@ -3196,8 +3196,8 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 //                         //         prmt::Point<2>(0., 0.), prmt::Point<2>(1., 1.));
                     // vec<prmt::Point<2>> inclusion;
                     vec<vec<prmt::Point<2>>> inclusion(2);
-                    cdbl radius = 0.025;
-                    cdbl radius_2 = 0.027;
+                    cdbl radius = 0.05;
+                    cdbl radius_2 = 0.055;
                     dealii::Point<2> center (0.5, 0.5);
                     give_circ(inclusion[0], 32, radius, prmt::Point<2>(center));
                     give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
@@ -5157,7 +5157,7 @@ void solve_approx_cell_elastic_problem (cst flag)
         enum {x, y, z};
         Domain<3> domain;
         {
-            set_cylinder(domain.grid, 0.25, y, 4);
+            set_cylinder(domain.grid, 0.25, y, 3);
             // set_ball(domain.grid, 0.4, 3);
             // set_rect_3d(domain.grid,
             //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -5173,8 +5173,8 @@ void solve_approx_cell_elastic_problem (cst flag)
         element_matrix.C .resize (2);
         // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
         // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
-        EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.25}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+        EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.25}(element_matrix.C[1]);
 
         OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
 
@@ -5331,7 +5331,7 @@ void solve_approx_cell_elastic_problem (cst flag)
             //         approx, x, x, z,
             //         domain.dof_handler, cell_func, stress);
             EPTools ::print_move_slice (stress, domain.dof_handler, 
-                    "stress_slice_approx_1_0_0_x_x.gpd", y, 0.5);
+                    "stress_slice_approx_1_0_0_x_x.gpd", z, 0.5);
         };
 
         {
@@ -5362,6 +5362,8 @@ void solve_approx_cell_elastic_problem (cst flag)
 
                 printf("\n");
         {
+        arr<str, 3> ort = {"x", "y", "z"};
+        arr<str, 3> aprx = {"0", "1", "2"};
             OnCell::StressCalculator stress_calculator (
                     domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
             for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
@@ -5527,6 +5529,8 @@ void solve_approx_cell_elastic_problem (cst flag)
                                             out.write ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
                                         };
                                         out.close ();
+            EPTools ::print_move_slice (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+                    "cell/stress_"+name+".gpd", y, 0.5);
                                     };
                                 };
                             };
@@ -5629,7 +5633,7 @@ void solve_approx_cell_elastic_problem (cst flag)
         //     };
         // };
         EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][x], domain.dof_handler, 
-                file_name[arr<i32, 3>{1, 0, 0}][x], y, 0.5);
+                file_name[arr<i32, 3>{1, 0, 0}][x], z, 0.5);
         EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][y], domain.dof_handler, 
                 file_name[arr<i32, 3>{1, 0, 0}][y], z, 0.5);
         EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][z], domain.dof_handler, 
@@ -5645,6 +5649,11 @@ void solve_approx_cell_elastic_problem (cst flag)
         EPTools ::print_move_slice (cell_func[arr<i32, 3>{0, 2, 0}][x], domain.dof_handler, 
                 "move_slice_approx_2y_x.gpd", z, 0.5);
         puts("222222222222222222222222222222");
+
+        EPTools ::print_move_slice (cell_stress[arr<i32, 3>{1, 0, 0}][x][x], domain.dof_handler, 
+                "stress_slice_xx.gpd", z, 0.5);
+        EPTools ::print_move_slice (cell_stress[arr<i32, 3>{0, 1, 0}][y][x], domain.dof_handler, 
+                "stress_slice_yy.gpd", z, 0.5);
 
             // EPTools ::print_move<2> (slae.solution[0], domain.dof_handler, "move_approx");
         // EPTools ::print_move_slice (slae.solution[0], domain.dof_handler, "move_slice_approx.gpd", z, 0.5);
@@ -5753,6 +5762,9 @@ void solve_two_stress (cst flag)
     {  
         enum {x, y, z};
 
+        cst ort_slice = x;
+        cdbl coor_slice = 0.5;
+
         st size_sol_hole = 0;
         {
             std::ifstream in ("hole/solution_hole_size.bin", std::ios::in | std::ios::binary);
@@ -5782,7 +5794,8 @@ void solve_two_stress (cst flag)
             in.close ();
         };
         {
-            std::ifstream in ("hole/stress_hole_y.bin", std::ios::in | std::ios::binary);
+            std::ifstream in ("hole/deform_hole_y.bin", std::ios::in | std::ios::binary);
+            // std::ifstream in ("hole/stress_hole_y.bin", std::ios::in | std::ios::binary);
             for (st i = 0; i < size_sol_hole; ++i)
             {
                 in.read ((char *) &deform_1[y][i], sizeof(dbl));
@@ -5872,20 +5885,20 @@ void solve_two_stress (cst flag)
             };
         };
         };
-        {
-            // std::cout << "cell/stress_"+name+".bin" << std::endl;
-            std::ifstream in ("cell/stress_1_0_0_x_x.bin", std::ios::in | std::ios::binary);
-            // std::cout << in.is_open() << std::endl;
-            arr<dbl, 3> tmp;
-            for (st i = 0; i < size_sol_cell; ++i)
-            {
-                // in.read ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
-                dbl tmp = 0.0;
-                in.read ((char *) &(tmp), sizeof(dbl));
-                cell_stress[arr<i32, 3>{1, 0, 0}][x][x][i] = tmp;
-            };
-            in.close ();
-        };
+        // {
+        //     // std::cout << "cell/stress_"+name+".bin" << std::endl;
+        //     std::ifstream in ("cell/stress_1_0_0_x_x.bin", std::ios::in | std::ios::binary);
+        //     // std::cout << in.is_open() << std::endl;
+        //     arr<dbl, 3> tmp;
+        //     for (st i = 0; i < size_sol_cell; ++i)
+        //     {
+        //         // in.read ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
+        //         dbl tmp = 0.0;
+        //         in.read ((char *) &(tmp), sizeof(dbl));
+        //         cell_stress[arr<i32, 3>{1, 0, 0}][x][x][i] = tmp;
+        //     };
+        //     in.close ();
+        // };
 
         vec<dealii::Point<2>> coor_hole (size_sol_hole);
         {
@@ -5909,10 +5922,20 @@ void solve_two_stress (cst flag)
             };
             in.close ();
         };
-        for (st i = 0; i < 10; ++i)
         {
-            printf("%f %f %f\n", coor_cell[i](x), coor_cell[i](y), coor_cell[i](z));
+            FILE *F;
+            F = fopen("stress_cell_yyy.gpd", "w");
+        for (st i = 0; i < size_sol_cell; ++i)
+        {
+            if (i % 3 == y)
+            fprintf(F,"%f %f %f\n", coor_cell[i](x), coor_cell[i](z), cell_stress[arr<i32,3>{0,1,0}][y][y][i]);
         };
+            fclose(F);
+        };
+        // for (st i = 0; i < 10; ++i)
+        // {
+        //     printf("%f %f %f\n", coor_cell[i](x), coor_cell[i](y), coor_cell[i](z));
+        // };
         
         st size_line_hole = 0;
         {
@@ -5922,11 +5945,27 @@ void solve_two_stress (cst flag)
             {
                 if (std::abs(coor_hole[i](y) - 0.5) < 1.0e-10)
                 {
-                    if ((i % 2))
+                    if ((i % 2) == y)
                     {
                 fprintf(F,"%f %f\n", coor_hole[i](x), deform_1[y][i]);
+                // fprintf(F,"%f %f\n", coor_hole[i](x), deform_2[x][y][i]);
                 ++size_line_hole;
-                printf("%f\n", deform_1[y][i]);
+                // printf("%f\n", deform_1[y][i]);
+                    };
+                };
+            };
+            fclose(F);
+        };
+        {
+            FILE *F;
+            F = fopen("deform_1_yyx_line.gpd", "w");
+            for (st i = 0; i < size_sol_hole; ++i)
+            {
+                if (std::abs(coor_hole[i](y) - 0.5) < 1.0e-10)
+                {
+                    if ((i % 2) == x)
+                    {
+                        fprintf(F,"%f %f\n", coor_hole[i](x), deform_2[y][y][i]);
                     };
                 };
             };
@@ -5944,9 +5983,9 @@ void solve_two_stress (cst flag)
                    )
 
                 {
-                    if ((i % 3) == 0)
+                    if ((i % 3) == y)
                     {
-                fprintf(F,"%f %f\n", coor_cell[i](x), cell_stress[arr<i32,3>{1,0,0}][x][x][i]);
+                fprintf(F,"%f %f\n", coor_cell[i](x), cell_stress[arr<i32,3>{0,1,0}][y][y][i]);
                 ++size_line_cell;
                     };
                 };
@@ -5979,7 +6018,7 @@ void solve_two_stress (cst flag)
             st n = 0;
             for (st i = 0; i < size_sol_hole; ++i)
             {
-                if (std::abs(coor_hole[i](y) - 0.5) < 1.0e-10)
+                if (std::abs(coor_hole[i](ort_slice) - coor_slice) < 1.0e-10)
                 {
                     for (st j = 0; j < 2; ++j)
                     {
@@ -6005,49 +6044,139 @@ void solve_two_stress (cst flag)
             F = fopen("deform_1_yy_line_2.gpd", "w");
             for (st i = 0; i < size_line_hole; ++i)
             {
-                fprintf(F,"%f %f\n", coor_line_hole[i](x), deform_line_1[y][y][i]);
+                fprintf(F,"%f %f\n", coor_line_hole[i](y), deform_line_1[y][y][i]);
             };
             fclose(F);
         };
-        // {
-        //     st n = 0;
-        //     for (st i = 0; i < size_sol_hole; ++i)
-        //     {
-        //         if (std::abs(coor_hole[i](y) - 0.5) < 1.0e-10)
-        //         {
-        //             for (st j = 0; j < 2; ++j)
-        //             {
-        //                 for (st k = 0; k < 2; ++k)
-        //                 {
-        //                     for (st l = 0; l < 2; ++l)
-        //                     {
-        //                         if ((i % 2) == k)
-        //                         {
-        //                             deform_line_2[k][j][l][n] = deform_2[j][l][i];
-        //                         };
-        //                     };
-        //                 };
-        //             };
-        //             if ((i % 2))
-        //             {
-        //         ++n;
-        //             };
-        //         };
-        //     };
-        // };
+        {
+            FILE *F;
+            F = fopen("deform_1_xx_line_2.gpd", "w");
+            for (st i = 0; i < size_line_hole; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_hole[i](y), deform_line_1[x][x][i]);
+            };
+            fclose(F);
+        };
+        {
+            st n = 0;
+            for (st i = 0; i < size_sol_hole; ++i)
+            {
+                if (std::abs(coor_hole[i](ort_slice) - coor_slice) < 1.0e-10)
+                {
+                    for (st j = 0; j < 2; ++j)
+                    {
+                        for (st k = 0; k < 2; ++k)
+                        {
+                            for (st l = 0; l < 2; ++l)
+                            {
+                                if ((i % 2) == k)
+                                {
+                                    deform_line_2[k][j][l][n] = deform_2[j][l][i];
+                                };
+                            };
+                        };
+                    };
+                    if ((i % 2))
+                    {
+                ++n;
+                    };
+                };
+            };
+        };
+        {
+            FILE *F;
+            F = fopen("deform_2_yyx_line_2.gpd", "w");
+            for (st i = 0; i < size_line_hole; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_hole[i](x), deform_line_2[y][y][x][i]);
+            };
+            fclose(F);
+        };
+        {
+            FILE *F;
+            F = fopen("deform_2_yyy_line_2.gpd", "w");
+            for (st i = 0; i < size_line_hole; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_hole[i](y), deform_line_2[y][y][y][i]);
+            };
+            fclose(F);
+        };
+        {
+            FILE *F;
+            F = fopen("deform_2_xxy_line_2.gpd", "w");
+            for (st i = 0; i < size_line_hole; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_hole[i](y), deform_line_2[x][x][y][i]);
+            };
+            fclose(F);
+        };
         //     // for (st i = 0; i < size_line_hole; ++i)
         //     // {
         //     //     printf("%f %f\n", coor_line_hole[i](x), coor_line_hole[i](y));
         //     // };
-        // OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_stress (number_of_approx);
-        // for (auto &&a : cell_line_stress.content)
-        //     for (auto &&b : a)
-        //         for (auto &&c : b)
-        //             for (auto &&d : c)
-        //                 for (auto &&e : d)
-        //                     for (auto &&j : e)
-        //                         j .resize (size_line_cell);
-        // vec<dealii::Point<3>> coor_line_cell (size_line_cell);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_stress (number_of_approx);
+        for (auto &&a : cell_line_stress.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            for (auto &&j : e)
+                                j .resize (size_line_cell);
+        vec<dealii::Point<3>> coor_line_cell (size_line_cell);
+        {
+            st n = 0;
+            for (st m = 0; m < size_sol_cell; ++m)
+            {
+                if (
+                        (std::abs(coor_cell[m](ort_slice) - coor_slice) < 1.0e-10) and
+                        (std::abs(coor_cell[m](z) - 0.5) < 1.0e-10)
+                   )
+
+                {
+                    for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+                    {
+                        for (st i = 0; i < approx_number+1; ++i)
+                        {
+                            for (st j = 0; j < approx_number+1; ++j)
+                            {
+                                for (st k = 0; k < approx_number+1; ++k)
+                                {
+                                    if ((i+j+k) == approx_number)
+                                    {
+                                        arr<i32, 3> approximation = {i, j, k};
+                                        for (st nu = 0; nu < 3; ++nu)
+                                        {
+                                            for (st alpha = 0; alpha < 3; ++alpha)
+                                            {
+                                                st beta = m % 3;
+                                                // if ((i == 1) and (j == 0) and (k == 0) and (nu == x) and (alpha == x))
+                                                // for (st beta = 0; beta < 3; ++beta)
+                                                // {
+                                                //     if ((m % 3) == beta)
+                                                //     {
+                                                        cell_line_stress[approximation][nu][alpha][beta][n] = 
+                                                             cell_stress[approximation][nu][alpha][m];
+                                                        // printf("%d %d %d %d %d\n", i, j, k, nu, alpha);
+                                                //     };
+                                                // };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+        //                             // printf("%d\n", n);
+                    if ((m % 3) == z)
+                    {
+                        coor_line_cell[n] = coor_cell[m];
+                        ++n;
+                    };
+                    if (n == size_line_cell)
+                        break;
+                };
+            };
+        };
         // {
         //     st n = 0;
         //     for (st i = 0; i < size_sol_cell; ++i)
@@ -6058,77 +6187,17 @@ void solve_two_stress (cst flag)
         //            )
         //
         //         {
-        //             for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
-        //             {
-        //                 for (st i = 0; i < approx_number+1; ++i)
-        //                 {
-        //                     for (st j = 0; j < approx_number+1; ++j)
-        //                     {
-        //                         for (st k = 0; k < approx_number+1; ++k)
-        //                         {
-        //                             if ((i+j+k) == approx_number)
-        //                             {
-        //                                 arr<i32, 3> approximation = {i, j, k};
-        //                                 for (st nu = 0; nu < 3; ++nu)
-        //                                 {
-        //                                     for (st alpha = 0; alpha < 3; ++alpha)
-        //                                     {
-        //                                         // for (st beta = 0; beta < 3; ++beta)
-        //                                         st beta = 0;
-        //                                         {
-        //                                             if ((i % 3) == beta)
-        //                                             {
-        //                                                 cell_line_stress[approximation][nu][alpha][beta][n] = 
-        //                                                      cell_stress[approximation][nu][alpha][n];
-        //                                             };
-        //                                         };
-        //                                     };
-        //                                 };
-        //                             };
-        //                         };
-        //                     };
-        //                 };
-        //             };
-        //                             printf("%d\n", n);
-        //             if ((i % 3) == 0)
-        //             {
-        //                 coor_line_cell[n] = coor_cell[i];
-        //                 ++n;
-        //             };
-        //             if (n == size_line_cell)
-        //                 break;
-        //         };
-        //     };
-        // };
-        // {
-        //     st n = 0;
-        //     for (st i = 0; i < size_sol_cell; ++i)
-        //     {
-        //         if (
-        //                 (std::abs(coor_cell[i](y) - 0.5) < 1.0e-10) and
-        //                 (std::abs(coor_cell[i](z) - 0.5) < 1.0e-10)
-        //            )
-        //
-        //         {
-        //             st beta = 0;
+        //             st beta = y;
         //             {
         //                 if ((i % 3) == beta)
         //                 {
-        //                     cell_line_stress[arr<i32, 3>{1,0,0}][x][x][x][i] = 
-        //                          cell_stress[arr<i32, 3>{1,0,0}][x][x][i];
+        //                     cell_line_stress[arr<i32, 3>{0,1,0}][y][y][y][n] = 
+        //                          cell_stress[arr<i32, 3>{0,1,0}][y][y][i];
+        //                 ++n;
         //                 };
         //             };
         //         };
         //     };
-        // };
-        // {
-        //     FILE *F;
-        //     F = fopen("stress_cell_line_2.gpd", "w");
-        //     for (st i = 0; i < size_line_cell; ++i)
-        //     {
-        //         fprintf(F,"%f %f\n", coor_line_cell[i](x), cell_line_stress[arr<i32,3>{1,0,0}][x][x][x][i]);
-        //     };
-        //     fclose(F);
         // };
         // {
         //     FILE *F;
@@ -6146,9 +6215,145 @@ void solve_two_stress (cst flag)
         //     };
         //     fclose(F);
         // };
+        {
+            FILE *F;
+            F = fopen("stress_cell_line_2.gpd", "w");
+            for (st i = 0; i < size_line_cell; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_cell[i](x), cell_line_stress[arr<i32,3>{1,0,0}][x][x][x][i]);
+                // printf("%f %f\n", coor_line_cell[i](x), cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][i]);
+            };
+            fclose(F);
+        };
+        {
+            FILE *F;
+            F = fopen("stress_cell_line_2.gpd", "w");
+            for (st i = 0; i < size_line_cell; ++i)
+            {
+                fprintf(F,"%f %f\n", coor_line_cell[i](x), cell_line_stress[arr<i32,3>{1,0,0}][x][x][x][i]);
+                // printf("%f %f\n", coor_line_cell[i](x), cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][i]);
+            };
+            fclose(F);
+        };
 
         printf("size_line %d %d\n", size_line_hole, size_line_cell);
         printf("size %d %d\n", size_sol_hole, size_sol_cell);
+
+        cst num_cells = 100;
+        cdbl cell_size = 1.0 / num_cells;
+        for (st i = 0; i < size_line_cell; ++i)
+        {
+            coor_line_cell[i](x) /= num_cells;
+        };
+
+
+        arr<arr<vec<dbl>, 3>, 3> final_stress;
+        arr<arr<vec<dbl>, 3>, 3> final_stress_2;
+        for (st i = 0; i < 3; ++i)
+        {
+           for (st j = 0; j < 3; ++j)
+           {
+               final_stress[i][j] .resize (size_line_hole);
+               final_stress_2[i][j] .resize (size_line_hole);
+           }; 
+        };
+        {
+            FILE *F;
+            F = fopen("hole_plas_cell.gpd", "w");
+            for (st i = 0; i < size_line_hole; ++i)
+            {
+                dbl coor_in_cell = coor_line_hole[i](x);
+                for (st j = 0; j < num_cells; ++j)
+                {
+                    coor_in_cell -= cell_size;
+                    if (coor_in_cell < 0.0)
+                    {
+                        coor_in_cell += cell_size;
+                        break;
+                    };
+                };
+                // dbl sol_in_cell = 0.0;
+                st num_of_point_in_cell = 0;
+                for (st j = 0; j < size_line_cell; ++j)
+                {
+                    if (coor_in_cell < coor_line_cell[j](x))
+                    {
+                        // dbl X = coor_in_cell;
+                        // dbl X1 = coor_line_cell[j-1](x);
+                        // dbl X2 = coor_line_cell[j](x);
+                        // dbl Y1 = cell_line_stress[arr<i32,3>{1,0,0}][x][x][x][j-1];
+                        // dbl Y2 = cell_line_stress[arr<i32,3>{1,0,0}][x][x][x][j];
+                        // sol_in_cell = (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
+                        num_of_point_in_cell = j;
+                        // printf("%f %f %f\n", coor_line_hole[i](x), coor_in_cell, coor_line_cell[j](x));
+                        break;
+                    };
+                };
+                auto sol_in_cell  = [&coor_in_cell, &coor_line_cell, &cell_line_stress] 
+                    (cst i, cst j, cst k, cst l, cst m, cst n, cst nm)
+                    {
+                        st nm_1 = 0;
+                        if (nm == 0)
+                            nm_1 = coor_line_cell.size() - 1;
+                        else
+                            nm_1 = nm - 1;
+                        cdbl X = coor_in_cell;
+                        cdbl X1 = coor_line_cell[nm_1](0);
+                        cdbl X2 = coor_line_cell[nm](0);
+                        cdbl Y1 = cell_line_stress[arr<i32,3>{i,j,k}][l][m][n][nm_1];
+                        cdbl Y2 = cell_line_stress[arr<i32,3>{i,j,k}][l][m][n][nm];
+                        // printf("%f %f %f %f %f %f %ld %ld %f\n",
+                        //         (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2), X, X1, X2, Y1, Y2, nm_1, nm,
+                        //         cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][0]);
+                        // return (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
+                        return Y1;
+                    };
+                cst num = num_of_point_in_cell;
+// sol_in_cell(0,1,0,y,y,y,num);
+
+                for (st alpha = 0; alpha < 3; ++alpha)
+                {
+                    for (st beta = 0; beta < 3; ++beta)
+                    {
+                       final_stress[alpha][beta][i] = 
+                           sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
+                           sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
+                           sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
+                           sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i];
+                       final_stress_2[alpha][beta][i] = 
+                           sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
+                           sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
+                           sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
+                           sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i] +
+                           (
+                           sol_in_cell(2,0,0,x,alpha,beta, num) * deform_line_2[x][x][x][i] +
+                           sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][y][x][i] +
+                           sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][x][y][i] +
+                           sol_in_cell(0,2,0,x,alpha,beta, num) * deform_line_2[x][y][y][i] +
+                           sol_in_cell(2,0,0,y,alpha,beta, num) * deform_line_2[y][x][x][i] +
+                           sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][y][x][i] +
+                           sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][x][y][i] +
+                           sol_in_cell(0,2,0,y,alpha,beta, num) * deform_line_2[y][y][y][i]
+                           ) * cell_size;
+                    };
+                };
+                // fprintf(F, "%f %f %f %f %f %f %f\n", 
+                //         coor_line_hole[i](y), deform_line_1[x][x][i], deform_line_2[x][x][y][i],
+                //         sol_in_cell(0,1,0,y,y,y,num), sol_in_cell(0,2,0,y,x,x,num), 
+                //         final_stress[x][x][i], final_stress_2[x][x][i]);
+                fprintf(F, "%f %f %f %f %f %f %f\n", 
+                        coor_line_hole[i](y), deform_line_1[x][x][i], deform_line_2[x][x][y][i],
+                        sol_in_cell(1,0,0,x,x,x,num), sol_in_cell(2,0,0,x,y,y,num), 
+                        final_stress[x][x][i], final_stress_2[x][x][i]);
+        // for (st o = 0; o < size_line_cell; ++o)
+        // {
+        //     printf("%f %f %f\n", cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][o],
+        //             sol_in_cell(0,1,0,y,y,y,o), coor_in_cell);
+        // };
+        // puts(" ");
+            };
+            fclose(F);
+        };
     };
 };
 
@@ -6162,7 +6367,7 @@ int main()
     solve_heat_conduction_problem_on_cell (0);
 
     //ELASSTIC_PROBLEM
-    solve_elastic_problem (1);
+    solve_elastic_problem (0);
 
     // ELASSTIC_PROBLEM_ON_CELL
     solve_elastic_problem_on_cell (0);
@@ -6192,8 +6397,12 @@ int main()
 
     solve_approx_cell_elastic_problem (0);
 
-    solve_two_stress (1);
+    solve_two_stress (0);
 
+
+    solve_approx_cell_elastic_problem (1);
+    solve_elastic_problem (0);
+    solve_two_stress (1);
 
     // st size = 0;
     // {
