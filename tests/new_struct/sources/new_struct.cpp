@@ -3174,7 +3174,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 // domain.grid .create_triangulation_compatibility (v, c, b);
                 domain.grid .create_triangulation (v, c, b);
 
-                domain.grid.refine_global(6);
+                domain.grid.refine_global(8);
 
                 // dealii::GridGenerator::hyper_cube(domain.grid);
                 // domain.grid.refine_global(2);
@@ -3281,35 +3281,35 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
             LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
             element_matrix.C .resize (3);
-            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-            EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.00}(element_matrix.C[1]);
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+            // // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.00}(element_matrix.C[1]);
             // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
-            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
             // auto meta_coef = solve_elastic_problem_on_cell_3d_and_meta_coef_return ();
             ATools::FourthOrderTensor meta_coef;
             std::ifstream in ("cell/meta_coef.bin", std::ios::in | std::ios::binary);
             in.read ((char *) &meta_coef, sizeof meta_coef);
             in.close ();
-            // for (st i = 0; i < 3; ++i)
-            // {
-            //     for (st j = 0; j < 3; ++j)
-            //     {
-            //         for (st k = 0; k < 3; ++k)
-            //         {
-            //             for (st l = 0; l < 3; ++l)
-            //             {
-            //                 element_matrix.C[0][i][j][k][l] = meta_coef[i][j][k][l];
-            //                 element_matrix.C[1][i][j][k][l] = 0.0;
-            //                 // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
-            //                 element_matrix.C[2][i][j][k][l] = meta_coef[i][j][k][l];
-            //                 // element_matrix.C[0][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
-            //                 // element_matrix.C[1][2-i][2-j][2-k][2-l] = 0.0;
-            //                 // // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
-            //                 // element_matrix.C[2][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
-            //             };
-            //         };
-            //     };
-            // };
+            for (st i = 0; i < 3; ++i)
+            {
+                for (st j = 0; j < 3; ++j)
+                {
+                    for (st k = 0; k < 3; ++k)
+                    {
+                        for (st l = 0; l < 3; ++l)
+                        {
+                            element_matrix.C[0][i][j][k][l] = meta_coef[i][j][k][l];
+                            element_matrix.C[1][i][j][k][l] = 0.0;
+                            // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
+                            element_matrix.C[2][i][j][k][l] = meta_coef[i][j][k][l];
+                            // element_matrix.C[0][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
+                            // element_matrix.C[1][2-i][2-j][2-k][2-l] = 0.0;
+                            // // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
+                            // element_matrix.C[2][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
+                        };
+                    };
+                };
+            };
         for (size_t i = 0; i < 9; ++i)
         {
             uint8_t im = i / (2 + 1);
@@ -3322,10 +3322,10 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
                 if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
                     printf("\x1B[31m%f\x1B[0m   ", 
-                            meta_coef[im][in][jm][jn]);
+                            element_matrix.C[0][im][in][jm][jn]);
                 else
                     printf("%f   ", 
-                            meta_coef[im][in][jm][jn]);
+                            element_matrix.C[0][im][in][jm][jn]);
             };
             for (size_t i = 0; i < 2; ++i)
                 printf("\n");
@@ -5157,7 +5157,7 @@ void solve_approx_cell_elastic_problem (cst flag)
         enum {x, y, z};
         Domain<3> domain;
         {
-            set_cylinder(domain.grid, 0.25, y, 3);
+            set_cylinder(domain.grid, 0.25, y, 4);
             // set_ball(domain.grid, 0.4, 3);
             // set_rect_3d(domain.grid,
             //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -5174,7 +5174,7 @@ void solve_approx_cell_elastic_problem (cst flag)
         // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
         // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
         EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.25}(element_matrix.C[1]);
+        EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.25}(element_matrix.C[1]);
 
         OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
 
@@ -5762,8 +5762,12 @@ void solve_two_stress (cst flag)
     {  
         enum {x, y, z};
 
-        cst ort_slice = x;
+        cst ort_slice = y;
         cdbl coor_slice = 0.5;
+
+        ATools::FourthOrderTensor C;
+        std::ifstream in ("cell/meta_coef.bin", std::ios::in | std::ios::binary);
+        in.read ((char *) &C, sizeof C);
 
         st size_sol_hole = 0;
         {
@@ -6239,7 +6243,7 @@ void solve_two_stress (cst flag)
         printf("size_line %d %d\n", size_line_hole, size_line_cell);
         printf("size %d %d\n", size_sol_hole, size_sol_cell);
 
-        cst num_cells = 100;
+        cst num_cells = 10;
         cdbl cell_size = 1.0 / num_cells;
         for (st i = 0; i < size_line_cell; ++i)
         {
@@ -6247,12 +6251,14 @@ void solve_two_stress (cst flag)
         };
 
 
+        arr<arr<vec<dbl>, 3>, 3> macro_stress;
         arr<arr<vec<dbl>, 3>, 3> final_stress;
         arr<arr<vec<dbl>, 3>, 3> final_stress_2;
         for (st i = 0; i < 3; ++i)
         {
            for (st j = 0; j < 3; ++j)
            {
+               macro_stress[i][j] .resize (size_line_hole);
                final_stress[i][j] .resize (size_line_hole);
                final_stress_2[i][j] .resize (size_line_hole);
            }; 
@@ -6260,11 +6266,15 @@ void solve_two_stress (cst flag)
         {
             FILE *F;
             F = fopen("hole_plas_cell.gpd", "w");
-            for (st i = 0; i < size_line_hole; ++i)
+            // for (st i = 0; i < size_line_hole; ++i)
+            cst fgh = 1000;
+            for (st i = 0; i < fgh+1; ++i)
             {
-                dbl coor_in_cell = coor_line_hole[i](x);
+                // dbl coor_in_cell = coor_line_hole[i](x);
+                dbl coor_in_cell = 1.0/fgh * i;
                 for (st j = 0; j < num_cells; ++j)
                 {
+                    // printf("%f\n", coor_in_cell);
                     coor_in_cell -= cell_size;
                     if (coor_in_cell < 0.0)
                     {
@@ -6272,6 +6282,10 @@ void solve_two_stress (cst flag)
                         break;
                     };
                 };
+                // printf("%f %f %f\n", 
+                //         1.0 / fgh * i,
+                //         coor_in_cell, cell_size);
+                // printf("\n");
                 // dbl sol_in_cell = 0.0;
                 st num_of_point_in_cell = 0;
                 for (st j = 0; j < size_line_cell; ++j)
@@ -6305,46 +6319,57 @@ void solve_two_stress (cst flag)
                         // printf("%f %f %f %f %f %f %ld %ld %f\n",
                         //         (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2), X, X1, X2, Y1, Y2, nm_1, nm,
                         //         cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][0]);
-                        // return (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
-                        return Y1;
+                        return (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
+                        // return Y1;
                     };
                 cst num = num_of_point_in_cell;
 // sol_in_cell(0,1,0,y,y,y,num);
 
-                for (st alpha = 0; alpha < 3; ++alpha)
-                {
-                    for (st beta = 0; beta < 3; ++beta)
-                    {
-                       final_stress[alpha][beta][i] = 
-                           sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
-                           sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
-                           sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
-                           sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i];
-                       final_stress_2[alpha][beta][i] = 
-                           sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
-                           sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
-                           sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
-                           sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i] +
-                           (
-                           sol_in_cell(2,0,0,x,alpha,beta, num) * deform_line_2[x][x][x][i] +
-                           sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][y][x][i] +
-                           sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][x][y][i] +
-                           sol_in_cell(0,2,0,x,alpha,beta, num) * deform_line_2[x][y][y][i] +
-                           sol_in_cell(2,0,0,y,alpha,beta, num) * deform_line_2[y][x][x][i] +
-                           sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][y][x][i] +
-                           sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][x][y][i] +
-                           sol_in_cell(0,2,0,y,alpha,beta, num) * deform_line_2[y][y][y][i]
-                           ) * cell_size;
-                    };
-                };
+                // for (st alpha = 0; alpha < 3; ++alpha)
+                // {
+                //     for (st beta = 0; beta < 3; ++beta)
+                //     {
+                //        macro_stress[alpha][beta][i] = 
+                //            C[x][x][alpha][beta] * deform_line_1[x][x][i] +
+                //            C[y][x][alpha][beta] * deform_line_1[y][x][i] +
+                //            C[x][y][alpha][beta] * deform_line_1[x][y][i] +
+                //            C[y][y][alpha][beta] * deform_line_1[y][y][i];
+                //        final_stress[alpha][beta][i] = 
+                //            sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
+                //            sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
+                //            sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
+                //            sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i];
+                //        final_stress_2[alpha][beta][i] = 
+                //            sol_in_cell(1,0,0,x,alpha,beta, num) * deform_line_1[x][x][i] +
+                //            sol_in_cell(1,0,0,y,alpha,beta, num) * deform_line_1[y][x][i] +
+                //            sol_in_cell(0,1,0,x,alpha,beta, num) * deform_line_1[x][y][i] +
+                //            sol_in_cell(0,1,0,y,alpha,beta, num) * deform_line_1[y][y][i] +
+                //            (
+                //            sol_in_cell(2,0,0,x,alpha,beta, num) * deform_line_2[x][x][x][i] +
+                //            sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][y][x][i] +
+                //            sol_in_cell(1,1,0,x,alpha,beta, num) * deform_line_2[x][x][y][i] +
+                //            sol_in_cell(0,2,0,x,alpha,beta, num) * deform_line_2[x][y][y][i] +
+                //            sol_in_cell(2,0,0,y,alpha,beta, num) * deform_line_2[y][x][x][i] +
+                //            sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][y][x][i] +
+                //            sol_in_cell(1,1,0,y,alpha,beta, num) * deform_line_2[y][x][y][i] +
+                //            sol_in_cell(0,2,0,y,alpha,beta, num) * deform_line_2[y][y][y][i]
+                //            ) * cell_size;
+                //     };
+                // };
+                //
+                // fprintf(F, "%f %f %f %f %f %f %f %f\n", 
+                //         coor_line_hole[i](x), 
+                //         deform_line_1[y][y][i], deform_line_2[y][y][x][i],
+                //         sol_in_cell(0,1,0,y,y,y,num), sol_in_cell(0,2,0,y,x,x,num), 
+                //         final_stress[y][y][i], final_stress_2[y][y][i], macro_stress[y][y][i]);
+                fprintf(F, "%f %f %f\n", 
+                        1.0 / fgh * i,
+                        coor_in_cell,
+                        sol_in_cell(0,1,0,y,y,y,num));
                 // fprintf(F, "%f %f %f %f %f %f %f\n", 
                 //         coor_line_hole[i](y), deform_line_1[x][x][i], deform_line_2[x][x][y][i],
-                //         sol_in_cell(0,1,0,y,y,y,num), sol_in_cell(0,2,0,y,x,x,num), 
+                //         sol_in_cell(1,0,0,x,x,x,num), sol_in_cell(2,0,0,x,y,y,num), 
                 //         final_stress[x][x][i], final_stress_2[x][x][i]);
-                fprintf(F, "%f %f %f %f %f %f %f\n", 
-                        coor_line_hole[i](y), deform_line_1[x][x][i], deform_line_2[x][x][y][i],
-                        sol_in_cell(1,0,0,x,x,x,num), sol_in_cell(2,0,0,x,y,y,num), 
-                        final_stress[x][x][i], final_stress_2[x][x][i]);
         // for (st o = 0; o < size_line_cell; ++o)
         // {
         //     printf("%f %f %f\n", cell_line_stress[arr<i32,3>{0,1,0}][y][y][y][o],
@@ -6400,7 +6425,7 @@ int main()
     solve_two_stress (0);
 
 
-    solve_approx_cell_elastic_problem (1);
+    solve_approx_cell_elastic_problem (0);
     solve_elastic_problem (0);
     solve_two_stress (1);
 
