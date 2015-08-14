@@ -71,6 +71,66 @@ namespace EPTools
         };
     };
 
+    //! Задать ортотропный тэнзор упругости 
+
+        void set_ortotropic_elascity (
+                const arr<arr<dbl, 3>, 3> E, 
+                const arr<dbl, 3> G, 
+                ATools::FourthOrderTensor &C)
+        {
+            enum {x, y, z};
+            for (st i = 0; i < 3; ++i)
+            {
+                for (st j = 0; j < 3; ++j)
+                {
+                    for (st k = 0; k < 3; ++k)
+                    {
+                        for (st l = 0; l < 3; ++l)
+                        {
+                            C[i][j][k][l] = 0.0;
+                        };
+                    };
+                };
+            };
+
+            cdbl c = E[x][y] * E[y][x] + E[z][y] * E[y][z] + E[x][z] * E[z][x];
+            cdbl d = E[x][y] * E[y][z] * E[z][x] + E[x][z] * E[z][y] * E[y][x];
+            cdbl sm = 1.0 / (1 - c - d);
+
+            auto a = [&E] (cst i){
+                cst m = (i + 1) % 3;
+                cst n = (i + 2) % 3;
+                return (1.0 - E[m][n] * E[n][m]);
+            };
+            auto b = [&E] (cst i, cst j){
+            for (st k = 0; k < 3; ++k)
+            {
+            if ((k != i) and (k != j))
+            return E[i][j] + E[i][k] * E[k][j];
+            };
+            };
+           
+            for (st i = 0; i < 3; ++i)
+            {
+                for (st j = 0; j < 3; ++j)
+                {
+                    if (i == j)
+                    {
+                        C[i][i][j][j] = E[i][i] * a(i) * sm;
+                    }
+                    else
+                    {
+                        C[i][i][j][j] = E[i][i] * b(i, j) * sm;
+                        C[i][j][i][j] = G[i + j - 1];
+                        C[i][j][j][i] = G[i + j - 1];
+                    };
+                    // C[j][j][i][i] = C[i][i][j][j];
+                    // C[j][i][j][i] = C[i][j][i][j];
+
+                };
+            };
+        };
+
     //! Распечатать в файл перемещения
     template<u8 dim>
         void print_move (const dealii::Vector<dbl> &move, 

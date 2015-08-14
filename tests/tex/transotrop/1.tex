@@ -1,0 +1,156 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+\begin{document}
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+%tiny,
+enlargelimits,
+axis equal,
+xmin=-3,xmax=3,
+ymin=-3,ymax=3,
+xtick=\empty,
+ytick=\empty,
+]
+\fill[gray] (axis cs:-3,-3) circle[radius=1]; \fill[gray] (axis cs:-3,0) circle[radius=1];
+\fill[gray] (axis cs:-3,+3) circle[radius=1]; \fill[gray] (axis cs:0,-3) circle[radius=1];
+\fill[gray] (axis cs:0,0) circle[radius=1]; \fill[gray] (axis cs:0,+3) circle[radius=1];
+\fill[gray] (axis cs:+3,-3) circle[radius=1]; \fill[gray] (axis cs:+3,0) circle[radius=1];
+\fill[gray] (axis cs:+3,+3) circle[radius=1];
+\end{axis}
+\end{tikzpicture}
+\caption{Тетрагональная симметрия} \label{fig1}
+\end{figure}
+
+
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+%tiny,
+enlargelimits,
+axis equal,
+xmin=-3,xmax=3,
+ymin=-3,ymax=3,
+xtick=\empty,
+ytick=\empty,
+]
+\fill[gray] (axis cs:-1.5,+2.5980762) circle[radius=1]; \fill[gray] (axis cs:+1.5,+2.5980762) circle[radius=1];
+ \fill[gray] (axis cs:-3,0) circle[radius=1]; \fill[gray] (axis cs:0,0) circle[radius=1]; \fill[gray] (axis cs:+3,0) circle[radius=1];
+\fill[gray] (axis cs:-1.5,-2.5980762) circle[radius=1]; \fill[gray] (axis cs:+1.5,-2.5980762) circle[radius=1];
+\end{axis}
+\end{tikzpicture}
+\caption{Гексагональная симметрия} \label{fig2}
+\end{figure}
+
+\begin{equation} \label{e1}
+\begin{pmatrix} 
+C_{xxxx} & C_{xxyy} & C_{xxzz} & 0 & 0 & 0\\
+C_{yyxx} & C_{yyyy} & C_{yyzz} & 0 & 0 & 0\\
+C_{zzxx} & C_{zzyy} & C_{zzzz} & 0 & 0 & 0\\
+0 & 0 & 0 & C_{xzxz} & 0 & 0 \\
+0 & 0 & 0 & 0 & C_{yzyz} & 0 \\
+0 & 0 & 0 & 0 & 0 & C_{xyxy} \\
+\end{pmatrix} 
+\end{equation} 
+\\
+\begin{equation} \label{e2}
+\begin{array}{c}
+C_{xxxx} == C_{yyyy}, C_{xxyy} == C_{yyxx}, C_{xxzz} == C_{yyzz}, C_{xzxz} == C_{yzyz}, \\ \\
+C_{xyxy} = \frac{C_{xxxx} - C_{xxyy}}{2}, \\ \\
+C_{xyxy} = \frac{C_{yyyy} - C_{yyxx}}{2}, \\ \\
+\end{array} 
+\end{equation} 
+
+$G_{xy} = C{xyxy}$ - модуль поперечного сдвига.\\
+
+Материал имеет трансверсальную изотропию упругих свойств в случае его гексагональной симметрии (Рис. \ref{fig1}). 
+Тогда его матрица упругих своств принимает вид (\ref{e1}), для которой выполняются соотношения (\ref{e2}). 
+Если же материал обладает тетрагональной симметрией (Рис. \ref{fig2}), то он не является трансверсально изотропным 
+и соотношения (\ref{e2}) не выполняются.
+
+При повороте системы координат вокруг оси симметрии четвертого порядка (здесь ось Oz), 
+компоненты тензора меняются, тензор принимает вид: 
+
+\begin{equation} \label{e3}
+\begin{pmatrix} 
+C_{xxxx} & C_{xxyy} & C_{xxzz} & 0 & 0 & C_{xxxy}\\
+C_{yyxx} & C_{yyyy} & C_{yyzz} & 0 & 0 & C_{yyxy}\\
+C_{zzxx} & C_{zzyy} & C_{zzzz} & 0 & 0 & 0\\
+0 & 0 & 0 & C_{xzxz} & 0 & 0 \\
+0 & 0 & 0 & 0 & C_{yzyz} & 0 \\
+C_{xyxx} & C_{xyyy} & 0 & 0 & 0 & C_{xyxy} \\
+\end{pmatrix} 
+\end{equation} 
+
+В нем $C_{xxxy} = -C_{yyxy}$ и $C_{xyxx} = -C_{xyyy}$.
+
+Величина $C_{x'x'x'y'}$ в новой системе координат $Ox'y'z$, при повороте на угл $\alpha$, 
+для тетрагональной симметрии получается таким образом:
+
+\begin{equation} \label{e4}
+\begin{gathered}
+C_{x'x'x'y'} = \\
+(C_{xxxx} a^3 + C_{xyxy}  a  b^2 + C_{xyxy}  a  b^2 + C_{yyxx}  a  b^2)  b - \\
+(C_{xxyy}  a^2  b + C_{xyxy}  a^2  b + C_{xyxy}  a^2 b + C_{yyyy}  b^3)  a = \\
+C_{xxxx} a^3 b + 2 C_{xyxy}  a  b^3 + C_{yyxx}  a  b^3 - C_{xxyy}  a^3  b - 
+2 C_{xyxy}  a^3  b - C_{yyyy}  b^3 a = \\
+(C_{xxxx} - C_{xxyy} - 2 C_{xyxy}) a^3 b + (C_{yyyy} - C_{yyxx} - 2 C_{xyxy}) a b^3 = \\
+(C_{xxxx} - C_{xxyy} - 2 C_{xyxy}) (a^3 b - a b^3)
+\end{gathered}
+\end{equation} 
+
+где $a = cos(\alpha)$, $a = sin(\alpha)$.
+
+Матрица поворота вокруг оси Oz:
+\begin{equation} \label{e5}
+\begin{pmatrix} 
+cos(\alpha) & -sin(\alpha) & 0 \\
+sin(\alpha) & cos(\alpha) & 0 \\
+0 & 0 & 1 \\
+\end{pmatrix} 
+\end{equation} 
+
+\begin{equation} \label{e6}
+a^3 b - a b^3 = cos(\alpha)^3sin(\alpha) - cos(\alpha)sin(\alpha)^3 = \frac{1}{4}sin(4\alpha)
+\end{equation}
+
+Из (\ref{e4}) и (\ref{e6}) следует, что величина $C_{xxxy}(\alpha)$ достигает максимума при 
+$\alpha = \frac{\pi}{8}$ и равена $\frac{1}{4}(C_{xxxx}(0) - C_{xxyy}(0) - 2 C_{xyxy}(0))$, а значит 
+$\frac{1}{2}(\frac{C_{xxxx}(0) - C_{xxyy}(0)}{2} - C_{xyxy}(0))$.
+
+Другие коэфиициенты для угла $\frac{\pi}{8}$:
+
+$$
+C_{xxxx} = \frac{1}{4}(3C_{xxxx}+C_{xxyy}+2C_{xyxy})
+$$
+$$
+C_{xxyy} = \frac{1}{4}(C_{xxxx}+3C_{xxyy}-2C_{xyxy})
+$$
+
+%\includegraphics[width=1\linewidth]{Mxy_c_h}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
