@@ -6601,7 +6601,7 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua)
         enum {x, y, z};
         Domain<3> domain;
         {
-            set_cylinder(domain.grid, 0.25, z, 4);
+            set_cylinder(domain.grid, 0.25, z, 3);
             // set_ball(domain.grid, 0.4, 3);
             // set_rect_3d(domain.grid,
             //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -8606,7 +8606,7 @@ void solve_two_stress (cst flag, cdbl E, cdbl pua)
         printf("size_line %d %d\n", size_line_hole, size_line_cell);
         printf("size %d %d\n", size_sol_hole, size_sol_cell);
 
-        cst num_cells = 100;
+        cst num_cells = 10;
         cdbl cell_size = 1.0 / num_cells;
         for (st i = 0; i < size_line_cell; ++i)
         {
@@ -9440,7 +9440,7 @@ int main()
 
     // solve_approx_cell_elastic_problem (1, 10.0, 0.25);
 
-    calculate_real_stress (1, 10.0, 0.25);
+    // calculate_real_stress (1, 10.0, 0.25);
     
     enum {x, y, z};
 
@@ -9453,9 +9453,9 @@ int main()
     // solve_elastic_problem (1);
     // solve_two_stress (1, 5.0, 0.25);
     //
-    // solve_approx_cell_elastic_problem (1, 10.0, 0.25);
+    solve_approx_cell_elastic_problem (1, 1.0, 0.25);
     // solve_elastic_problem (1);
-    // solve_two_stress (1, 10.0, 0.25);
+    solve_two_stress (1, 1.0, 0.25);
     //
     // solve_approx_cell_elastic_problem (1, 20.0, 0.25);
     // solve_elastic_problem (1);
