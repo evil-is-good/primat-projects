@@ -804,7 +804,105 @@ void print_elastic_deformation (const dealii::Vector<dbl> &move,
         };
         out.close ();
     };
-}
+};
+
+void print_elastic_deformation (const dealii::Vector<dbl> &move, 
+        const dealii::DoFHandler<2> &dof_handler,
+        const str file_name, const str file_name_bin)
+{
+    cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+
+    arr<dealii::Vector<dbl>, 2> grad;
+
+    grad[0] .reinit (dof_handler.n_dofs());
+    grad[1] .reinit (dof_handler.n_dofs());
+
+    vec<st> N(dof_handler.n_dofs());
+
+    for (
+            auto cell = dof_handler.begin_active(); 
+            cell     != dof_handler.end(); 
+            ++cell
+        )
+    {
+        /* Точки 3 и 2 переставленны местами, потому что в диле у них
+         * порядок зигзагом, а мне надо по кругу
+         */
+        arr<prmt::Point<2>, 4> points = {
+            prmt::Point<2>(cell->vertex(0)(0), cell->vertex(0)(1)),
+            prmt::Point<2>(cell->vertex(1)(0), cell->vertex(1)(1)),
+            prmt::Point<2>(cell->vertex(3)(0), cell->vertex(3)(1)),
+            prmt::Point<2>(cell->vertex(2)(0), cell->vertex(2)(1))};
+        for (st component = 0; component < 2; ++component)
+        {
+            arr<dbl, 4> values = {
+                move(cell->vertex_dof_index (0, component)),
+                move(cell->vertex_dof_index (1, component)),
+                move(cell->vertex_dof_index (3, component)),
+                move(cell->vertex_dof_index (2, component))};
+
+            Scalar4PointsFunc<2> function_on_cell(points, values);
+
+            for (st i = 0; i < 4; ++i)
+            {
+                auto indx = cell->vertex_dof_index(i, component);
+
+                if ((cell->material_id() == 0) or (cell->material_id() == 2))
+                    // if (cell->material_id() == 0)
+                {
+                    grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                    grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                    // grad[0][indx] = 1.0;
+                    // grad[1][indx] = 1.0;
+                }
+                else
+                {
+                    grad[0][indx] = 0.0;
+                    grad[1][indx] = 0.0;
+                };
+                ++(N[indx]); 
+            };
+        };
+    };
+    for (st i = 0; i < N.size(); ++i)
+    {
+        grad[0][i] /= N[i];
+        grad[1][i] /= N[i];
+    };
+
+    {
+        dealii::DataOut<2> data_out;
+        data_out.attach_dof_handler (dof_handler);
+        data_out.add_data_vector (grad[0], "grad_dx");
+        data_out.add_data_vector (grad[1], "drad_dy");
+        // data_out.add_data_vector (T, "T");
+        data_out.build_patches ();
+
+        auto name = file_name;
+        // name += ".gpd";
+
+        std::ofstream output (name);
+        data_out.write_gnuplot (output);
+    };
+
+    {
+        std::ofstream out ("hole/"+file_name_bin+"/deform_hole_x.bin", std::ios::out | std::ios::binary);
+        for (st i = 0; i < grad[0].size(); ++i)
+        {
+            out.write ((char *) &(grad[0][i]), sizeof grad[0][0]);
+        };
+        out.close ();
+    };
+
+    {
+        std::ofstream out ("hole/"+file_name_bin+"/deform_hole_y.bin", std::ios::out | std::ios::binary);
+        for (st i = 0; i < grad[0].size(); ++i)
+        {
+            out.write ((char *) &(grad[1][i]), sizeof grad[0][0]);
+        };
+        out.close ();
+    };
+};
 
 void print_elastic_stress (const dealii::Vector<dbl> &move, 
         const dealii::DoFHandler<2> &dof_handler,
@@ -935,6 +1033,185 @@ void print_elastic_stress (const dealii::Vector<dbl> &move,
 
     {
         std::ofstream out ("hole/stress_hole_y.bin", std::ios::out | std::ios::binary);
+        for (st i = 0; i < stress[0].size(); ++i)
+        {
+            out.write ((char *) &(stress[1][i]), sizeof stress[0][0]);
+        };
+        out.close ();
+    };
+
+    dbl Int = 0.0;
+    {
+        cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+
+        dealii::QGauss<2>  quadrature_formula(2);
+
+        dealii::FEValues<2> fe_values (dof_handler.get_fe(), quadrature_formula,
+                dealii::update_values | dealii::update_gradients | dealii::update_quadrature_points |
+                dealii::update_JxW_values);
+
+        cst num_quad_points = quadrature_formula.size();
+        for (
+                auto cell = dof_handler.begin_active(); 
+                cell     != dof_handler.end(); 
+                ++cell
+            )
+        {
+            fe_values .reinit (cell);
+            for (st i = 0; i < 4; ++i)
+            {
+                auto indx_1 = cell->vertex_dof_index(i, 0);
+                for (st q_point = 0; q_point < num_quad_points; ++q_point)
+                {
+                    Int += 
+                        stress[1](indx_1) *
+                        // move(indx_1) *
+                        // 1.0 *
+                        // fe_values.shape_grad (i, q_point)[0] *
+                        fe_values.shape_value (i, q_point) *
+                        fe_values.JxW(q_point);
+                };
+            };
+        };
+
+    };
+
+    // for (st i = 0; i < stress[0].size(); ++i)
+    // {
+    //     Int += stress[0][i];
+    // };
+    printf("Integral %f\n", Int);
+}
+
+void print_elastic_stress (const dealii::Vector<dbl> &move, 
+        const dealii::DoFHandler<2> &dof_handler,
+        const ATools::FourthOrderTensor &C,
+        const str file_name, const str file_name_bin)
+{
+    cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+
+    arr<dealii::Vector<dbl>, 2> grad;
+
+    grad[0] .reinit (dof_handler.n_dofs());
+    grad[1] .reinit (dof_handler.n_dofs());
+
+    vec<st> N(dof_handler.n_dofs());
+
+    for (
+            auto cell = dof_handler.begin_active(); 
+            cell     != dof_handler.end(); 
+            ++cell
+        )
+    {
+        /* Точки 3 и 2 переставленны местами, потому что в диле у них
+         * порядок зигзагом, а мне надо по кругу
+         */
+        arr<prmt::Point<2>, 4> points = {
+            prmt::Point<2>(cell->vertex(0)(0), cell->vertex(0)(1)),
+            prmt::Point<2>(cell->vertex(1)(0), cell->vertex(1)(1)),
+            prmt::Point<2>(cell->vertex(3)(0), cell->vertex(3)(1)),
+            prmt::Point<2>(cell->vertex(2)(0), cell->vertex(2)(1))};
+        for (st component = 0; component < 2; ++component)
+        {
+            arr<dbl, 4> values = {
+                move(cell->vertex_dof_index (0, component)),
+                move(cell->vertex_dof_index (1, component)),
+                move(cell->vertex_dof_index (3, component)),
+                move(cell->vertex_dof_index (2, component))};
+
+            Scalar4PointsFunc<2> function_on_cell(points, values);
+
+            for (st i = 0; i < 4; ++i)
+            {
+                auto indx = cell->vertex_dof_index(i, component);
+
+                // if ((cell->material_id() == 0) or (cell->material_id() == 2))
+                //     // if (cell->material_id() == 0)
+                // {
+                    grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                    grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                    // grad[0][indx] = 1.0;
+                    // grad[1][indx] = 1.0;
+                // }
+                // else
+                // {
+                //     grad[0][indx] = 0.0;
+                //     grad[1][indx] = 0.0;
+                // };
+                ++(N[indx]); 
+            };
+        };
+    };
+    for (st i = 0; i < N.size(); ++i)
+    {
+        grad[0][i] /= N[i];
+        grad[1][i] /= N[i];
+    };
+
+    arr<dealii::Vector<dbl>, 2> stress;
+
+    stress[0] .reinit (dof_handler.n_dofs());
+    stress[1] .reinit (dof_handler.n_dofs());
+
+    for (
+            auto cell = dof_handler.begin_active(); 
+            cell     != dof_handler.end(); 
+            ++cell
+        )
+    {
+        for (st i = 0; i < 4; ++i)
+        {
+            auto indx_1 = cell->vertex_dof_index(i, 0);
+            auto indx_2 = cell->vertex_dof_index(i, 1);
+            stress[0][indx_1] = 
+                C[0][0][0][0] * grad[0][indx_1] +
+                C[0][0][0][1] * grad[0][indx_2] +
+                C[0][0][1][0] * grad[1][indx_1] +
+                C[0][0][1][1] * grad[1][indx_2];
+            stress[0][indx_2] = 
+                C[0][1][0][0] * grad[0][indx_1] +
+                C[0][1][0][1] * grad[0][indx_2] +
+                C[0][1][1][0] * grad[1][indx_1] +
+                C[0][1][1][1] * grad[1][indx_2];
+            stress[1][indx_1] = 
+                C[1][0][0][0] * grad[0][indx_1] +
+                C[1][0][0][1] * grad[0][indx_2] +
+                C[1][0][1][0] * grad[1][indx_1] +
+                C[1][0][1][1] * grad[1][indx_2];
+            stress[1][indx_2] = 
+                C[1][1][0][0] * grad[0][indx_1] +
+                C[1][1][0][1] * grad[0][indx_2] +
+                C[1][1][1][0] * grad[1][indx_1] +
+                C[1][1][1][1] * grad[1][indx_2];
+        };
+    };
+
+    {
+        dealii::DataOut<2> data_out;
+        data_out.attach_dof_handler (dof_handler);
+        data_out.add_data_vector (stress[0], "grad_dx");
+        data_out.add_data_vector (stress[1], "drad_dy");
+        // data_out.add_data_vector (T, "T");
+        data_out.build_patches ();
+
+        auto name = file_name;
+        // name += ".gpd";
+
+        std::ofstream output (name);
+        data_out.write_gnuplot (output);
+    };
+
+    {
+        std::ofstream out ("hole/"+file_name_bin+"/stress_hole_x.bin", std::ios::out | std::ios::binary);
+        for (st i = 0; i < stress[0].size(); ++i)
+        {
+            out.write ((char *) &(stress[0][i]), sizeof stress[0][0]);
+        };
+        out.close ();
+    };
+
+    {
+        std::ofstream out ("hole/"+file_name_bin+"/stress_hole_y.bin", std::ios::out | std::ios::binary);
         for (st i = 0; i < stress[0].size(); ++i)
         {
             out.write ((char *) &(stress[1][i]), sizeof stress[0][0]);
@@ -1155,6 +1432,268 @@ void print_elastic_deformation_2 (const dealii::Vector<dbl> &move,
 
         {
             std::ofstream out ("hole/deform_hole_yy.bin", std::ios::out | std::ios::binary);
+            for (st i = 0; i < grad_2[0][0].size(); ++i)
+            {
+                out.write ((char *) &(grad_2[1][1][i]), sizeof grad_2[1][1][0]);
+            };
+            out.close ();
+        };
+    };
+    {
+        cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+
+        dealii::QGauss<2>  quadrature_formula(2);
+
+        dealii::FEValues<2> fe_values (dof_handler.get_fe(), quadrature_formula,
+                dealii::update_gradients | dealii::update_quadrature_points | dealii::update_JxW_values);
+
+        cst num_quad_points = quadrature_formula.size();
+
+        arr<dealii::Vector<dbl>, 2> grad_2;
+
+        grad_2[0] .reinit (dof_handler.get_tria().n_active_cells());
+        grad_2[1] .reinit (dof_handler.get_tria().n_active_cells());
+
+        vec<prmt::Point<2>> midle_point (dof_handler.get_tria().n_active_cells());
+        vec<dealii::types::global_dof_index> local_dof_indices (dofs_per_cell);
+
+        st number_of_cell = 0;
+        for (
+                auto cell = dof_handler.begin_active(); 
+                cell     != dof_handler.end(); 
+                ++cell
+            )
+        {
+            fe_values .reinit (cell);
+
+            if (cell->material_id() == 0)
+            {
+                dbl area = 0.0;
+                for (st q_point = 0; q_point < num_quad_points; ++q_point)
+                {
+                    area +=
+                        fe_values.JxW(q_point);
+                };
+
+                cell->get_dof_indices (local_dof_indices);
+
+                for (st component = 0; component < 2; ++component)
+                {
+                    arr<dbl, 8> tmp;
+                    for (st i = 0; i < dofs_per_cell; ++i)
+                    {
+                        tmp[i] = 0.0;
+                        for (st q_point = 0; q_point < num_quad_points; ++q_point)
+                        {
+                            tmp[i] += grad[0](local_dof_indices[i]) *
+                                fe_values.shape_grad (i, q_point)[component] *
+                                fe_values.JxW(q_point);
+                        };
+                    };
+                    grad_2[component][number_of_cell] = (tmp[0] + tmp[2] + tmp[4] + tmp[6]) / (area);
+                };
+            }
+            else
+            {
+                grad[0][number_of_cell] = 0.0;
+                grad[1][number_of_cell] = 0.0;
+            };
+
+            midle_point[number_of_cell].x() = 
+                (cell->vertex(0)(0) +
+                 cell->vertex(1)(0) +
+                 cell->vertex(2)(0) +
+                 cell->vertex(3)(0)) / 4.0;
+            midle_point[number_of_cell].y() = 
+                (cell->vertex(0)(1) +
+                 cell->vertex(1)(1) +
+                 cell->vertex(2)(1) +
+                 cell->vertex(3)(1)) / 4.0;
+
+            ++number_of_cell;
+        };
+        FILE *F;
+        F = fopen("deform_mean_2.gpd", "w");
+        for (st i = 0; i < grad_2[0].size(); ++i)
+        {
+            fprintf(F, "%f %f %f %f\n", 
+                    midle_point[i].x(), midle_point[i].y(), grad_2[0][i], grad_2[1][i]);
+        };
+        fclose(F);
+
+    };
+}
+
+void print_elastic_deformation_2 (const dealii::Vector<dbl> &move, 
+        const dealii::DoFHandler<2> &dof_handler,
+        const str file_name, const str file_name_bin)
+{
+    cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+
+    arr<dealii::Vector<dbl>, 2> grad;
+
+    grad[0] .reinit (dof_handler.n_dofs());
+    grad[1] .reinit (dof_handler.n_dofs());
+
+    vec<st> N(dof_handler.n_dofs());
+
+    for (
+            auto cell = dof_handler.begin_active(); 
+            cell     != dof_handler.end(); 
+            ++cell
+        )
+    {
+        /* Точки 3 и 2 переставленны местами, потому что в диле у них
+         * порядок зигзагом, а мне надо по кругу
+         */
+        arr<prmt::Point<2>, 4> points = {
+            prmt::Point<2>(cell->vertex(0)(0), cell->vertex(0)(1)),
+            prmt::Point<2>(cell->vertex(1)(0), cell->vertex(1)(1)),
+            prmt::Point<2>(cell->vertex(3)(0), cell->vertex(3)(1)),
+            prmt::Point<2>(cell->vertex(2)(0), cell->vertex(2)(1))};
+        for (st component = 0; component < 2; ++component)
+        {
+            arr<dbl, 4> values = {
+                move(cell->vertex_dof_index (0, component)),
+                move(cell->vertex_dof_index (1, component)),
+                move(cell->vertex_dof_index (3, component)),
+                move(cell->vertex_dof_index (2, component))};
+
+            Scalar4PointsFunc<2> function_on_cell(points, values);
+
+            for (st i = 0; i < 4; ++i)
+            {
+                auto indx = cell->vertex_dof_index(i, component);
+
+                // if (cell->material_id() == 0)
+                if ((cell->material_id() == 0) or (cell->material_id() == 2))
+                {
+                    grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                    grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                }
+                else
+                {
+                    grad[0][indx] = 0.0;
+                    grad[1][indx] = 0.0;
+                };
+                ++(N[indx]); 
+            };
+        };
+    };
+    for (st i = 0; i < N.size(); ++i)
+    {
+        grad[0][i] /= N[i];
+        grad[1][i] /= N[i];
+    };
+
+    {
+        arr<arr<dealii::Vector<dbl>, 2>, 2> grad_2;
+
+        grad_2[0][0] .reinit (dof_handler.n_dofs());
+        grad_2[0][1] .reinit (dof_handler.n_dofs());
+        grad_2[1][0] .reinit (dof_handler.n_dofs());
+        grad_2[1][1] .reinit (dof_handler.n_dofs());
+
+        for (
+                auto cell = dof_handler.begin_active(); 
+                cell     != dof_handler.end(); 
+                ++cell
+            )
+        {
+            /* Точки 3 и 2 переставленны местами, потому что в диле у них
+             * порядок зигзагом, а мне надо по кругу
+             */
+            arr<prmt::Point<2>, 4> points = {
+                prmt::Point<2>(cell->vertex(0)(0), cell->vertex(0)(1)),
+                prmt::Point<2>(cell->vertex(1)(0), cell->vertex(1)(1)),
+                prmt::Point<2>(cell->vertex(3)(0), cell->vertex(3)(1)),
+                prmt::Point<2>(cell->vertex(2)(0), cell->vertex(2)(1))};
+            for (st g_comp = 0; g_comp < 2; ++g_comp)
+            {
+                for (st component = 0; component < 2; ++component)
+                {
+                    arr<dbl, 4> values = {
+                        grad[g_comp](cell->vertex_dof_index (0, component)),
+                        grad[g_comp](cell->vertex_dof_index (1, component)),
+                        grad[g_comp](cell->vertex_dof_index (3, component)),
+                        grad[g_comp](cell->vertex_dof_index (2, component))};
+
+                    Scalar4PointsFunc<2> function_on_cell(points, values);
+
+                    for (st i = 0; i < 4; ++i)
+                    {
+                        auto indx = cell->vertex_dof_index(i, component);
+
+                        if ((cell->material_id() == 0) or (std::abs(grad[0][indx]) < 1e-5))
+                        // if (cell->material_id() == 0)
+                        {
+                            grad_2[g_comp][0][indx] += function_on_cell.dx(cell->vertex(i));
+                            grad_2[g_comp][1][indx] += function_on_cell.dy(cell->vertex(i));
+                        }
+                        else
+                        {
+                            grad_2[g_comp][0][indx] = 0.0;
+                            grad_2[g_comp][1][indx] = 0.0;
+                        };
+                        ++(N[indx]); 
+                    };
+                };
+            };
+        };
+        for (st i = 0; i < N.size(); ++i)
+        {
+            grad_2[0][0][i] /= N[i];
+            grad_2[0][1][i] /= N[i];
+            grad_2[1][0][i] /= N[i];
+            grad_2[1][1][i] /= N[i];
+        };
+
+        {
+            dealii::DataOut<2> data_out;
+            data_out.attach_dof_handler (dof_handler);
+            data_out.add_data_vector (grad_2[0][0], "grad_dx_dx");
+            data_out.add_data_vector (grad_2[0][1], "grad_dx_dy");
+            data_out.add_data_vector (grad_2[1][0], "grad_dy_dx");
+            data_out.add_data_vector (grad_2[1][1], "grad_dy_dy");
+            // data_out.add_data_vector (T, "T");
+            data_out.build_patches ();
+
+            auto name = file_name;
+            // name += ".gpd";
+
+            std::ofstream output (name);
+            data_out.write_gnuplot (output);
+        };
+
+        {
+            std::ofstream out ("hole/"+file_name_bin+"/deform_hole_xx.bin", std::ios::out | std::ios::binary);
+            for (st i = 0; i < grad_2[0][0].size(); ++i)
+            {
+                out.write ((char *) &(grad_2[0][0][i]), sizeof grad_2[0][0][0]);
+            };
+            out.close ();
+        };
+
+        {
+            std::ofstream out ("hole/"+file_name_bin+"/deform_hole_xy.bin", std::ios::out | std::ios::binary);
+            for (st i = 0; i < grad_2[0][0].size(); ++i)
+            {
+                out.write ((char *) &(grad_2[0][1][i]), sizeof grad_2[0][1][0]);
+            };
+            out.close ();
+        };
+
+        {
+            std::ofstream out ("hole/"+file_name_bin+"/deform_hole_yx.bin", std::ios::out | std::ios::binary);
+            for (st i = 0; i < grad_2[0][0].size(); ++i)
+            {
+                out.write ((char *) &(grad_2[1][0][i]), sizeof grad_2[1][0][0]);
+            };
+            out.close ();
+        };
+
+        {
+            std::ofstream out ("hole/"+file_name_bin+"/deform_hole_yy.bin", std::ios::out | std::ios::binary);
             for (st i = 0; i < grad_2[0][0].size(); ++i)
             {
                 out.write ((char *) &(grad_2[1][1][i]), sizeof grad_2[1][1][0]);
