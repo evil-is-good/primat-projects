@@ -827,6 +827,143 @@ namespace OnCell
         };
 
     };
+
+
+
+
+
+
+
+
+    //! Расчет деформаций, обьёмная задача упругости, произвольное приближение
+    class DeformCalculator 
+    {
+        public:
+            DeformCalculator (const dealii::FiniteElement<3> &fe);
+
+            DeformCalculator(
+                    const dealii::DoFHandler<3> &dof_handler,
+                    const dealii::FiniteElement<3> &fe);
+
+            void calculate(
+                    const arr<i32, 3> approximation,
+                    cst nu,
+                    cst beta,
+                    const dealii::DoFHandler<3> &dof_handler,
+                    const OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> &cell_func,
+                    dealii::Vector<dbl> &deform);
+
+            static cst x = 0;
+            static cst y = 1;
+            static cst z = 2;
+
+            dealii::QGauss<3>          quadrature_formula; //!< Формула интегрирования в квадратурах.
+            dealii::FEValues<3, 3>     fe_values; //!< Тип функций формы.
+            vec<u32>                   global_dof_indices; //!< Список глобальных значений индексов с ячейки.
+            cu8                        dofs_per_cell; //!< Количество узлов в ячейке (зависит от типа функций формы).
+            cu8                        num_quad_points; //!< Количество точек по которым считается квадратура.
+            dbl                        area_of_domain = 0.0;
+    };
+
+        DeformCalculator::DeformCalculator (
+                const dealii::FiniteElement<3> &fe) :
+            quadrature_formula (2),
+            fe_values (fe, quadrature_formula,
+                    dealii::update_values | dealii::update_gradients | dealii::update_quadrature_points | 
+                    dealii::update_JxW_values),
+            dofs_per_cell (fe.dofs_per_cell),
+            global_dof_indices (fe.dofs_per_cell),
+            num_quad_points (quadrature_formula.size())
+    {};
+
+    DeformCalculator::DeformCalculator(
+            const dealii::DoFHandler<3> &dof_handler,
+            const dealii::FiniteElement<3> &fe) :
+        DeformCalculator(fe)
+    {
+        auto cell = dof_handler.begin_active();
+        auto endc = dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            fe_values .reinit (cell);
+
+            for (st q_point = 0; q_point < num_quad_points; ++q_point)
+                area_of_domain += fe_values.JxW(q_point);
+        };
+    };
+
+    void DeformCalculator::calculate(
+            const arr<i32, 3> approximation,
+            cst nu,
+            cst beta,
+            const dealii::DoFHandler<3> &dof_handler,
+            const OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> &cell_func,
+            dealii::Vector<dbl> &deform)
+    {
+        arr<i32, 3> k = {approximation[0], approximation[1], approximation[2]};
+
+        vec<st> N(dof_handler.n_dofs());
+
+        auto cell = dof_handler.begin_active();
+        auto endc = dof_handler.end();
+        // puts("2222");
+        for (; cell != endc; ++cell)
+        {
+            fe_values .reinit (cell);
+            cst material_id = cell->material_id();
+            cell->get_dof_indices (global_dof_indices);
+
+            dbl cell_area = 0.0;
+            for (st q_point = 0; q_point < num_quad_points; ++q_point)
+            {
+                cell_area += fe_values.JxW(q_point);
+            };
+
+            dbl tmp = 0.0;
+
+            for (st m = 0; m < dofs_per_cell; ++m)
+            {
+                for (st q_point = 0; q_point < num_quad_points; ++q_point)
+                {
+                        arr<i32, 3> k_beta = {k[x], k[y], k[z]}; // k - э_beta
+                        bool cell_k_beta_exist = true;
+                        if (k[beta] == 0)
+                            cell_k_beta_exist = false;
+                        else
+                            k_beta[beta]--;
+
+                        cdbl cell_k = cell_func[k][nu][global_dof_indices[m]];
+
+                        dbl cell_k_beta = 0.0;
+                        if (cell_k_beta_exist)
+                            cell_k_beta = cell_func[k_beta][nu][global_dof_indices[m]];
+                        else
+                            cell_k_beta = 0.0;
+
+                        tmp +=
+                            (
+                              cell_k *
+                              this->fe_values.shape_grad (m, q_point)[beta] +
+                              cell_k_beta *
+                              this->fe_values.shape_value (m, q_point)
+                            ) *
+                            this->fe_values.JxW(q_point);
+                };
+                ++(N[global_dof_indices[m]]); 
+            };
+            for (st i = 0; i < 8; ++i)
+            {
+                deform[global_dof_indices[i*3+beta]] += (tmp / cell_area);// / N[i];
+            };
+        };
+
+        for (st i = 0; i < deform.size(); ++i)
+        {
+            if ((i%3) == beta)
+            deform[i] /= N[i];
+        };
+
+    };
 };
 
 #endif

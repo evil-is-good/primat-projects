@@ -847,8 +847,8 @@ void print_elastic_deformation (const dealii::Vector<dbl> &move,
             {
                 auto indx = cell->vertex_dof_index(i, component);
 
-                if ((cell->material_id() == 0) or (cell->material_id() == 2))
-                    // if (cell->material_id() == 0)
+                // if ((cell->material_id() == 0) or (cell->material_id() == 2))
+                    if (cell->material_id() == 0)
                 {
                     grad[0][indx] += function_on_cell.dx(cell->vertex(i));
                     grad[1][indx] += function_on_cell.dy(cell->vertex(i));
