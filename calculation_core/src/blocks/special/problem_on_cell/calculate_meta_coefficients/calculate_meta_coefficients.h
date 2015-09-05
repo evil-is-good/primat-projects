@@ -919,10 +919,11 @@ namespace OnCell
                 cell_area += fe_values.JxW(q_point);
             };
 
-            dbl tmp = 0.0;
+            arr<dbl,3> tmp = {0.0, 0.0, 0.0};
 
             for (st m = 0; m < dofs_per_cell; ++m)
             {
+                cst alpha = m % 3;
                 for (st q_point = 0; q_point < num_quad_points; ++q_point)
                 {
                         arr<i32, 3> k_beta = {k[x], k[y], k[z]}; // k - э_beta
@@ -940,7 +941,7 @@ namespace OnCell
                         else
                             cell_k_beta = 0.0;
 
-                        tmp +=
+                        tmp[alpha] +=
                             (
                               cell_k *
                               this->fe_values.shape_grad (m, q_point)[beta] +
@@ -953,7 +954,10 @@ namespace OnCell
             };
             for (st i = 0; i < 8; ++i)
             {
-                deform[global_dof_indices[i*3+beta]] += (tmp / cell_area);// / N[i];
+                for (st alpha = 0; alpha < 3; ++alpha)
+                {
+                    deform[global_dof_indices[i*3+alpha]] += (tmp[alpha] / cell_area);
+                };
             };
         };
 
