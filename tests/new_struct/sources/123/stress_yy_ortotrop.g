@@ -16,9 +16,9 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol s}_{zz}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:4 w l ti "" lt 1 lw 3#, \
- "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_9.gpd" u 1:4 w l ti "" lt 2 lw 3, \
- "../hole_plas_cell_E_50_R_25_4_E_50_R_25_4_9.gpd" u 1:4 w l ti "" lt 3 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:4 w l ti "" lt 1 lw 3#, \
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:4 w l ti "" lt 2 lw 3, \
+ "../hole_plas_cell_E_50_R_25_4_E_50_R_25_4_8_ortotrop.gpd" u 1:4 w l ti "" lt 3 lw 3
  
  
 reset
@@ -39,7 +39,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol s}_{xx}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:2 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:2 w l ti "" lt 1 lw 3
  
  
 reset
@@ -60,7 +60,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{xx}^{v_x k=(1,0,0)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:5 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:5 w l ti "" lt 1 lw 3
  
  
 reset
@@ -81,7 +81,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{zz}^{v_x k=(1,0,0)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:7 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:7 w l ti "" lt 1 lw 3
 
  
  
@@ -103,7 +103,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{xz}^{v_x k=(0,0,1)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:9 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:9 w l ti "" lt 1 lw 3
 
  
  
@@ -125,7 +125,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{xz}^{v_z k=(1,0,0)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:12 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:12 w l ti "" lt 1 lw 3
   
  
 reset
@@ -146,7 +146,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{xx}^{v_z k=(0,0,1)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:14 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:14 w l ti "" lt 1 lw 3
    
  
 reset
@@ -167,7 +167,7 @@ set xlabel "{/Symbol x}_X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol t}_{zz}^{v_z k=(0,0,1)}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_4_9.gpd" u 1:16 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:16 w l ti "" lt 1 lw 3
  
  
  
@@ -191,7 +191,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 ~{}{0.5⁓}{/Symbol s}_{xx}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:17 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:17 w l ti "" lt 1 lw 3
    
  
 reset
@@ -212,7 +212,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 ~{}{0.5⁓}{/Symbol s}_{zz}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:20 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:20 w l ti "" lt 1 lw 3
  
  
  
@@ -234,7 +234,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol e}_{zz}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:23 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:23 w l ti "" lt 1 lw 3
  
  
 reset
@@ -255,7 +255,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol e}_{xx}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:21 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:21 w l ti "" lt 1 lw 3
   
  
  
@@ -276,7 +276,7 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol e}_{zz}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:44 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:44 w l ti "" lt 1 lw 3
  
  
 reset
@@ -297,4 +297,4 @@ set xlabel "X" font "Monospace, 50"
 set ylabel "{/Serif=50 {/Symbol e}_{xx}}" font "Monospace, 25" offset 2
 
 plot \
- "../hole_plas_cell_E_10_R_25_5_E_10_R_25_5_9.gpd" u 1:42 w l ti "" lt 1 lw 3
+ "../hole_plas_cell_E_10_R_25_4_E_10_R_25_4_8_ortotrop.gpd" u 1:42 w l ti "" lt 1 lw 3

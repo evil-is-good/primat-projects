@@ -7703,7 +7703,8 @@ printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n");
     };
     };
 
-void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst refine, const str f_name)
+void solve_approx_cell_elastic_problem (
+        cst flag, cdbl E, cdbl pua, cdbl R, cst refine, cst number_of_approx, const str f_name)
 {
     if (flag)
     {
@@ -7754,54 +7755,55 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst 
         // };
         EPTools ::set_isotropic_elascity{yung : E, puasson : 0.25}(element_matrix.C[1]);
         
-        // {
-        //     arr<arr<dbl, 6>, 6> E2d_original;
-        //     // arr<arr<dbl, 6>, 6> E2d_final;
-        //     for (st i = 0; i < 6; ++i)
-        //     {
-        //         for (st j = 0; j < 6; ++j)
-        //         {
-        //             E2d_original[i][j] = 0.0;
-        //         };
-        //     };
-        //
-        //     arr<dbl, 3> E = {10.0, 10.0, 100.0};
-        //
-        //     E2d_original[0][0] = 1.0 / E[0];
-        //     E2d_original[1][1] = 1.0 / E[1];
-        //     E2d_original[2][2] = 1.0 / E[2];
-        //     E2d_original[0][1] = -0.25 / E[0];
-        //     E2d_original[0][2] = -0.25 / E[0];
-        //     E2d_original[1][0] = -0.25 / E[1];
-        //     E2d_original[1][2] = -0.25 / E[1];
-        //     E2d_original[2][0] = -0.25 / E[2];
-        //     E2d_original[2][1] = -0.25 / E[2];
-        //     E2d_original[3][3] = 1.0 / 0.4;
-        //     E2d_original[4][4] = 1.0 / 0.4;
-        //     E2d_original[5][5] = 1.0 / 0.4;
-        //
-        //     auto C2d_original = inverse (E2d_original);
-        //     auto C = t2_to_t4 (C2d_original);
-        //     for (st i = 0; i < 3; ++i)
-        //     {
-        //         for (st j = 0; j < 3; ++j)
-        //         {
-        //             for (st k = 0; k < 3; ++k)
-        //             {
-        //                 for (st l = 0; l < 3; ++l)
-        //                 {
-        //                     element_matrix.C[1][i][j][k][l] = C[i][j][k][l];
-        //                 };
-        //             };
-        //         };
-        //     };
-        // };
+        if(0)
+        {
+            arr<arr<dbl, 6>, 6> E2d_original;
+            // arr<arr<dbl, 6>, 6> E2d_final;
+            for (st i = 0; i < 6; ++i)
+            {
+                for (st j = 0; j < 6; ++j)
+                {
+                    E2d_original[i][j] = 0.0;
+                };
+            };
+
+            arr<dbl, 3> E = {10.0, 100.0, 10.0};
+
+            E2d_original[0][0] = 1.0 / E[0];
+            E2d_original[1][1] = 1.0 / E[1];
+            E2d_original[2][2] = 1.0 / E[2];
+            E2d_original[0][1] = -0.25 / E[0];
+            E2d_original[0][2] = -0.25 / E[0];
+            E2d_original[1][0] = -0.25 / E[1];
+            E2d_original[1][2] = -0.25 / E[1];
+            E2d_original[2][0] = -0.25 / E[2];
+            E2d_original[2][1] = -0.25 / E[2];
+            E2d_original[3][3] = 1.0 / 0.4;
+            E2d_original[4][4] = 1.0 / 0.4;
+            E2d_original[5][5] = 1.0 / 0.4;
+
+            auto C2d_original = inverse (E2d_original);
+            auto C = t2_to_t4 (C2d_original);
+            for (st i = 0; i < 3; ++i)
+            {
+                for (st j = 0; j < 3; ++j)
+                {
+                    for (st k = 0; k < 3; ++k)
+                    {
+                        for (st l = 0; l < 3; ++l)
+                        {
+                            element_matrix.C[1][i][j][k][l] = C[i][j][k][l];
+                        };
+                    };
+                };
+            };
+        };
 
         OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
 
         OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
-        cst number_of_approx = 2; // Начиная с нулевой
+        // cst number_of_approx = 3; // Начиная с нулевой
         // arr<arr<i32, 3>, number_of_approx> approximations = {
         //     arr<i32, 3>({1, 0, 0}),
         //     arr<i32, 3>({0, 1, 0})};
@@ -7824,7 +7826,7 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst 
                 for (auto &&c : b)
                     for (auto &&d : c)
                         d .reinit (slae.solution[0].size());
-        printf("dfdfvdfv %d\n", cell_func.content[0][0][0][0].size());
+        // printf("dfdfvdfv %d\n", cell_func.content[0][0][0][0].size());
         // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
         for (st i = 0; i < slae.solution[0].size(); ++i)
         {
@@ -8261,6 +8263,31 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst 
         out.close ();
         };
 
+        {
+            std::ofstream out("cell/"+f_name+"/meta_coef.txt", std::ios::out);
+            for (size_t i = 0; i < 9; ++i)
+            {
+                uint8_t im = i / (2 + 1);
+                uint8_t in = i % (2 + 1);
+
+                for (size_t j = 0; j < 9; ++j)
+                {
+                    uint8_t jm = j / (2 + 1);
+                    uint8_t jn = j % (2 + 1);
+
+                    if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                        out << "\x1B[31m" << meta_coef[im][in][jm][jn] << "[0m   "
+                    else
+                        out <<  meta_coef[im][in][jm][jn] << "   "
+                };
+                for (size_t i = 0; i < 2; ++i)
+                    out << std::endl;
+            };
+            
+            out.close ();
+        };
+        
+
         arr<str, 3> ort = {"x", "y", "z"};
         arr<str, 3> aprx = {"0", "1", "2"};
         for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
@@ -8288,6 +8315,8 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst 
                                         out.close ();
             EPTools ::print_move_slice (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
                     "cell/"+f_name+"/stress_"+name+".gpd", y, 0.5);
+            EPTools ::print_move<3> (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+                    "cell/"+f_name+"/stress_"+name+".vtk", dealii::DataOutBase::vtk);
                                     };
                                 };
                             };
@@ -8322,6 +8351,8 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua, cdbl R, cst 
                                         out.close ();
             EPTools ::print_move_slice (cell_deform[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
                     "cell/"+f_name+"/deform_"+name+".gpd", y, 0.5);
+            EPTools ::print_move<3> (cell_deform[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+                    "cell/"+f_name+"/deform_"+name+".vtk", dealii::DataOutBase::vtk);
                                     };
                                 };
                             };
@@ -9268,6 +9299,7 @@ void get_line_deform_and_stress(
         OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> &cell_line_stress,
         OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> &cell_line_deform,
         vec<dealii::Point<3>> &coor_line_cell,
+        cst number_of_approx,
         const str f_name_cell, const str f_name_hole
         )
 {
@@ -9359,7 +9391,7 @@ void get_line_deform_and_stress(
             in.close ();
         };
 
-        cst number_of_approx = 2;
+        // cst number_of_approx = 3;
 
         OnCell::ArrayWithAccessToVector<arr<arr<vec<dbl>, 3>, 3>> cell_stress (number_of_approx);
         for (auto &&a : cell_stress.content)
@@ -9784,11 +9816,12 @@ void calculate_real_stress (
 
         cst ort_slice = y;
         cdbl coor_slice = 0.5;
+        cst number_of_approx = 2;
 
         // solve_approx_cell_elastic_problem (flg1, E, pua);
         // solve_elastic_problem (flg2);
 
-        solve_approx_cell_elastic_problem (flg1, E, pua, R, refine_cell, f_name_cell);
+        solve_approx_cell_elastic_problem (flg1, E, pua, R, refine_cell, number_of_approx, f_name_cell);
         solve_elastic_problem (flg2, refine_hole, f_name_cell, f_name_hole);
 
         // cst num_cells = 10;
@@ -9799,8 +9832,8 @@ void calculate_real_stress (
         arr<arr<vec<dbl>, 2>, 2> deform_line_1;
         arr<arr<arr<vec<dbl>, 2>, 2>, 2> deform_line_2;
         vec<dealii::Point<2>> coor_line_hole;
-        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_stress(2);
-        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_deform(2);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_stress(3);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<dbl>, 3>, 3>, 3>> cell_line_deform(3);
         vec<dealii::Point<3>> coor_line_cell;
 
 
@@ -9814,8 +9847,10 @@ void calculate_real_stress (
                 cell_line_stress,
                 cell_line_deform,
                 coor_line_cell,
+                number_of_approx,
                 f_name_cell, f_name_hole
                 );
+        return;
 
 
 
@@ -9837,6 +9872,7 @@ void calculate_real_stress (
         arr<arr<vec<dbl>, 3>, 3> final_stress;
         arr<arr<vec<dbl>, 3>, 3> final_deform;
         arr<arr<vec<dbl>, 3>, 3> final_stress_2;
+        arr<arr<vec<dbl>, 3>, 3> final_deform_2;
         for (st i = 0; i < 3; ++i)
         {
            for (st j = 0; j < 3; ++j)
@@ -9845,12 +9881,15 @@ void calculate_real_stress (
                final_stress[i][j] .resize (num_of_rez_points);
                final_deform[i][j] .resize (num_of_rez_points);
                final_stress_2[i][j] .resize (num_of_rez_points);
+               final_deform_2[i][j] .resize (num_of_rez_points);
            }; 
         };
         {
-            FILE *F;
+            std::ofstream F(("hole_plas_cell_"+f_name_cell+"_"+f_name_hole+".gpd").c_str(),
+                    std::ios::out);
+            // FILE *F;
             // F = fopen("hole_plas_cell.gpd", "w");
-            F = fopen(("hole_plas_cell_"+f_name_cell+"_"+f_name_hole+".gpd").c_str(), "w");
+            // F = fopen(("hole_plas_cell_"+f_name_cell+"_"+f_name_hole+".gpd").c_str(), "w");
             // for (st i = 0; i < size_line_hole; ++i)
             for (st i = 0; i < num_of_rez_points+1; ++i)
             {
@@ -9938,6 +9977,24 @@ void calculate_real_stress (
                         return (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
                          // return Y1;
                     };
+                auto deform_2_in_hole  = [&coor_in_hole, &coor_line_hole,
+                     &deform_line_2, point_number_in_hole] 
+                    (cst i, cst j, cst k)
+                    {
+                        cst nm = point_number_in_hole;
+                        st nm_1 = 0;
+                        if (nm == 0)
+                            nm_1 = coor_line_hole.size() - 1;
+                        else
+                            nm_1 = nm - 1;
+                        cdbl X = coor_in_hole;
+                        cdbl X1 = coor_line_hole[nm_1](0);
+                        cdbl X2 = coor_line_hole[nm](0);
+                        cdbl Y1 = deform_line_2[i][j][k][nm_1];
+                        cdbl Y2 = deform_line_2[i][j][k][nm];
+                        return (X*(Y1-Y2)+X1*Y2-X2*Y1) / (X1-X2);
+                         // return Y1;
+                    };
 
                 for (st alpha = 0; alpha < 3; ++alpha)
                 {
@@ -9958,45 +10015,166 @@ void calculate_real_stress (
                            deform_in_cell(1,0,0,y,alpha,beta) * deform_in_hole(y,x) +
                            deform_in_cell(0,1,0,x,alpha,beta) * deform_in_hole(x,y) +
                            deform_in_cell(0,1,0,y,alpha,beta) * deform_in_hole(y,y);
+                       final_stress_2[alpha][beta][i] = 
+                           stress_in_cell(1,0,0,x,alpha,beta) * deform_in_hole(x,x) +
+                           stress_in_cell(1,0,0,y,alpha,beta) * deform_in_hole(x,y) +
+                           stress_in_cell(0,1,0,x,alpha,beta) * deform_in_hole(y,x) +
+                           stress_in_cell(0,1,0,y,alpha,beta) * deform_in_hole(y,y) +
+                           (
+                           stress_in_cell(2,0,0,x,alpha,beta) * deform_2_in_hole(x,x,x) +
+                           stress_in_cell(1,1,0,x,alpha,beta) * deform_2_in_hole(x,y,x) +
+                           stress_in_cell(1,1,0,x,alpha,beta) * deform_2_in_hole(x,x,y) +
+                           stress_in_cell(0,2,0,x,alpha,beta) * deform_2_in_hole(x,y,y) +
+                           stress_in_cell(2,0,0,y,alpha,beta) * deform_2_in_hole(y,x,x) +
+                           stress_in_cell(1,1,0,y,alpha,beta) * deform_2_in_hole(y,y,x) +
+                           stress_in_cell(1,1,0,y,alpha,beta) * deform_2_in_hole(y,x,y) +
+                           stress_in_cell(0,2,0,y,alpha,beta) * deform_2_in_hole(y,y,y)
+                           ) * cell_size;
+                       final_deform_2[alpha][beta][i] = 
+                           deform_in_cell(1,0,0,x,alpha,beta) * deform_in_hole(x,x) +
+                           deform_in_cell(1,0,0,y,alpha,beta) * deform_in_hole(x,y) +
+                           deform_in_cell(0,1,0,x,alpha,beta) * deform_in_hole(y,x) +
+                           deform_in_cell(0,1,0,y,alpha,beta) * deform_in_hole(y,y) +
+                           (
+                           deform_in_cell(2,0,0,x,alpha,beta) * deform_2_in_hole(x,x,x) +
+                           deform_in_cell(1,1,0,x,alpha,beta) * deform_2_in_hole(x,y,x) +
+                           deform_in_cell(1,1,0,x,alpha,beta) * deform_2_in_hole(x,x,y) +
+                           deform_in_cell(0,2,0,x,alpha,beta) * deform_2_in_hole(x,y,y) +
+                           deform_in_cell(2,0,0,y,alpha,beta) * deform_2_in_hole(y,x,x) +
+                           deform_in_cell(1,1,0,y,alpha,beta) * deform_2_in_hole(y,y,x) +
+                           deform_in_cell(1,1,0,y,alpha,beta) * deform_2_in_hole(y,x,y) +
+                           deform_in_cell(0,2,0,y,alpha,beta) * deform_2_in_hole(y,y,y)
+                           ) * cell_size;
                     };
                 };
-                fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
-                        coor_in_hole, 
-                        final_stress[x][x][i],
-                        final_stress[x][y][i],
-                        final_stress[y][y][i],
-                        stress_in_cell(1,0,0,x,x,x), 
-                        stress_in_cell(1,0,0,x,x,y), 
-                        stress_in_cell(1,0,0,x,y,y),
-                        stress_in_cell(0,1,0,x,x,x), 
-                        stress_in_cell(0,1,0,x,x,y), 
-                        stress_in_cell(0,1,0,x,y,y),
-                        stress_in_cell(1,0,0,y,x,x), 
-                        stress_in_cell(1,0,0,y,x,y), 
-                        stress_in_cell(1,0,0,y,y,y),
-                        stress_in_cell(0,1,0,y,x,x), 
-                        stress_in_cell(0,1,0,y,x,y), 
-                        stress_in_cell(0,1,0,y,y,y),
-                        macro_stress[x][x][i],
-                        macro_stress[x][y][i],
-                        macro_stress[y][x][i],
-                        macro_stress[y][y][i],
-                        final_deform[x][x][i],
-                        final_deform[x][y][i],
-                        final_deform[y][y][i],
-                        deform_in_cell(1,0,0,x,x,x), 
-                        deform_in_cell(1,0,0,x,x,y), 
-                        deform_in_cell(1,0,0,x,y,y),
-                        deform_in_cell(0,1,0,x,x,x), 
-                        deform_in_cell(0,1,0,x,x,y), 
-                        deform_in_cell(0,1,0,x,y,y),
-                        deform_in_cell(1,0,0,y,x,x), 
-                        deform_in_cell(1,0,0,y,x,y), 
-                        deform_in_cell(1,0,0,y,y,y),
-                        deform_in_cell(0,1,0,y,x,x), 
-                        deform_in_cell(0,1,0,y,x,y), 
-                        deform_in_cell(0,1,0,y,y,y)
-                        );
+                arr<dbl, 44> out_data;
+                out_data[0]  = coor_in_hole, 
+                out_data[1]  = final_stress[x][x][i],
+                out_data[2]  = final_stress[x][y][i],
+                out_data[3]  = final_stress[y][y][i],
+                out_data[4]  = stress_in_cell(1,0,0,x,x,x), 
+                out_data[5]  = stress_in_cell(1,0,0,x,x,y), 
+                out_data[6]  = stress_in_cell(1,0,0,x,y,y),
+                out_data[7]  = stress_in_cell(0,1,0,x,x,x), 
+                out_data[8]  = stress_in_cell(0,1,0,x,x,y), 
+                out_data[9]  = stress_in_cell(0,1,0,x,y,y),
+                out_data[10] = stress_in_cell(1,0,0,y,x,x), 
+                out_data[11] = stress_in_cell(1,0,0,y,x,y), 
+                out_data[12] = stress_in_cell(1,0,0,y,y,y),
+                out_data[13] = stress_in_cell(0,1,0,y,x,x), 
+                out_data[14] = stress_in_cell(0,1,0,y,x,y), 
+                out_data[15] = stress_in_cell(0,1,0,y,y,y),
+                out_data[16] = macro_stress[x][x][i],
+                out_data[17] = macro_stress[x][y][i],
+                out_data[18] = macro_stress[y][x][i],
+                out_data[19] = macro_stress[y][y][i],
+                out_data[20] = final_deform[x][x][i],
+                out_data[21] = final_deform[x][y][i],
+                out_data[22] = final_deform[y][y][i],
+                out_data[23] = deform_in_cell(1,0,0,x,x,x), 
+                out_data[24] = deform_in_cell(1,0,0,x,x,y), 
+                out_data[25] = deform_in_cell(1,0,0,x,y,y),
+                out_data[26] = deform_in_cell(0,1,0,x,x,x), 
+                out_data[27] = deform_in_cell(0,1,0,x,x,y), 
+                out_data[28] = deform_in_cell(0,1,0,x,y,y),
+                out_data[29] = deform_in_cell(1,0,0,y,x,x), 
+                out_data[30] = deform_in_cell(1,0,0,y,x,y), 
+                out_data[31] = deform_in_cell(1,0,0,y,y,y),
+                out_data[32] = deform_in_cell(0,1,0,y,x,x), 
+                out_data[33] = deform_in_cell(0,1,0,y,x,y), 
+                out_data[34] = deform_in_cell(0,1,0,y,y,y);
+                out_data[35] = final_stress_2[x][x][i],
+                out_data[36] = final_stress_2[x][y][i],
+                out_data[37] = final_stress_2[y][y][i],
+                out_data[38] = final_deform_2[x][x][i],
+                out_data[39] = final_deform_2[x][y][i],
+                out_data[40] = final_deform_2[y][y][i],
+                out_data[41] = deform_in_hole(x,x),
+                out_data[42] = deform_in_hole(x,y),
+                out_data[43] = deform_in_hole(y,y);
+                // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+                //         coor_in_hole, 
+                //         final_stress[x][x][i],
+                //         final_stress[x][y][i],
+                //         final_stress[y][y][i],
+                //         stress_in_cell(1,0,0,x,x,x), 
+                //         stress_in_cell(1,0,0,x,x,y), 
+                //         stress_in_cell(1,0,0,x,y,y),
+                //         stress_in_cell(0,1,0,x,x,x), 
+                //         stress_in_cell(0,1,0,x,x,y), 
+                //         stress_in_cell(0,1,0,x,y,y),
+                //         stress_in_cell(1,0,0,y,x,x), 
+                //         stress_in_cell(1,0,0,y,x,y), 
+                //         stress_in_cell(1,0,0,y,y,y),
+                //         stress_in_cell(0,1,0,y,x,x), 
+                //         stress_in_cell(0,1,0,y,x,y), 
+                //         stress_in_cell(0,1,0,y,y,y),
+                //         macro_stress[x][x][i],
+                //         macro_stress[x][y][i],
+                //         macro_stress[y][x][i],
+                //         macro_stress[y][y][i],
+                //         final_deform[x][x][i],
+                //         final_deform[x][y][i],
+                //         final_deform[y][y][i],
+                //         deform_in_cell(1,0,0,x,x,x), 
+                //         deform_in_cell(1,0,0,x,x,y), 
+                //         deform_in_cell(1,0,0,x,y,y),
+                //         deform_in_cell(0,1,0,x,x,x), 
+                //         deform_in_cell(0,1,0,x,x,y), 
+                //         deform_in_cell(0,1,0,x,y,y),
+                //         deform_in_cell(1,0,0,y,x,x), 
+                //         deform_in_cell(1,0,0,y,x,y), 
+                //         deform_in_cell(1,0,0,y,y,y),
+                //         deform_in_cell(0,1,0,y,x,x), 
+                //         deform_in_cell(0,1,0,y,x,y), 
+                //         deform_in_cell(0,1,0,y,y,y)
+                //         );
+                F 
+                    << out_data[0] << " "
+                    << out_data[1] << " "
+                    << out_data[2] << " "
+                    << out_data[3] << " "
+                    << out_data[4] << " "
+                    << out_data[5] << " "
+                    << out_data[6] << " "
+                    << out_data[7] << " "
+                    << out_data[8] << " "
+                    << out_data[9] << " "
+                    << out_data[10] << " "
+                    << out_data[11] << " "
+                    << out_data[12] << " "
+                    << out_data[13] << " "
+                    << out_data[14] << " "
+                    << out_data[15] << " "
+                    << out_data[16] << " "
+                    << out_data[17] << " "
+                    << out_data[18] << " "
+                    << out_data[19] << " "
+                    << out_data[20] << " "
+                    << out_data[21] << " "
+                    << out_data[22] << " "
+                    << out_data[23] << " "
+                    << out_data[24] << " "
+                    << out_data[25] << " "
+                    << out_data[26] << " "
+                    << out_data[27] << " "
+                    << out_data[28] << " "
+                    << out_data[29] << " "
+                    << out_data[30] << " "
+                    << out_data[31] << " "
+                    << out_data[32] << " "
+                    << out_data[33] << " "
+                    << out_data[34] << " "
+                    << out_data[35] << " "
+                    << out_data[36] << " "
+                    << out_data[37] << " "
+                    << out_data[38] << " "
+                    << out_data[39] << " "
+                    << out_data[40] << " "
+                    << out_data[41] << " "
+                    << out_data[42] << " "
+                    << out_data[43] << " "
+                    << std::endl;
                 // for (st i = 0; i < num_of_rez_points; ++i)
                 // {
                 //     if ((coor_in_hole > cell_size * (43-1)) and (coor_in_hole < cell_size * (43)))
@@ -10009,7 +10187,8 @@ void calculate_real_stress (
                 //         };
                 // };
             };
-            fclose(F);
+            // fclose(F);
+            F.close ();
         };
         // {
         //     FILE *f;
@@ -10096,10 +10275,20 @@ int main()
     // calculate_real_stress (1, 100, 10.0, 0.25, 0, 1, 0.25, 5, 7,
     //         str("E_10_R_25_5"), str("E_10_R_25_5_7_without_hole"));
 
-    calculate_real_stress (1, 100, 10.0, 0.25, 1, 1, 0.25, 4, 8,
+    // calculate_real_stress (1, 100, 10.0, 0.25, 0, 0, 0.25, 5, 9,
+    //         str("E_10_R_25_5"), str("E_10_R_25_5_9"));
+
+    // calculate_real_stress (1, 100, 10.0, 0.25, 1, 1, 0.25, 4, 7,
+    //         str("E_10_R_25_4"), str("E_10_R_25_4_7"));
+
+    // calculate_real_stress (1, 100, 10.0, 0.25, 1, 0, 0.25, 4, 8,
+    //         str("E_10_R_25_4_ortotrop"), str("E_10_R_25_4_8"));
+
+    calculate_real_stress (1, 100, 10.0, 0.25, 1, 0, 0.25, 4, 8,
             str("E_10_R_25_4"), str("E_10_R_25_4_8"));
     
-    enum {x, y, z};
+    enum {x, y, z};//_ortotrop
+
 
     // if (!access("lol", 0))
     // {

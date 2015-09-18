@@ -173,15 +173,15 @@ namespace EPTools
             cst ort,
             cdbl slice_coor)
     {
-        dbl int_x = 0.0;
-        dbl int_y = 0.0;
-        dbl integ = 0.0;
+        // dbl int_x = 0.0;
+        // dbl int_y = 0.0;
+        // dbl integ = 0.0;
         FILE* f_out;
-        FILE* f_out_x;
-        FILE* f_out_y;
+        // FILE* f_out_x;
+        // FILE* f_out_y;
         f_out = fopen (file_name.c_str(), "w");
-        f_out_x = fopen ("approx_2_x", "w");
-        f_out_y = fopen ("approx_2_y", "w");
+        // f_out_x = fopen ("approx_2_x", "w");
+        // f_out_y = fopen ("approx_2_y", "w");
         for (auto cell = dof_handler.begin_active (); cell != dof_handler.end (); ++cell)
         {
             for (st i = 0; i < dealii::GeometryInfo<3>::vertices_per_cell; ++i)
@@ -206,26 +206,26 @@ namespace EPTools
                             move(cell->vertex_dof_index(i, 1)),
                             move(cell->vertex_dof_index(i, 2))
                            );
-                    if (std::abs(cell->vertex(i)(1) - 1.0) < 1e-10)
-                    {
-                        fprintf(f_out_x, "%f %f\n",
-                                cell->vertex(i)(0), move(cell->vertex_dof_index(i, 0)));
-                        int_x += move(cell->vertex_dof_index(i, 0));
-                    }
-                    if (std::abs(cell->vertex(i)(0) - 1.0) < 1e-10)
-                    {
-                        fprintf(f_out_y, "%f %f\n",
-                                cell->vertex(i)(1), move(cell->vertex_dof_index(i, 0)));
-                        int_y += move(cell->vertex_dof_index(i, 0));
-                    };
-                    integ += move(cell->vertex_dof_index(i, 0));
+                    // if (std::abs(cell->vertex(i)(1) - 1.0) < 1e-10)
+                    // {
+                    //     // fprintf(f_out_x, "%f %f\n",
+                    //     //         cell->vertex(i)(0), move(cell->vertex_dof_index(i, 0)));
+                    //     int_x += move(cell->vertex_dof_index(i, 0));
+                    // }
+                    // if (std::abs(cell->vertex(i)(0) - 1.0) < 1e-10)
+                    // {
+                    //     // fprintf(f_out_y, "%f %f\n",
+                    //     //         cell->vertex(i)(1), move(cell->vertex_dof_index(i, 0)));
+                    //     int_y += move(cell->vertex_dof_index(i, 0));
+                    // };
+                    // integ += move(cell->vertex_dof_index(i, 0));
                 };
             };
         };
         fclose(f_out);
-        fclose(f_out_x);
-        fclose(f_out_y);
-        printf("INTEGRALS %f %f %f\n", int_x, int_y, integ);
+        // fclose(f_out_x);
+        // fclose(f_out_y);
+        // printf("INTEGRALS %f %f %f\n", int_x, int_y, integ);
     };
     //
     // void print_cell_stress_slice ( 
