@@ -1,11 +1,12 @@
-#ifndef elastic_problem_def
-#define elastic_problem_def 1
+#ifndef ELASTIC_PROBLEM_TOOLS
+#define ELASTIC_PROBLEM_TOOLS 1
 
 #include <fstream>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/numerics/data_out.h>
+#include "../problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
 
 // #include "../../general/4_points_function/4_points_function.h"
 
@@ -73,63 +74,63 @@ namespace EPTools
 
     //! Задать ортотропный тэнзор упругости 
 
-        void set_ortotropic_elascity (
-                const arr<arr<dbl, 3>, 3> E, 
-                const arr<dbl, 3> G, 
-                ATools::FourthOrderTensor &C)
+    void set_ortotropic_elascity (
+            const arr<arr<dbl, 3>, 3> E, 
+            const arr<dbl, 3> G, 
+            ATools::FourthOrderTensor &C)
+    {
+        enum {x, y, z};
+        for (st i = 0; i < 3; ++i)
         {
-            enum {x, y, z};
-            for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
             {
-                for (st j = 0; j < 3; ++j)
+                for (st k = 0; k < 3; ++k)
                 {
-                    for (st k = 0; k < 3; ++k)
+                    for (st l = 0; l < 3; ++l)
                     {
-                        for (st l = 0; l < 3; ++l)
-                        {
-                            C[i][j][k][l] = 0.0;
-                        };
+                        C[i][j][k][l] = 0.0;
                     };
-                };
-            };
-
-            cdbl c = E[x][y] * E[y][x] + E[z][y] * E[y][z] + E[x][z] * E[z][x];
-            cdbl d = E[x][y] * E[y][z] * E[z][x] + E[x][z] * E[z][y] * E[y][x];
-            cdbl sm = 1.0 / (1 - c - d);
-
-            auto a = [&E] (cst i){
-                cst m = (i + 1) % 3;
-                cst n = (i + 2) % 3;
-                return (1.0 - E[m][n] * E[n][m]);
-            };
-            auto b = [&E] (cst i, cst j){
-            for (st k = 0; k < 3; ++k)
-            {
-            if ((k != i) and (k != j))
-            return E[i][j] + E[i][k] * E[k][j];
-            };
-            };
-           
-            for (st i = 0; i < 3; ++i)
-            {
-                for (st j = 0; j < 3; ++j)
-                {
-                    if (i == j)
-                    {
-                        C[i][i][j][j] = E[i][i] * a(i) * sm;
-                    }
-                    else
-                    {
-                        C[i][i][j][j] = E[i][i] * b(i, j) * sm;
-                        C[i][j][i][j] = G[i + j - 1];
-                        C[i][j][j][i] = G[i + j - 1];
-                    };
-                    // C[j][j][i][i] = C[i][i][j][j];
-                    // C[j][i][j][i] = C[i][j][i][j];
-
                 };
             };
         };
+
+        cdbl c = E[x][y] * E[y][x] + E[z][y] * E[y][z] + E[x][z] * E[z][x];
+        cdbl d = E[x][y] * E[y][z] * E[z][x] + E[x][z] * E[z][y] * E[y][x];
+        cdbl sm = 1.0 / (1 - c - d);
+
+        auto a = [&E] (cst i){
+            cst m = (i + 1) % 3;
+            cst n = (i + 2) % 3;
+            return (1.0 - E[m][n] * E[n][m]);
+        };
+        auto b = [&E] (cst i, cst j){
+            for (st k = 0; k < 3; ++k)
+            {
+                if ((k != i) and (k != j))
+                    return E[i][j] + E[i][k] * E[k][j];
+            };
+        };
+
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                if (i == j)
+                {
+                    C[i][i][j][j] = E[i][i] * a(i) * sm;
+                }
+                else
+                {
+                    C[i][i][j][j] = E[i][i] * b(i, j) * sm;
+                    C[i][j][i][j] = G[i + j - 1];
+                    C[i][j][j][i] = G[i + j - 1];
+                };
+                // C[j][j][i][i] = C[i][i][j][j];
+                // C[j][i][j][i] = C[i][j][i][j];
+
+            };
+        };
+    };
 
     //! Распечатать в файл перемещения
     template<u8 dim>
@@ -848,7 +849,7 @@ void print_elastic_deformation (const dealii::Vector<dbl> &move,
                 auto indx = cell->vertex_dof_index(i, component);
 
                 // if ((cell->material_id() == 0) or (cell->material_id() == 2))
-                    if (cell->material_id() == 0)
+                if (cell->material_id() == 0)
                 {
                     grad[0][indx] += function_on_cell.dx(cell->vertex(i));
                     grad[1][indx] += function_on_cell.dy(cell->vertex(i));
@@ -949,10 +950,10 @@ void print_elastic_stress (const dealii::Vector<dbl> &move,
                 // if ((cell->material_id() == 0) or (cell->material_id() == 2))
                 //     // if (cell->material_id() == 0)
                 // {
-                    grad[0][indx] += function_on_cell.dx(cell->vertex(i));
-                    grad[1][indx] += function_on_cell.dy(cell->vertex(i));
-                    // grad[0][indx] = 1.0;
-                    // grad[1][indx] = 1.0;
+                grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                // grad[0][indx] = 1.0;
+                // grad[1][indx] = 1.0;
                 // }
                 // else
                 // {
@@ -1128,10 +1129,10 @@ void print_elastic_stress (const dealii::Vector<dbl> &move,
                 // if ((cell->material_id() == 0) or (cell->material_id() == 2))
                 //     // if (cell->material_id() == 0)
                 // {
-                    grad[0][indx] += function_on_cell.dx(cell->vertex(i));
-                    grad[1][indx] += function_on_cell.dy(cell->vertex(i));
-                    // grad[0][indx] = 1.0;
-                    // grad[1][indx] = 1.0;
+                grad[0][indx] += function_on_cell.dx(cell->vertex(i));
+                grad[1][indx] += function_on_cell.dy(cell->vertex(i));
+                // grad[0][indx] = 1.0;
+                // grad[1][indx] = 1.0;
                 // }
                 // else
                 // {
@@ -1363,7 +1364,7 @@ void print_elastic_deformation_2 (const dealii::Vector<dbl> &move,
                         auto indx = cell->vertex_dof_index(i, component);
 
                         if ((cell->material_id() == 0) or (std::abs(grad[0][indx]) < 1e-5))
-                        // if (cell->material_id() == 0)
+                            // if (cell->material_id() == 0)
                         {
                             grad_2[g_comp][0][indx] += function_on_cell.dx(cell->vertex(i));
                             grad_2[g_comp][1][indx] += function_on_cell.dy(cell->vertex(i));
@@ -1625,7 +1626,7 @@ void print_elastic_deformation_2 (const dealii::Vector<dbl> &move,
                         auto indx = cell->vertex_dof_index(i, component);
 
                         if ((cell->material_id() == 0) or (std::abs(grad[0][indx]) < 1e-5))
-                        // if (cell->material_id() == 0)
+                            // if (cell->material_id() == 0)
                         {
                             grad_2[g_comp][0][indx] += function_on_cell.dx(cell->vertex(i));
                             grad_2[g_comp][1][indx] += function_on_cell.dy(cell->vertex(i));
@@ -2752,6 +2753,7 @@ void print_coor_bin (const dealii::DoFHandler<dim> &dof_handler, const str file_
         out.close ();
     };
 };
+
 };
 
 #endif

@@ -22,6 +22,7 @@
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/system_linear_algebraic_equations/system_linear_algebraic_equations.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/assembler/assembler.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/print/print.h"
 
 #include "../../../calculation_core/src/blocks/general/laplacian/vector/laplacian_vector.h"
 #include "../../../calculation_core/src/blocks/general/source/vector/source_vector.h"

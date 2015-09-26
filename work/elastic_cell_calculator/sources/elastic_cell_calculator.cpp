@@ -60,7 +60,8 @@ void set_cylinder(dealii::Triangulation< 3 > &triangulation,
 };
 
 void solve_cell_elastic_problem (
-        const str& path, cst number_of_approx, vec<ATools::FourthOrderTensor>& C, Domain<3>& domain)
+        const str& path, cst number_of_approx, 
+        const vec<ATools::FourthOrderTensor>& C, Domain<3>& domain)
 {
     enum {x, y, z};
 
@@ -82,12 +83,14 @@ void solve_cell_elastic_problem (
                 {
                     for (st m = 0; m < C.size(); ++m)
                     {
-                        element_matrix.C[m][i][j][k][k] = C[m][i][j][k][l];
+                        element_matrix.C[m][i][j][k][l] = C[m][i][j][k][l];
                     };
                 };
             };
         };
     };
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+        // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
 
     OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
 
@@ -142,11 +145,11 @@ void solve_cell_elastic_problem (
 
     for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
     {
-        for (st i = 0; i < approx_number+1; ++i)
+        for (i32 i = 0; i < approx_number+1; ++i)
         {
-            for (st j = 0; j < approx_number+1; ++j)
+            for (i32 j = 0; j < approx_number+1; ++j)
             {
-                for (st k = 0; k < approx_number+1; ++k)
+                for (i32 k = 0; k < approx_number+1; ++k)
                 {
                     if ((i+j+k) == approx_number)
                     {
@@ -185,11 +188,11 @@ void solve_cell_elastic_problem (
             };
         };
         puts("!!!");
-        for (st i = 0; i < approx_number+2; ++i)
+        for (i32 i = 0; i < approx_number+2; ++i)
         {
-            for (st j = 0; j < approx_number+2; ++j)
+            for (i32 j = 0; j < approx_number+2; ++j)
             {
-                for (st k = 0; k < approx_number+2; ++k)
+                for (i32 k = 0; k < approx_number+2; ++k)
                 {
                     if ((i+j+k) == approx_number+1)
                     {
@@ -202,11 +205,6 @@ void solve_cell_elastic_problem (
                             meta_coefficient[approximation][nu][x] = res[x]; //E_x_a[0]_nu_a[1]
                             meta_coefficient[approximation][nu][y] = res[y]; 
                             meta_coefficient[approximation][nu][z] = res[z]; 
-                            printf("meta k=(%ld, %ld, %ld) nu=%ld %f %f %f\n", i, j, k, nu, 
-                                    meta_coefficient[approximation][nu][x],
-                                    meta_coefficient[approximation][nu][y],
-                                    meta_coefficient[approximation][nu][z]
-                                  );
                         };
                     };
                 };
@@ -215,94 +213,94 @@ void solve_cell_elastic_problem (
     };
     puts("!!!!!");
 
-    {
-        arr<str, 3> ort = {"x", "y", "z"};
-        arr<str, 3> aprx = {"0", "1", "2"};
-        OnCell::StressCalculator stress_calculator (
-                domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
-        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
-        {
-            for (st i = 0; i < approx_number+1; ++i)
-            {
-                for (st j = 0; j < approx_number+1; ++j)
-                {
-                    for (st k = 0; k < approx_number+1; ++k)
-                    {
-                        if ((i+j+k) == approx_number)
-                        {
-                            arr<i32, 3> approximation = {i, j, k};
-                            for (st nu = 0; nu < 3; ++nu)
-                            {
-                                for (st alpha = 0; alpha < 3; ++alpha)
-                                {
-                                    dealii::Vector<dbl> stress(domain.dof_handler.n_dofs());
-                                    for (st beta = 0; beta < 3; ++beta)
-                                    {
-                                        stress_calculator .calculate (
-                                                approximation, nu, alpha, beta,
-                                                domain.dof_handler, cell_func, stress);
-                                        true_meta_coef[approximation][nu][alpha][beta] =
-                                            OnCell::calculate_meta_coefficients_3d_elastic_from_stress (
-                                                    domain.dof_handler, stress, beta);
-                                        printf("meta k=(%ld, %ld, %ld) nu=%ld alpha=%ld beta=%ld %f\n", 
-                                                i, j, k, nu, alpha, beta, true_meta_coef[approximation][nu][alpha][beta]);
-                                    };
-                                    cell_stress[approximation][nu][alpha] = stress;
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-    {
-        arr<str, 3> ort = {"x", "y", "z"};
-        arr<str, 3> aprx = {"0", "1", "2"};
-        OnCell::DeformCalculator deform_calculator (
-                domain.dof_handler, domain.dof_handler.get_fe());
-        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
-        {
-            for (st i = 0; i < approx_number+1; ++i)
-            {
-                for (st j = 0; j < approx_number+1; ++j)
-                {
-                    for (st k = 0; k < approx_number+1; ++k)
-                    {
-                        if ((i+j+k) == approx_number)
-                        {
-                            arr<i32, 3> approximation = {i, j, k};
-                            for (st nu = 0; nu < 3; ++nu)
-                            {
-                                dealii::Vector<dbl> deform(domain.dof_handler.n_dofs());
-                                for (st beta = 0; beta < 3; ++beta)
-                                {
-                                    deform_calculator .calculate (
-                                            approximation, nu, beta,
-                                            domain.dof_handler, cell_func, deform);
-                                    cell_deform[approximation][nu][beta] = deform;
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-    };
-
-    ATools::FourthOrderTensor meta_coef;
-    for (st i = 0; i < 3; ++i)
-    {
-        for (st j = 0; j < 3; ++j)
-        {
-            for (st k = 0; k < 3; ++k)
-            {
-                meta_coef[j][k][i][x] = true_meta_coef[arr<i32, 3>{1, 0, 0}][i][j][k];
-                meta_coef[j][k][i][y] = true_meta_coef[arr<i32, 3>{0, 1, 0}][i][j][k];
-                meta_coef[j][k][i][z] = true_meta_coef[arr<i32, 3>{0, 0, 1}][i][j][k];
-            };
-        };
-    };
+    // {
+    //     arr<str, 3> ort = {"x", "y", "z"};
+    //     arr<str, 3> aprx = {"0", "1", "2"};
+    //     OnCell::StressCalculator stress_calculator (
+    //             domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+    //     for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+    //     {
+    //         for (st i = 0; i < approx_number+1; ++i)
+    //         {
+    //             for (st j = 0; j < approx_number+1; ++j)
+    //             {
+    //                 for (st k = 0; k < approx_number+1; ++k)
+    //                 {
+    //                     if ((i+j+k) == approx_number)
+    //                     {
+    //                         arr<i32, 3> approximation = {i, j, k};
+    //                         for (st nu = 0; nu < 3; ++nu)
+    //                         {
+    //                             for (st alpha = 0; alpha < 3; ++alpha)
+    //                             {
+    //                                 dealii::Vector<dbl> stress(domain.dof_handler.n_dofs());
+    //                                 for (st beta = 0; beta < 3; ++beta)
+    //                                 {
+    //                                     stress_calculator .calculate (
+    //                                             approximation, nu, alpha, beta,
+    //                                             domain.dof_handler, cell_func, stress);
+    //                                     true_meta_coef[approximation][nu][alpha][beta] =
+    //                                         OnCell::calculate_meta_coefficients_3d_elastic_from_stress (
+    //                                                 domain.dof_handler, stress, beta);
+    //                                     // printf("meta k=(%ld, %ld, %ld) nu=%ld alpha=%ld beta=%ld %f\n", 
+    //                                     //         i, j, k, nu, alpha, beta, true_meta_coef[approximation][nu][alpha][beta]);
+    //                                 };
+    //                                 cell_stress[approximation][nu][alpha] = stress;
+    //                             };
+    //                         };
+    //                     };
+    //                 };
+    //             };
+    //         };
+    //     };
+    // };
+    // {
+    //     arr<str, 3> ort = {"x", "y", "z"};
+    //     arr<str, 3> aprx = {"0", "1", "2"};
+    //     OnCell::DeformCalculator deform_calculator (
+    //             domain.dof_handler, domain.dof_handler.get_fe());
+    //     for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+    //     {
+    //         for (st i = 0; i < approx_number+1; ++i)
+    //         {
+    //             for (st j = 0; j < approx_number+1; ++j)
+    //             {
+    //                 for (st k = 0; k < approx_number+1; ++k)
+    //                 {
+    //                     if ((i+j+k) == approx_number)
+    //                     {
+    //                         arr<i32, 3> approximation = {i, j, k};
+    //                         for (st nu = 0; nu < 3; ++nu)
+    //                         {
+    //                             dealii::Vector<dbl> deform(domain.dof_handler.n_dofs());
+    //                             for (st beta = 0; beta < 3; ++beta)
+    //                             {
+    //                                 deform_calculator .calculate (
+    //                                         approximation, nu, beta,
+    //                                         domain.dof_handler, cell_func, deform);
+    //                                 cell_deform[approximation][nu][beta] = deform;
+    //                             };
+    //                         };
+    //                     };
+    //                 };
+    //             };
+    //         };
+    //     };
+    // };
+    //
+    // ATools::FourthOrderTensor meta_coef;
+    // for (st i = 0; i < 3; ++i)
+    // {
+    //     for (st j = 0; j < 3; ++j)
+    //     {
+    //         for (st k = 0; k < 3; ++k)
+    //         {
+    //             meta_coef[j][k][i][x] = true_meta_coef[arr<i32, 3>{1, 0, 0}][i][j][k];
+    //             meta_coef[j][k][i][y] = true_meta_coef[arr<i32, 3>{0, 1, 0}][i][j][k];
+    //             meta_coef[j][k][i][z] = true_meta_coef[arr<i32, 3>{0, 0, 1}][i][j][k];
+    //         };
+    //     };
+    // };
 
     // auto newcoef = unphysical_to_physicaly (meta_coef);
     // printf("%f %f %f %f %f %f %f %f %f %f %f\n", 
@@ -320,11 +318,15 @@ void solve_cell_elastic_problem (
     //       );
 
 
-    {
-        std::ofstream out (path + "/meta_coef.bin", std::ios::out | std::ios::binary);
-        out.write ((char *) &meta_coef, sizeof meta_coef);
-        out.close ();
-    };
+    // {
+    //     std::ofstream out (path + "/meta_coef.bin", std::ios::out | std::ios::binary);
+    //     out.write ((char *) &meta_coef, sizeof meta_coef);
+    //     out.close ();
+    // };
+    // OnCell::BDStore::print_coor<3> (domain.dof_handler, path + "/coor");
+    OnCell::BDStore::print_stress (
+                domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe(),
+                cell_func, number_of_approx, path);
 
     // arr<str, 3> ort = {"x", "y", "z"};
     // arr<str, 3> aprx = {"0", "1", "2"};
@@ -345,16 +347,16 @@ void solve_cell_elastic_problem (
     //                         {
     //                             str name = aprx[i]+str("_")+aprx[j]+str("_")+aprx[k]+str("_")+ort[nu]+str("_")+ort[alpha];
     //                             {
-    //                                 std::ofstream out ("cell/"+f_name+"/stress_"+name+".bin", std::ios::out | std::ios::binary);
+    //                                 std::ofstream out (path+"/stress_"+name+".bin", std::ios::out | std::ios::binary);
     //                                 for (st i = 0; i < slae.solution[0].size(); ++i)
     //                                 {
     //                                     out.write ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
     //                                 };
     //                                 out.close ();
-    //                                 EPTools ::print_move_slice (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
-    //                                         "cell/"+f_name+"/stress_"+name+".gpd", y, 0.5);
-    //                                 EPTools ::print_move<3> (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
-    //                                         "cell/"+f_name+"/stress_"+name+".vtk", dealii::DataOutBase::vtk);
+    //                                 // EPTools ::print_move_slice (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+    //                                 //         "cell/"+f_name+"/stress_"+name+".gpd", y, 0.5);
+    //                                 // EPTools ::print_move<3> (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+    //                                 //         "cell/"+f_name+"/stress_"+name+".vtk", dealii::DataOutBase::vtk);
     //                             };
     //                         };
     //                     };
@@ -468,6 +470,7 @@ void solve_cell_elastic_problem_circle(
     //     printf("\n");
     // };
 
+    // solve_approx_cell_elastic_problem (path, approximation_number, C, domain);
     solve_cell_elastic_problem (path, approximation_number, C, domain);
 };
 
@@ -504,6 +507,10 @@ int main(int argc, char *argv[])
         folder[5] = argv[prop.size() * 6 + 4];
         folder[6] = argv[prop.size() * 6 + 3];
         const str path = make_path(folder);
+
+        std::cout << prop[0][0] << " " << prop[0][3]  << std::endl;
+        std::cout << prop[1][0] << " " << prop[1][3]  << std::endl;
+        std::cout << refine << " " << R << std::endl;
 
         solve_cell_elastic_problem_circle (path, approximation_number, prop, refine, R);
     };
