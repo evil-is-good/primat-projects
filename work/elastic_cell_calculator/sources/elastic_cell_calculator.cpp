@@ -288,19 +288,19 @@ void solve_cell_elastic_problem (
     //     };
     // };
     //
-    // ATools::FourthOrderTensor meta_coef;
-    // for (st i = 0; i < 3; ++i)
-    // {
-    //     for (st j = 0; j < 3; ++j)
-    //     {
-    //         for (st k = 0; k < 3; ++k)
-    //         {
-    //             meta_coef[j][k][i][x] = true_meta_coef[arr<i32, 3>{1, 0, 0}][i][j][k];
-    //             meta_coef[j][k][i][y] = true_meta_coef[arr<i32, 3>{0, 1, 0}][i][j][k];
-    //             meta_coef[j][k][i][z] = true_meta_coef[arr<i32, 3>{0, 0, 1}][i][j][k];
-    //         };
-    //     };
-    // };
+    ATools::FourthOrderTensor meta_coef;
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            for (st k = 0; k < 3; ++k)
+            {
+                meta_coef[j][k][i][x] = true_meta_coef[arr<i32, 3>{1, 0, 0}][i][j][k];
+                meta_coef[j][k][i][y] = true_meta_coef[arr<i32, 3>{0, 1, 0}][i][j][k];
+                meta_coef[j][k][i][z] = true_meta_coef[arr<i32, 3>{0, 0, 1}][i][j][k];
+            };
+        };
+    };
 
     // auto newcoef = unphysical_to_physicaly (meta_coef);
     // printf("%f %f %f %f %f %f %f %f %f %f %f\n", 
@@ -323,9 +323,16 @@ void solve_cell_elastic_problem (
     //     out.write ((char *) &meta_coef, sizeof meta_coef);
     //     out.close ();
     // };
-    // OnCell::BDStore::print_coor<3> (domain.dof_handler, path + "/coor");
+    OnCell::BDStore::print_meta_coef (meta_coef, path);
+    OnCell::BDStore::print_coor<3> (domain.dof_handler, path);
     OnCell::BDStore::print_stress (
                 domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe(),
+                cell_func, number_of_approx, path);
+    OnCell::BDStore::print_deform (
+                domain.dof_handler, domain.dof_handler.get_fe(),
+                cell_func, number_of_approx, path);
+    OnCell::BDStore::print_move (
+                domain.dof_handler,
                 cell_func, number_of_approx, path);
 
     // arr<str, 3> ort = {"x", "y", "z"};

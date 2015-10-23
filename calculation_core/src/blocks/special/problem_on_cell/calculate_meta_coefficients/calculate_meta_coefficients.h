@@ -713,7 +713,6 @@ namespace OnCell
 
         auto cell = dof_handler.begin_active();
         auto endc = dof_handler.end();
-        // puts("2222");
         for (; cell != endc; ++cell)
         {
             fe_values .reinit (cell);
@@ -726,11 +725,6 @@ namespace OnCell
                 cell_area += fe_values.JxW(q_point);
             };
 
-            // arr<dbl, 24> tmp;
-            // for (st i = 0; i < 24; ++i)
-            // {
-            //     tmp[i] = 0.0;
-            // };
             dbl tmp = 0.0;
 
             for (st m = 0; m < dofs_per_cell; ++m)
