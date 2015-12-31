@@ -1029,7 +1029,6 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             const double radius, const size_t n_refine)
     {
         dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
-       // puts("1111111111111111111111111111111111111111111");
         triangulation .refine_global (n_refine);
         {
             dealii::Point<2> center (0.5, 0.5);
@@ -3313,19 +3312,19 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                     cell.boundary_id = 4;
                     b.boundary_lines .push_back (cell);
                 };
-                // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
-                // b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
-                // b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
-                // b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
+                // // b.boundary_lines .push_back (dealii::CellData<1>{0, 1, 0});
+                // // b.boundary_lines .push_back (dealii::CellData<1>{1, 2, 2});
+                // // b.boundary_lines .push_back (dealii::CellData<1>{2, 3, 1});
+                // // b.boundary_lines .push_back (dealii::CellData<1>{3, 0, 2});
+                //
+                // // dealii::GridReordering<2> ::reorder_cells (c);
+                // // domain.grid .create_triangulation_compatibility (v, c, b);
+                // domain.grid .create_triangulation (v, c, b);
 
-                // dealii::GridReordering<2> ::reorder_cells (c);
-                // domain.grid .create_triangulation_compatibility (v, c, b);
-                domain.grid .create_triangulation (v, c, b);
-
-                domain.grid.refine_global(6);
-
-                // dealii::GridGenerator::hyper_cube(domain.grid);
-                // domain.grid.refine_global(2);
+                // domain.grid.refine_global(5);
+                //
+                // // dealii::GridGenerator::hyper_cube(domain.grid);
+                // // domain.grid.refine_global(2);
 
                     vec<prmt::Point<2>> border;
                     vec<st> type_border;
@@ -3344,8 +3343,8 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 //                         //         prmt::Point<2>(0., 0.), prmt::Point<2>(1., 1.));
                     // vec<prmt::Point<2>> inclusion;
                     vec<vec<prmt::Point<2>>> inclusion(2);
-                    cdbl radius = 0.05;
-                    cdbl radius_2 = 0.055;
+                    cdbl radius = 0.25;
+                    cdbl radius_2 = 0.255;
                     dealii::Point<2> center (0.5, 0.5);
                     give_circ(inclusion[0], 32, radius, prmt::Point<2>(center));
                     give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
@@ -3359,7 +3358,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                     //         prmt::Point<2>(0.65, 0.65), prmt::Point<2>(0.75, 0.75));
 //                         give_crack<t_rounded_tip, 1>(inclusion, 30);
 // 
-                    // ::set_grid(domain.grid, border, inclusion, type_border);
+                    ::set_grid(domain.grid, border, inclusion, type_border);
                     // dealii::GridGenerator ::hyper_cube (domain.grid, 0.0, 1.0);
                     // domain.grid.refine_global(4);
                     {
@@ -3418,7 +3417,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                             //     cell->set_material_id(0);
                         };
                     };
-                domain.grid.refine_global(1);
+                // domain.grid.refine_global(1);
             };
             dealii::FESystem<2,2> fe 
                 (dealii::FE_Q<2,2>(1), 2);
@@ -3429,35 +3428,35 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
             LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
             element_matrix.C .resize (3);
-            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-            // // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.00}(element_matrix.C[1]);
-            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
-            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
+            EPTools ::set_isotropic_elascity{yung : 20.0, puasson : 0.25}(element_matrix.C[0]);
+            // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.00}(element_matrix.C[1]);
+            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
+            EPTools ::set_isotropic_elascity{yung : 20.0, puasson : 0.25}(element_matrix.C[2]);
             // auto meta_coef = solve_elastic_problem_on_cell_3d_and_meta_coef_return ();
             ATools::FourthOrderTensor meta_coef;
             std::ifstream in ("cell/meta_coef.bin", std::ios::in | std::ios::binary);
             in.read ((char *) &meta_coef, sizeof meta_coef);
             in.close ();
-            for (st i = 0; i < 3; ++i)
-            {
-                for (st j = 0; j < 3; ++j)
-                {
-                    for (st k = 0; k < 3; ++k)
-                    {
-                        for (st l = 0; l < 3; ++l)
-                        {
-                            element_matrix.C[0][i][j][k][l] = meta_coef[i][j][k][l];
-                            element_matrix.C[1][i][j][k][l] = 0.0;
-                            // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
-                            element_matrix.C[2][i][j][k][l] = meta_coef[i][j][k][l];
-                            // element_matrix.C[0][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
-                            // element_matrix.C[1][2-i][2-j][2-k][2-l] = 0.0;
-                            // // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
-                            // element_matrix.C[2][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
-                        };
-                    };
-                };
-            };
+            // for (st i = 0; i < 3; ++i)
+            // {
+            //     for (st j = 0; j < 3; ++j)
+            //     {
+            //         for (st k = 0; k < 3; ++k)
+            //         {
+            //             for (st l = 0; l < 3; ++l)
+            //             {
+            //                 element_matrix.C[0][i][j][k][l] = meta_coef[i][j][k][l];
+            //                 element_matrix.C[1][i][j][k][l] = 0.0;
+            //                 // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
+            //                 element_matrix.C[2][i][j][k][l] = meta_coef[i][j][k][l];
+            //                 // element_matrix.C[0][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
+            //                 // element_matrix.C[1][2-i][2-j][2-k][2-l] = 0.0;
+            //                 // // element_matrix.C[1][i][j][k][l] = meta_coef[i][j][k][l];
+            //                 // element_matrix.C[2][2-i][2-j][2-k][2-l] = meta_coef[i][j][k][l];
+            //             };
+            //         };
+            //     };
+            // };
         for (size_t i = 0; i < 9; ++i)
         {
             uint8_t im = i / (2 + 1);
@@ -3468,7 +3467,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 uint8_t jm = j / (2 + 1);
                 uint8_t jn = j % (2 + 1);
 
-                if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                if (std::abs(element_matrix.C[0][im][in][jm][jn]) > 0.0000001)
                     printf("\x1B[31m%f\x1B[0m   ", 
                             element_matrix.C[0][im][in][jm][jn]);
                 else
@@ -3963,12 +3962,70 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                     // ::set_tria <5> (domain.grid, dot, material_id);
                     // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
                     // set_circ(domain.grid, 0.475, 4);
-                    set_circ(domain.grid, 0.25, 4);
+                    // set_circ(domain.grid, 0.25, 7);
                     // domain.grid .refine_global (3);
+                    // vec<prmt::Point<2>> border;
+                    // vec<prmt::Point<2>> inclusion;
+                    // cdbl radius = 0.25;
+                    // dealii::Point<2> center (0.5, 0.5);
+                    // // give_circ(inclusion, 16, radius, prmt::Point<2>(center));
+                    // give_rectangle(inclusion, 16,
+                    //         prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
+                    // give_rectangle(border, 16,
+                    //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                    // ::set_grid(domain.grid, border, inclusion);
+
+                    vec<prmt::Point<2>> border;
+                    vec<st> type_border;
+                    give_rectangle_with_border_condition(
+                            border,
+                            type_border,
+                            arr<st, 4>{1,3,2,4},
+                            1,
+                            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                    vec<vec<prmt::Point<2>>> inclusion(1);
+                    cdbl radius = 0.25;
+                    // cdbl radius_2 = 0.255;
+                    dealii::Point<2> center (0.5, 0.5);
+                    give_circ(inclusion[0], 62, radius, prmt::Point<2>(center));
+                    // give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
+                    ::set_grid(domain.grid, border, inclusion, type_border);
+
                     {
                         std::ofstream out ("grid-igor.eps");
                         dealii::GridOut grid_out;
                         grid_out.write_eps (domain.grid, out);
+                    };
+                    {
+                        // dealii::Point<2> center (0.5, 0.5);
+                        dealii::Triangulation<2>::active_cell_iterator
+                            cell = domain.grid .begin_active(),
+                                 end_cell = domain.grid .end();
+                        for (; cell != end_cell; ++cell)
+                        {
+                            dealii::Point<2> midle_p(0.0, 0.0);
+
+                            for (size_t i = 0; i < 4; ++i)
+                            {
+                                midle_p(0) += cell->vertex(i)(0);
+                                midle_p(1) += cell->vertex(i)(1);
+                            };
+                            midle_p(0) /= 4.0;
+                            midle_p(1) /= 4.0;
+
+                            // printf("%f %f\n", midle_p(0), midle_p(1));
+
+                            if (center.distance(midle_p) < radius)
+                            {
+                                cell->set_material_id(1);
+                                               // puts("adf");
+                            }
+                            else
+                            {
+                                cell->set_material_id(0);
+                                // puts("123");
+                            };
+                        };
                     };
                 };
                 dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
@@ -3979,10 +4036,10 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
                 LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
                 element_matrix.C .resize (2);
-                // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
-                // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
-                EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-                EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.0}(element_matrix.C[1]);
+                EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+                EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+                // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+                // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.0}(element_matrix.C[1]);
 
                 u8 dim = 2;
 
@@ -4046,6 +4103,8 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 };
             EPTools ::print_elastic_stress (slae.solution[0], domain.dof_handler, 
                     element_matrix.C[0], "cell_stress_xx.gpd");
+            EPTools ::print_elastic_deformation (slae.solution[0], domain.dof_handler, "cell_deform.gpd");
+            EPTools ::print_elastic_deformation_mean (slae.solution[0], domain.dof_handler, "cell_deform_mean.gpd");
 
                 auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
                         domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
@@ -5642,6 +5701,147 @@ void solve_approx_cell_heat_problem (cst flag)
 
         };
             // fclose(F);
+    };
+};
+
+void create_arbitrary_grid_arbitrary_with_circle_include (
+        Domain<2> &domain,
+        cdbl radius,
+        cst num_border_point,
+        cst num_includ_point)
+{
+    vec<prmt::Point<2>> border;
+    vec<st> type_border;
+    give_rectangle_with_border_condition(
+            border,
+            type_border,
+            arr<st, 4>{1,3,2,4},
+            num_border_point,
+            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+    vec<vec<prmt::Point<2>>> inclusion(1);
+    // cdbl radius_2 = 0.255;
+    dealii::Point<2> center (0.5, 0.5);
+    give_circ(inclusion[0], num_includ_point, radius, prmt::Point<2>(center));
+    // give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
+    ::set_grid(domain.grid, border, inclusion, type_border);
+
+    {
+        std::ofstream out ("grid-igor.eps");
+        dealii::GridOut grid_out;
+        grid_out.write_eps (domain.grid, out);
+    };
+
+    {
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = domain.grid .begin_active(),
+                 end_cell = domain.grid .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+            if (center.distance(midle_p) < radius)
+            {
+                cell->set_material_id(1);
+            }
+            else
+            {
+                cell->set_material_id(0);
+            };
+        };
+    };
+};
+
+void solve_cell_elastic_problem_and_print_along_line (cst flag)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+        Domain<2> domain;
+        create_arbitrary_grid_arbitrary_with_circle_include (domain, 0.25, 1, 10);
+
+        dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+        domain.dof_init (fe);
+
+        OnCell::SystemsLinearAlgebraicEquations<4> slae;
+        OnCell::BlackOnWhiteSubstituter bows;
+
+        LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (2);
+        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+        EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+
+        u8 dim = 2;
+
+        const bool vector_type = 1;
+        OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+
+        OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+        arr<u8, 4> theta  = {x, y, z, x};
+        arr<u8, 4> lambda = {x, y, z, y};
+
+#pragma omp parallel for
+        for (st n = 0; n < 4; ++n)
+        {
+            vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+
+            for (auto i : {x, y})
+                for (auto j : {x, y})
+                    for(st k = 0; k < element_matrix.C.size(); ++k)
+                    {
+                        coef_for_rhs[k][i][j] = 
+                            element_matrix.C[k][i][j][theta[n]][lambda[n]];
+                    };
+
+            slae.solution[n] = 0;
+            slae.rhsv[n] = 0;
+
+            OnCell::SourceVector<2> element_rhsv (
+                    coef_for_rhs, domain.dof_handler.get_fe());
+            OnCell::Assembler::assemble_rhsv<2> (
+                    slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+
+            dealii::SolverControl solver_control (10000, 1e-12);
+            dealii::SolverCG<> solver (solver_control);
+            solver.solve (
+                    slae.matrix,
+                    slae.solution[n],
+                    slae.rhsv[n]
+                    ,dealii::PreconditionIdentity()
+                    );
+            FOR(i, 0, slae.solution[n].size())
+                slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+        };
+
+        OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+        vec<ATools::SecondOrderTensor> coef_for_potr(2);
+        for (st i = 0; i < 2; ++i)
+        {
+            coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+            coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+            coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+            coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+        };
+        solve_heat_problem_on_cell_aka_torsion_rod<2> (
+                domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+
+        arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
+        for (st i = 0; i < 4; ++i)
+        {
+            EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+        };
+        // EPTools ::print_elastic_stress (slae.solution[0], domain.dof_handler, 
+        //         element_matrix.C[0], "cell_stress_xx.gpd");
+        // EPTools ::print_elastic_deformation (slae.solution[0], domain.dof_handler, "cell_deform.gpd");
+        // EPTools ::print_elastic_deformation_mean (slae.solution[0], domain.dof_handler, "cell_deform_mean.gpd");
     };
 };
 
@@ -8276,9 +8476,9 @@ void solve_approx_cell_elastic_problem (
                     uint8_t jn = j % (2 + 1);
 
                     if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
-                        out << "\x1B[31m" << meta_coef[im][in][jm][jn] << "[0m   "
+                        out << "\x1B[31m" << meta_coef[im][in][jm][jn] << "[0m   ";
                     else
-                        out <<  meta_coef[im][in][jm][jn] << "   "
+                        out <<  meta_coef[im][in][jm][jn] << "   ";
                 };
                 for (size_t i = 0; i < 2; ++i)
                     out << std::endl;
@@ -10201,7 +10401,6 @@ void calculate_real_stress (
 
 int main()
 {
-
     //heat_conduction_problem
     solve_heat_conduction_problem (0);
 
@@ -10240,6 +10439,8 @@ int main()
     solve_approx_cell_elastic_problem (0);
 
     solve_two_stress (0);
+
+    solve_cell_elastic_problem_and_print_along_line(1);
 
     // solve_approx_cell_elastic_problem (1, 10.0, 0.25);
 
@@ -10284,8 +10485,8 @@ int main()
     // calculate_real_stress (1, 100, 10.0, 0.25, 1, 0, 0.25, 4, 8,
     //         str("E_10_R_25_4_ortotrop"), str("E_10_R_25_4_8"));
 
-    calculate_real_stress (1, 100, 10.0, 0.25, 1, 0, 0.25, 4, 8,
-            str("E_10_R_25_4"), str("E_10_R_25_4_8"));
+    // calculate_real_stress (1, 100, 10.0, 0.25, 1, 0, 0.25, 4, 8,
+    //         str("E_10_R_25_4"), str("E_10_R_25_4_8"));
     
     enum {x, y, z};//_ortotrop
 

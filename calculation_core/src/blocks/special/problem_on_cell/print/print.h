@@ -204,7 +204,7 @@ namespace OnCell
         void print_deform(
                 const dealii::DoFHandler<3> &dof_handler,
                 const dealii::FiniteElement<3> &fe,
-                const ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>>& move,
+                const ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> &move,
                 cst number_of_approx,
                 const str path)
         {

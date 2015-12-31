@@ -5,14 +5,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import subprocess
-from PySide import QtGui
-from PySide import QtCore
-from PySide.QtGui import QApplication, QMainWindow
+from PyQt4 import QtGui
+from PyQt4 import QtCore
+from PyQt4.QtGui import QApplication, QMainWindow
+
+try:
+    _fromUtf8 = QtCore.QString.fromUtf8
+except AttributeError:
+    print "sdfcsdvsd"
+    def _fromUtf8(s):
+        return s
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle(u'Главное окно')    # если устанавливать значение не unicode, то будут печататься крокозябры
+        self.setObjectName(QtCore.QString.fromUtf8("MainWindow"))
         self.resize(300, 200)
         self.cw = QtGui.QWidget()  # на главном окне нужно определить central widget
         self.layout = QtGui.QGridLayout()  # у central widget должна быть определена разметка, чтобы добавлять в неё gui-элементы
@@ -25,6 +33,7 @@ class MainWindow(QMainWindow):
 
         self.button1 = QtGui.QPushButton()
         self.button1.setText(u'Отрисовка графика')
+        self.button1.setObjectName(QtCore.QString.fromUtf8("button1"))
         self.button1.clicked.connect(self.showGraph)
         self.layout.addWidget(self.button1, 1, 0)
 
@@ -62,7 +71,12 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.memo, 19, 0)
  
     def showGraph(self):
-        path = "/home/primat/hoz_block_disk/cell_func_bd/2/1.0_1.0_1.0_0.25_0.25_0.25/10.0_10.0_10.0_0.25_0.25_0.25/fiber/circle_pixel/0.25/3/"
+        # path = "/home/primat/hoz_block_disk/cell_func_bd/2/1.0_1.0_1.0_0.25_0.25_0.25/10.0_10.0_10.0_0.25_0.25_0.25/fiber/circle_pixel/0.25/3/"
+        path = ("/home/primat/hoz_block_disk/cell_func_bd/" + self.coefs[0].displayText()
+                + "/" + "_".join([self.coefs[i].displayText() for i in xrange(1,7)])
+                + "/" + "_".join([self.coefs[i].displayText() for i in xrange(7,13)])
+                + "/fiber/circle_pixel/" + self.coefs[15].displayText()
+                + "/" + self.coefs[14].displayText() + "/")
         f = open(path + "size_solution.bin")
         size = struct.Struct('I I').unpack(f.read())[0]
         f.close()
@@ -113,7 +127,9 @@ class MainWindow(QMainWindow):
 
     def calc(self):
         arguments = ' '.join([i.displayText() for i in self.coefs])
-        proc = subprocess.Popen("cd ~/projects/work/elastic_cell_calculator/sources/; make clean; make; ../release/elastic_cell_calculator.exe "
+        proc = subprocess.Popen(
+                "cd ~/projects/work/elastic_cell_calculator/sources/; make clean;"
+                + "make; ../release/elastic_cell_calculator.exe "
                 + arguments, shell=True, stdout=subprocess.PIPE)
         self.memo.setPlainText(' '.join(proc.stdout.readlines()))
         # self.memo.setPlainText(arguments)

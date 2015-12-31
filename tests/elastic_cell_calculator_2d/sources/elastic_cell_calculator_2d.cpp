@@ -3,6 +3,12 @@
 
 #include "pch.h"
 
+extern void set_grid(
+        dealii::Triangulation< 2 >&,
+        vec<prmt::Point<2>>,
+        vec<vec<prmt::Point<2>>>,
+        vec<st>);
+
 str make_path(const vec<str>& path)
 {
     // str partial_path = "/home/primat/hoz_block_disk/cell_func_bd/";
@@ -20,35 +26,27 @@ str make_path(const vec<str>& path)
     return partial_path;
 };
 
-void set_cylinder(dealii::Triangulation< 3 > &triangulation, 
-        const double radius, cst ort, const size_t n_refine)
+void set_circ_square_grid(dealii::Triangulation< 2 > &triangulation, 
+        const double radius, const size_t n_refine)
 {
     dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
     triangulation .refine_global (n_refine);
     {
         dealii::Point<2> center (0.5, 0.5);
-        dealii::Triangulation<3>::active_cell_iterator
+        dealii::Triangulation<2>::active_cell_iterator
             cell = triangulation .begin_active(),
                  end_cell = triangulation .end();
         for (; cell != end_cell; ++cell)
         {
             dealii::Point<2> midle_p(0.0, 0.0);
 
-            for (size_t i = 0; i < 8; ++i)
+            for (size_t i = 0; i < 4; ++i)
             {
-                st count = 0;
-                for (st j = 0; j < 3; ++j)
-                {
-                    if (j != ort)
-                    {
-                        midle_p(count) += cell->vertex(i)(j);
-                        ++count;
-                    };
-                };
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
             };
-            midle_p(0) /= 8.0;
-            midle_p(1) /= 8.0;
-
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
 
             if (center.distance(midle_p) < radius)
             {
@@ -60,13 +58,132 @@ void set_cylinder(dealii::Triangulation< 3 > &triangulation,
     };
 };
 
+void give_rectangle_with_border_condition(
+        vec<prmt::Point<2>> &curve,
+        vec<st> &type_edge,
+        const arr<st, 4> type_border,
+        cst num_points_on_edge,
+        const prmt::Point<2> first,
+        const prmt::Point<2> second)
+{
+    give_line_without_end_point(curve, num_points_on_edge,
+            first,
+            prmt::Point<2>(first.x(), second.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(first.x(), second.y()),
+            second);
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            second,
+            prmt::Point<2>(second.x(), first.y()));
+
+    give_line_without_end_point(curve, num_points_on_edge,
+            prmt::Point<2>(second.x(), first.y()),
+            first);
+
+    cst n_edge_on_border = curve.size() / 4;
+    // printf("type %d\n", n_edge_on_border);
+    type_edge.resize(curve.size());
+
+    FOR(i, 0, 4)
+        FOR(j, 0 + n_edge_on_border * i, n_edge_on_border + n_edge_on_border * i)
+        type_edge[j] = type_border[i];
+};
+
+    void give_circ(
+            vec<prmt::Point<2>> &curve,
+            cst num_points_on_tip,
+            cdbl radius,
+            prmt::Point<2> center)
+    {
+        cdbl PI = 3.14159265359;
+        cdbl angle_step_rad = 2.0 * PI / num_points_on_tip;
+        for (
+                dbl angle_rad = PI / 2.0; 
+                std::abs(angle_rad - 5.0 * (PI / 2.0)) > 1.e-8; 
+                angle_rad += angle_step_rad
+            )
+        {
+            dbl X = radius * cos(angle_rad) + center.x();
+            dbl Y = radius * sin(angle_rad) + center.y();
+            // printf("circ %f %f\n", X, Y);
+            curve .push_back (prmt::Point<2>(X, Y)); 
+        };
+
+        // for (
+        //         dbl angle_rad = 3.0 * (PI / 2.0); 
+        //         abs(angle_rad - (2.5 * PI)) > 1.e-8; 
+        //         angle_rad += angle_step_rad
+        //     )
+        // {
+        //     dbl X = radius * sin(angle_rad) + center.x();
+        //     dbl Y = radius * cos(angle_rad) + center.y();
+        //     printf("circ %f %f\n", X, Y);
+        //     curve .push_back (prmt::Point<2>(X, Y)); 
+        // };
+
+    };
+
+void set_circ_generate_grid(dealii::Triangulation< 2 > &triangulation, 
+        cdbl radius, cst num_points_on_border, cst num_points_on_include)
+{
+    vec<prmt::Point<2>> border;
+    vec<st> type_border;
+    give_rectangle_with_border_condition(
+            border,
+            type_border,
+            arr<st, 4>{1,3,2,4},
+            num_points_on_border,
+            prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+    vec<vec<prmt::Point<2>>> inclusion(1);
+
+    dealii::Point<2> center (0.5, 0.5);
+    give_circ(inclusion[0], num_points_on_include, radius, prmt::Point<2>(center));
+    // give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
+    ::set_grid(domain.grid, border, inclusion, type_border);
+
+    {
+        std::ofstream out ("grid-igor.eps");
+        dealii::GridOut grid_out;
+        grid_out.write_eps (domain.grid, out);
+    };
+
+    {
+        dealii::Triangulation<2>::active_cell_iterator
+            cell = domain.grid .begin_active(),
+                 end_cell = domain.grid .end();
+        for (; cell != end_cell; ++cell)
+        {
+            dealii::Point<2> midle_p(0.0, 0.0);
+
+            for (size_t i = 0; i < 4; ++i)
+            {
+                midle_p(0) += cell->vertex(i)(0);
+                midle_p(1) += cell->vertex(i)(1);
+            };
+            midle_p(0) /= 4.0;
+            midle_p(1) /= 4.0;
+
+            if (center.distance(midle_p) < radius)
+            {
+                cell->set_material_id(1);
+            }
+            else
+            {
+                cell->set_material_id(0);
+            };
+        };
+    };
+};
+
 void solve_cell_elastic_problem (
         const str& path, cst number_of_approx, 
-        const vec<ATools::FourthOrderTensor>& C, Domain<3>& domain)
+        const vec<ATools::FourthOrderTensor>& C, Domain<2>& domain)
 {
     enum {x, y, z};
 
-    dealii::FESystem<3,3> fe (dealii::FE_Q<3,3>(1), 3);
+    dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
     domain.dof_init (fe);
 
     OnCell::SystemsLinearAlgebraicEquations<1> slae;
@@ -75,41 +192,34 @@ void solve_cell_elastic_problem (
     LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
     element_matrix.C .resize (2);
     for (st i = 0; i < 3; ++i)
-    {
         for (st j = 0; j < 3; ++j)
-        {
             for (st k = 0; k < 3; ++k)
-            {
                 for (st l = 0; l < 3; ++l)
-                {
                     for (st m = 0; m < C.size(); ++m)
-                    {
                         element_matrix.C[m][i][j][k][l] = C[m][i][j][k][l];
-                    };
-                };
-            };
-        };
-    };
-        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
-        // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+        
+    // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
+    // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
 
-    OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
+    // OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
+    const bool vector_type = 1;
+    OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
 
-    OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
+    OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
     // cst number_of_approx = 3; // Начиная с нулевой
-    OnCell::ArrayWithAccessToVector<arr<arr<dbl, 3>, 3>> meta_coefficient(number_of_approx+1);
+    // OnCell::ArrayWithAccessToVector<arr<arr<dbl, 3>, 3>> meta_coefficient(number_of_approx+1);
     OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> cell_func (number_of_approx);
-    OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> N_func (number_of_approx);
+    // OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> N_func (number_of_approx);
     OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> cell_stress (number_of_approx);
     OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> cell_deform (number_of_approx);
-    OnCell::ArrayWithAccessToVector<arr<arr<arr<dbl, 3>, 3>, 3>> true_meta_coef (number_of_approx);
-    for (auto &&a : meta_coefficient.content)
-        for (auto &&b : a)
-            for (auto &&c : b)
-                for (auto &&d : c)
-                    for (auto &&e : d)
-                        e = 0.0;
+    // OnCell::ArrayWithAccessToVector<arr<arr<arr<dbl, 3>, 3>, 3>> true_meta_coef (number_of_approx);
+    // for (auto &&a : meta_coefficient.content)
+    //     for (auto &&b : a)
+    //         for (auto &&c : b)
+    //             for (auto &&d : c)
+    //                 for (auto &&e : d)
+    //                     e = 0.0;
     for (auto &&a : cell_func.content)
         for (auto &&b : a)
             for (auto &&c : b)
@@ -122,11 +232,11 @@ void solve_cell_elastic_problem (
         if ((i % 3) == y) cell_func[arr<i32, 3>{0, 0, 0}][y][i] = 1.0;
         if ((i % 3) == z) cell_func[arr<i32, 3>{0, 0, 0}][z][i] = 1.0;
     };
-    for (auto &&a : N_func.content)
-        for (auto &&b : a)
-            for (auto &&c : b)
-                for (auto &&d : c)
-                    d .reinit (slae.solution[0].size());
+    // for (auto &&a : N_func.content)
+    //     for (auto &&b : a)
+    //         for (auto &&c : b)
+    //             for (auto &&d : c)
+    //                 d .reinit (slae.solution[0].size());
     for (auto &&a : cell_stress.content)
         for (auto &&b : a)
             for (auto &&c : b)
@@ -141,8 +251,18 @@ void solve_cell_elastic_problem (
                         e .reinit (slae.solution[0].size());
 
 
-    OnCell::MetaCoefficientElasticCalculator mc_calculator (
-            domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+    // OnCell::MetaCoefficientElasticCalculator mc_calculator (
+    //         domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+
+    vec<arr<i32, 3>> approximation; 
+    for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        for (i32 i = 0; i < approx_number+1; ++i)
+            for (i32 j = 0; j < approx_number+1; ++j)
+                for (i32 k = 0; k < approx_number+1; ++k)
+                    if ((i+j+k) == approx_number)
+                        approximation .push_back (arr<i32, 3>{i, j, k};
+
+
 
     for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
     {
@@ -166,7 +286,7 @@ void solve_cell_elastic_problem (
                                     cell_func,
                                     // &psi_func,
                                     domain.dof_handler.get_fe());
-                            OnCell::Assembler::assemble_rhsv<3> (slae.rhsv[0], element_rhsv, domain.dof_handler, bows);
+                            OnCell::Assembler::assemble_rhsv<2> (slae.rhsv[0], element_rhsv, domain.dof_handler, bows);
 
                             dealii::SolverControl solver_control (500000, 1e-12);
                             dealii::SolverCG<> solver (solver_control);
@@ -452,33 +572,14 @@ void solve_cell_elastic_problem_circle(
 {
     enum {x, y, z};
 
-    Domain<3> domain;
-    set_cylinder(domain.grid, R, y, refine);
+    Domain<2> domain;
+    set_circ(domain.grid, R, refine);
     vec<ATools::FourthOrderTensor> C(prop.size());
     for (st i = 0; i < prop.size(); ++i)
     {
         EPTools ::set_isotropic_elascity{yung : prop[i][0], puasson : prop[i][3]}(C[i]);
     };
-    // auto C2d = t4_to_t2 (element_matrix.C[0]);
-    //     printf("C2d\n");
-    //     for (size_t i = 0; i < 6; ++i)
-    //     {
-    //         for (size_t j = 0; j < 6; ++j)
-    //         {
-    //             if (std::abs(C2d[i][j]) > 0.0000001)
-    //                 printf("\x1B[31m%f\x1B[0m   ", 
-    //                         C2d[i][j]);
-    //             else
-    //                 printf("%f   ", 
-    //                         C2d[i][j]);
-    //         };
-    //         for (size_t i = 0; i < 2; ++i)
-    //             printf("\n");
-    //     };
-    //     printf("\n");
-    // };
 
-    // solve_approx_cell_elastic_problem (path, approximation_number, C, domain);
     solve_cell_elastic_problem (path, approximation_number, C, domain);
 };
 
@@ -516,8 +617,8 @@ int main(int argc, char *argv[])
         folder[6] = argv[prop.size() * 6 + 3];
         const str path = make_path(folder);
 
-        std::cout << prop[0][0] << " " << prop[0][3]  << std::endl;
-        std::cout << prop[1][0] << " " << prop[1][3]  << std::endl;
+        std::cout << prop[0][0] << " " << prop[0][3] << std::endl;
+        std::cout << prop[1][0] << " " << prop[1][3] << std::endl;
         std::cout << refine << " " << R << std::endl;
 
         solve_cell_elastic_problem_circle (path, approximation_number, prop, refine, R);

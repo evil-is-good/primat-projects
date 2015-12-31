@@ -2203,6 +2203,126 @@ void print_elastic_deformation_mean (const dealii::Vector<dbl> &move,
     // };
 }
 
+
+//
+// void print_elastic_deformation_mean_along_line (const dealii::Vector<dbl> &move, 
+//         const dealii::DoFHandler<2> &dof_handler,
+//         const str file_name,
+//         Line &line)
+// {
+//     cu32 dofs_per_cell = dof_handler.get_fe().dofs_per_cell;
+//
+//     dealii::QGauss<2>  quadrature_formula(2);
+//
+//     dealii::FEValues<2> fe_values (dof_handler.get_fe(), quadrature_formula,
+//             dealii::update_gradients | dealii::update_quadrature_points | dealii::update_JxW_values);
+//
+//     cst num_quad_points = quadrature_formula.size();
+//
+//     arr<dealii::Vector<dbl>, 2> grad;
+//
+//     grad[0] .reinit (dof_handler.get_tria().n_active_cells());
+//     grad[1] .reinit (dof_handler.get_tria().n_active_cells());
+//
+//     vec<prmt::Point<2>> midle_point (dof_handler.get_tria().n_active_cells());
+//     printf("!!!!!!!!!!!!!! %d\n", dofs_per_cell);
+//     // auto cell = dof_handler.begin_active(); 
+//     // printf("%d %d %d %d %d\n", 
+//     //         cell->vertex_dof_index (0, 0),
+//     //         cell->vertex_dof_index (1, 0),
+//     //         cell->vertex_dof_index (4, 0),
+//     //         cell->vertex_dof_index (4, 1),
+//     //         cell->vertex_dof_index (0, 1)
+//     //         );
+//     vec<dealii::types::global_dof_index> local_dof_indices (dofs_per_cell);
+//
+//
+//     st number_of_cell = 0;
+//     for (
+//             auto cell = dof_handler.begin_active(); 
+//             cell     != dof_handler.end(); 
+//             ++cell
+//         )
+//     {
+//         fe_values .reinit (cell);
+//
+//         if (cell->material_id() == 0)
+//         {
+//             dbl area = 0.0;
+//             for (st q_point = 0; q_point < num_quad_points; ++q_point)
+//             {
+//                 area +=
+//                     fe_values.JxW(q_point);
+//             };
+//
+//             cell->get_dof_indices (local_dof_indices);
+//
+//             for (st component = 0; component < 2; ++component)
+//             {
+//                 arr<dbl, 8> tmp;
+//                 for (st i = 0; i < dofs_per_cell; ++i)
+//                 {
+//                     tmp[i] = 0.0;
+//                     for (st q_point = 0; q_point < num_quad_points; ++q_point)
+//                     {
+//                         tmp[i] += move(local_dof_indices[i]) *
+//                             fe_values.shape_grad (i, q_point)[component] *
+//                             fe_values.JxW(q_point);
+//                     };
+//                 };
+//                 grad[component][number_of_cell] = (tmp[0] + tmp[2] + tmp[4] + tmp[6]) / (area);
+//             };
+//         }
+//         else
+//         {
+//             grad[0][number_of_cell] = 0.0;
+//             grad[1][number_of_cell] = 0.0;
+//         };
+//
+//         midle_point[number_of_cell].x() = 
+//             (cell->vertex(0)(0) +
+//              cell->vertex(1)(0) +
+//              cell->vertex(2)(0) +
+//              cell->vertex(3)(0)) / 4.0;
+//         midle_point[number_of_cell].y() = 
+//             (cell->vertex(0)(1) +
+//              cell->vertex(1)(1) +
+//              cell->vertex(2)(1) +
+//              cell->vertex(3)(1)) / 4.0;
+//
+//         ++number_of_cell;
+//     };
+//     FILE *F;
+//     F = fopen("deform_mean.gpd", "w");
+//     for (st i = 0; i < grad[0].size(); ++i)
+//     {
+//         fprintf(F, "%f %f %f %f\n", midle_point[i].x(), midle_point[i].y(), grad[0][i], grad[1][i]);
+//     };
+//     fclose(F);
+//
+//     dbl Int = 0.0;
+//     for (st i = 0; i < grad[0].size(); ++i)
+//     {
+//         Int += grad[0][i];
+//     };
+//     printf("Integral %f\n", Int/grad[0].size());
+//     //
+//     // {
+//     //     dealii::DataOut<2> data_out;
+//     //     data_out.attach_dof_handler (dof_handler);
+//     //     data_out.add_data_vector (grad[0], "grad_dx");
+//     //     data_out.add_data_vector (grad[1], "drad_dy");
+//     //     // data_out.add_data_vector (T, "T");
+//     //     data_out.build_patches ();
+//     //
+//     //     auto name = file_name;
+//     //     // name += ".gpd";
+//     //
+//     //     std::ofstream output (name);
+//     //     data_out.write_gnuplot (output);
+//     // };
+// }
+
 void print_elastic_deformation_mean_other (const dealii::Vector<dbl> &move, 
         const dealii::DoFHandler<2> &dof_handler,
         const str file_name)

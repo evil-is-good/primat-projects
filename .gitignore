@@ -42,3 +42,5 @@ html-doc
 *.bin
 *.doc
 *.gz
+*.ui
+*.pyc

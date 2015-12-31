@@ -62,7 +62,7 @@ void set_cylinder(dealii::Triangulation< 3 > &triangulation,
 
 void solve_cell_elastic_problem (
         const str& path, cst number_of_approx, 
-        const vec<ATools::FourthOrderTensor>& C, Domain<3>& domain)
+        const vec<ATools::FourthOrderTensor>& C, Domain<2>& domain)
 {
     enum {x, y, z};
 
@@ -452,7 +452,7 @@ void solve_cell_elastic_problem_circle(
 {
     enum {x, y, z};
 
-    Domain<3> domain;
+    Domain<2> domain;
     set_cylinder(domain.grid, R, y, refine);
     vec<ATools::FourthOrderTensor> C(prop.size());
     for (st i = 0; i < prop.size(); ++i)
