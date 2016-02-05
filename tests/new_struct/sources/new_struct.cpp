@@ -395,15 +395,6 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
         OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
 
         OnCell::Assembler::assemble_matrix<dim> (slae.matrix, element_matrix, domain.dof_handler, bows);
-        // FILE *F;
-        // F = fopen("matrix.gpd", "w");
-        // for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
-        //     for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
-        //         if (slae.matrix.el(i,j))
-        //         {
-        //             fprintf(F, "%ld %ld %f\n", i, j, slae.matrix(i,j));
-        //         };
-        // fclose(F);
 
         FOR(i, 0, dim)
         {
@@ -417,18 +408,6 @@ void set_tria(dealii::Triangulation< 2 > &triangulation,
             };
             OnCell::SourceScalar<dim> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
             OnCell::Assembler::assemble_rhsv<dim> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
-            {
-                dealii::DataOut<dim> data_out;
-                data_out.attach_dof_handler (domain.dof_handler);
-                data_out.add_data_vector (slae.rhsv[0], "xb");
-                data_out.add_data_vector (slae.rhsv[1], "yb");
-                data_out.build_patches ();
-
-                auto name = "b.gpd";
-
-                std::ofstream output (name);
-                data_out.write_gnuplot (output);
-            };
 
             dealii::SolverControl solver_control (10000, 1e-12);
             dealii::SolverCG<> solver (solver_control);
@@ -3981,15 +3960,18 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                             border,
                             type_border,
                             arr<st, 4>{1,3,2,4},
-                            1,
+                            10,
                             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
                     vec<vec<prmt::Point<2>>> inclusion(1);
                     cdbl radius = 0.25;
                     // cdbl radius_2 = 0.255;
                     dealii::Point<2> center (0.5, 0.5);
                     give_circ(inclusion[0], 62, radius, prmt::Point<2>(center));
+                    // give_rectangle(inclusion[0], 10, prmt::Point<2>(0.0, 0.0), prmt::Point<2>(0.5, 0.5));
                     // give_circ(inclusion[1], 40, radius_2, prmt::Point<2>(center));
                     ::set_grid(domain.grid, border, inclusion, type_border);
+                    // ::set_hexagon_grid_pure (domain.grid, 1.0, 0.5);
+                    // domain.grid .refine_global (3);
 
                     {
                         std::ofstream out ("grid-igor.eps");
@@ -4036,8 +4018,8 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
                 LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
                 element_matrix.C .resize (2);
-                EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.2}(element_matrix.C[0]);
-                EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.28}(element_matrix.C[1]);
+                EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+                EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.25}(element_matrix.C[1]);
                 // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
                 // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.0}(element_matrix.C[1]);
 
@@ -4108,6 +4090,11 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
 
                 auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
                         domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+        {
+        std::ofstream out ("meta_coef.bin", std::ios::out | std::ios::binary);
+        out.write ((char *) &meta_coef, sizeof meta_coef);
+        out.close ();
+        };
 
                 for (size_t i = 0; i < 9; ++i)
                 {
@@ -4146,6 +4133,12 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                         meta_coef[0][1][0][1],
                         meta_coef[0][2][0][2]
                         );
+            std::cout << 
+                newcoef[2][2][0][0]/newcoef[0][0][0][0] <<  " " <<
+                newcoef[0][0][2][2]/newcoef[2][2][2][2] <<  " " <<
+                newcoef[0][0][2][2]/newcoef[0][0][0][0] <<  " " <<
+                newcoef[2][2][0][0]/newcoef[2][2][2][2]   
+                << std::endl;
                 };
                         // fprintf(F, "%f %f %f %f\n", 0.0,
                         //         meta_coef[0][0][0][0],
@@ -5049,6 +5042,50 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
     };
 };
 
+void print_move_slice_with_vera_func (const dealii::Vector<dbl> &move, 
+        const dealii::DoFHandler<3> &dof_handler,
+        const str file_name,
+        cst ort,
+        cdbl slice_coor,
+        cdbl Ri,
+        cdbl Ro,
+        cdbl E,
+        cdbl Nu,
+        cdbl P)
+{
+    cdbl C1 = (1-Nu)/E*(P*Ri*Ri/(Ro*Ro-Ri*Ri));
+    cdbl C2 = (1+Nu)/E*(P*Ri*Ri*Ro*Ro/(Ro*Ro-Ri*Ri));
+
+    FILE* f_out;
+    f_out = fopen (file_name.c_str(), "w");
+    for (auto cell = dof_handler.begin_active (); cell != dof_handler.end (); ++cell)
+    {
+        for (st i = 0; i < dealii::GeometryInfo<3>::vertices_per_cell; ++i)
+        {
+            if (std::abs(cell->vertex(i)(ort) - slice_coor) < 1e-10)
+            {
+                cdbl r = std::sqrt(cell->vertex(i)(0)*cell->vertex(i)(0)+cell->vertex(i)(1)*cell->vertex(i)(1));
+                fprintf(f_out, "%f %f %f %f %f %f %f %f\n",
+                        cell->vertex(i)(0),
+                        cell->vertex(i)(1),
+                        cell->vertex(i)(2),
+                        move(cell->vertex_dof_index(i, 0)),
+                        move(cell->vertex_dof_index(i, 1)),
+                        move(cell->vertex_dof_index(i, 2)),
+                        C1*r+C2/r,
+                        std::abs(
+                        std::sqrt(
+                        move(cell->vertex_dof_index(i, 0))*move(cell->vertex_dof_index(i, 0))+
+                        move(cell->vertex_dof_index(i, 1))*move(cell->vertex_dof_index(i, 1))
+                        ) -
+                        (C1*r+C2/r))
+                       );
+            };
+        };
+    };
+    fclose(f_out);
+};
+
 void solve_elastic_problem_3d (cst flag)
 {
     if (flag)
@@ -5056,82 +5093,136 @@ void solve_elastic_problem_3d (cst flag)
         enum {x, y, z};
         cdbl len_rod = 1.0;
         Domain<3> domain;
+        // {
+        //     dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 1.0);
+        //     // domain.grid.refine_global(2);
+        //     // set_cylinder(domain.grid, 0.475, z, 5);
+        //     // set_ball(domain.grid, 0.4, 3);
+        //     // set_long_rod(domain.grid, len_rod, 0.4, 3);
+        //     // domain.grid.refine_global(2);
+        //     //
+        //     // set_speciment(domain.grid, len_rod, 1.0, 1.0, 0.4 / 8.0, 1.0 / 8.0, arr<st,6>({2,2,2,2,2,2}), 5);
+        //     domain.grid.begin_active()->face(0)->set_boundary_indicator(1);
+        //     domain.grid.begin_active()->face(1)->set_boundary_indicator(2);
+        //     domain.grid.begin_active()->face(2)->set_boundary_indicator(0);
+        //     domain.grid.begin_active()->face(3)->set_boundary_indicator(0);
+        //     domain.grid.begin_active()->face(4)->set_boundary_indicator(0);
+        //     domain.grid.begin_active()->face(5)->set_boundary_indicator(0);
+        //     domain.grid.refine_global(3);
+        //
+        //     cdbl radius = 0.1;
+        //     cdbl radius_2 = 0.12;
+        //     dealii::Point<2> center (0.5, 0.5);
+        //     {
+        //         // dealii::Point<2> center (0.5, 0.5);
+        //         dealii::Triangulation<3>::active_cell_iterator
+        //             cell = domain.grid .begin_active(),
+        //                  end_cell = domain.grid .end();
+        //         for (; cell != end_cell; ++cell)
+        //         {
+        //             dealii::Point<2> midle_p(0.0, 0.0);
+        //
+        //             for (size_t i = 0; i < 8; ++i)
+        //             {
+        //                 midle_p(0) += cell->vertex(i)(0);
+        //                 midle_p(1) += cell->vertex(i)(1);
+        //             };
+        //             midle_p(0) /= 8.0;
+        //             midle_p(1) /= 8.0;
+        //
+        //             // printf("%f %f\n", midle_p(0), midle_p(1));
+        //
+        //             if (center.distance(midle_p) < radius_2)
+        //             {
+        //                 cell->set_material_id(2);
+        //                 //                puts("adf");
+        //             }
+        //             else
+        //                 cell->set_material_id(0);
+        //         };
+        //     };
+        //     {
+        //         // dealii::Point<2> center (0.5, 0.5);
+        //         dealii::Triangulation<3>::active_cell_iterator
+        //             cell = domain.grid .begin_active(),
+        //                  end_cell = domain.grid .end();
+        //         for (; cell != end_cell; ++cell)
+        //         {
+        //             dealii::Point<2> midle_p(0.0, 0.0);
+        //
+        //             for (size_t i = 0; i < 8; ++i)
+        //             {
+        //                 midle_p(0) += cell->vertex(i)(0);
+        //                 midle_p(1) += cell->vertex(i)(1);
+        //             };
+        //             midle_p(0) /= 8.0;
+        //             midle_p(1) /= 8.0;
+        //
+        //             // printf("%f %f\n", midle_p(0), midle_p(1));
+        //
+        //             if (center.distance(midle_p) < radius)
+        //             {
+        //                 cell->set_material_id(1);
+        //                 //                puts("adf");
+        //             }
+        //             // else
+        //             //     cell->set_material_id(0);
+        //         };
+        //     };
+        // };
+        cdbl Ri = 0.5;
+        cdbl Ro = 11.0;
+        vec<dealii::Point<2>> radius_vector;
+        vec<dealii::Point<2>> radius_vector_cell;
         {
-            dealii::GridGenerator::hyper_cube(domain.grid, 0.0, 1.0);
-            // domain.grid.refine_global(2);
-            // set_cylinder(domain.grid, 0.475, z, 5);
-            // set_ball(domain.grid, 0.4, 3);
-            // set_long_rod(domain.grid, len_rod, 0.4, 3);
-            // domain.grid.refine_global(2);
-            //
-            // set_speciment(domain.grid, len_rod, 1.0, 1.0, 0.4 / 8.0, 1.0 / 8.0, arr<st,6>({2,2,2,2,2,2}), 5);
-            domain.grid.begin_active()->face(0)->set_boundary_indicator(1);
-            domain.grid.begin_active()->face(1)->set_boundary_indicator(2);
-            domain.grid.begin_active()->face(2)->set_boundary_indicator(0);
-            domain.grid.begin_active()->face(3)->set_boundary_indicator(0);
-            domain.grid.begin_active()->face(4)->set_boundary_indicator(0);
-            domain.grid.begin_active()->face(5)->set_boundary_indicator(0);
-            domain.grid.refine_global(5);
-
-            cdbl radius = 0.1;
-            cdbl radius_2 = 0.12;
-            dealii::Point<2> center (0.5, 0.5);
+            auto center = dealii::Point<2>(0.0, 0.0);
+            dealii::GridGenerator::cylinder_shell(domain.grid, 1.0, Ri, Ro, 64, 1);
+            // domain.grid.refine_global(4);
+            // domain.grid.begin_active()->face(0)->set_boundary_indicator(1);
+            // domain.grid.begin_active()->face(1)->set_boundary_indicator(1);
+            // bool flag = false;
+            auto cell = domain.grid .begin_active();
+            auto end_cell = domain.grid .end();
+            for (; cell != end_cell; ++cell)
             {
-                // dealii::Point<2> center (0.5, 0.5);
-                dealii::Triangulation<3>::active_cell_iterator
-                    cell = domain.grid .begin_active(),
-                         end_cell = domain.grid .end();
-                for (; cell != end_cell; ++cell)
+                for (st i = 0; i < 6; ++i)
                 {
-                    dealii::Point<2> midle_p(0.0, 0.0);
-
-                    for (size_t i = 0; i < 8; ++i)
+                    if (cell->face(i)->at_boundary())
                     {
-                        midle_p(0) += cell->vertex(i)(0);
-                        midle_p(1) += cell->vertex(i)(1);
+                        auto p = cell->face(i)->center();
+                        auto p2d = dealii::Point<2>(p(0), p(1));
+                        // printf("%f %f\n", std::abs(center.distance(p2d) - Ri), center.distance(p2d));
+                        if (std::abs(center.distance(p2d) - Ri) < 0.1)
+                        {
+                            radius_vector .push_back(p2d);
+                            cell->face(i)->set_boundary_indicator(radius_vector.size()+2);
+                            // printf("dfgdfgvfvbf\n");
+                        };
+                        // if (!flag)
+                        if (std::abs(p(2) - 0.0) < 1.0e-5)
+                        {
+                            cell->face(i)->set_boundary_indicator(1);
+                            // flag = true;
+                        };
+                        if (std::abs(p(2) - 1.0) < 1.0e-5)
+                        {
+                            cell->face(i)->set_boundary_indicator(2);
+                        };
                     };
-                    midle_p(0) /= 8.0;
-                    midle_p(1) /= 8.0;
-
-                    // printf("%f %f\n", midle_p(0), midle_p(1));
-
-                    if (center.distance(midle_p) < radius_2)
-                    {
-                        cell->set_material_id(2);
-                        //                puts("adf");
-                    }
-                    else
-                        cell->set_material_id(0);
                 };
-            };
-            {
-                // dealii::Point<2> center (0.5, 0.5);
-                dealii::Triangulation<3>::active_cell_iterator
-                    cell = domain.grid .begin_active(),
-                         end_cell = domain.grid .end();
-                for (; cell != end_cell; ++cell)
+
+                dealii::Point<2> midle_p(0.0, 0.0);
+                for (size_t i = 0; i < 8; ++i)
                 {
-                    dealii::Point<2> midle_p(0.0, 0.0);
-
-                    for (size_t i = 0; i < 8; ++i)
-                    {
-                        midle_p(0) += cell->vertex(i)(0);
-                        midle_p(1) += cell->vertex(i)(1);
-                    };
-                    midle_p(0) /= 8.0;
-                    midle_p(1) /= 8.0;
-
-                    // printf("%f %f\n", midle_p(0), midle_p(1));
-
-                    if (center.distance(midle_p) < radius)
-                    {
-                        cell->set_material_id(1);
-                        //                puts("adf");
-                    }
-                    // else
-                    //     cell->set_material_id(0);
+                    midle_p(0) += cell->vertex(i)(0);
+                    midle_p(1) += cell->vertex(i)(1);
                 };
+                midle_p(0) /= 8.0;
+                midle_p(1) /= 8.0;
+                cell->set_material_id(radius_vector_cell.size());
+                radius_vector_cell .push_back(midle_p);
             };
+            domain.grid.refine_global(2);
         };
         dealii::FESystem<3,3> fe 
             (dealii::FE_Q<3,3>(1), 3);
@@ -5141,13 +5232,215 @@ void solve_elastic_problem_3d (cst flag)
         ATools ::trivial_prepare_system_equations (slae, domain);
 
         LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
-        element_matrix.C .resize (3);
-        // EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.15}(element_matrix.C[0]);
+        // element_matrix.C .resize (3);
+        // // EPTools ::set_isotropic_elascity{yung : 100.0, puasson : 0.15}(element_matrix.C[0]);
+        // // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
         // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
-        EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.0}(element_matrix.C[1]);
-        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
-        EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
+        // // EPTools ::set_isotropic_elascity{yung : 0.0, puasson : 0.0}(element_matrix.C[1]);
+        // // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[1]);
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[2]);
+
+        ATools::FourthOrderTensor C;
+        {
+            ATools::FourthOrderTensor Cxy;
+            std::ifstream in ("meta_coef.bin", std::ios::in | std::ios::binary);
+            in.read ((char *) &Cxy, sizeof Cxy);
+            in.close ();
+            arr<arr<dbl,3>,3> A = {
+                arr<dbl,3>{1.0, 0.0, 0.0},
+                arr<dbl,3>{0.0,  0.0, -1.0},
+                arr<dbl,3>{0.0,  1.0, 0.0}
+            };
+            // arr<arr<dbl,3>,3> A = {
+            //     arr<dbl,3>{1.0, 0.0, 0.0},
+            //     arr<dbl,3>{0.0,  1.0, 0.0},
+            //     arr<dbl,3>{0.0,  0.0, 1.0}
+            // };
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(Cxy[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     Cxy[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     Cxy[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            //     {
+            //     auto newcoef = unphysical_to_physicaly (Cxy);
+            // printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+            //             newcoef[0][0][0][0],
+            //             newcoef[0][0][1][1],
+            //             newcoef[0][0][2][2],
+            //             newcoef[1][1][0][0],
+            //             newcoef[1][1][1][1],
+            //             newcoef[1][1][2][2],
+            //             newcoef[2][2][0][0],
+            //             newcoef[2][2][1][1],
+            //             newcoef[2][2][2][2],
+            //             Cxy[0][1][0][1],
+            //             Cxy[0][2][0][2]
+            //             );
+            //     };
+
+            for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+            for (st k = 0; k < 3; ++k)
+            for (st l = 0; l < 3; ++l)
+            {
+                C[i][j][k][l] = 0.0;
+
+                for (st a = 0; a < 3; ++a)
+                for (st b = 0; b < 3; ++b)
+                for (st c = 0; c < 3; ++c)
+                for (st d = 0; d < 3; ++d)
+                {
+                    C[i][j][k][l] += 
+                        // C[i][j][k][l];
+                        A[i][a]*A[j][b]*A[k][c]*A[l][d]*Cxy[a][b][c][d];
+
+                };
+            };
+
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(C[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     C[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     C[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            //     {
+            //     auto newcoef = unphysical_to_physicaly (C);
+            // printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+            //             newcoef[0][0][0][0],
+            //             newcoef[0][0][1][1],
+            //             newcoef[0][0][2][2],
+            //             newcoef[1][1][0][0],
+            //             newcoef[1][1][1][1],
+            //             newcoef[1][1][2][2],
+            //             newcoef[2][2][0][0],
+            //             newcoef[2][2][1][1],
+            //             newcoef[2][2][2][2],
+            //             C[0][1][0][1],
+            //             C[0][2][0][2]
+            //             );
+            //     };
+
+        };
+            // exit(1);
+
+        element_matrix.C .resize (radius_vector_cell.size());
+        for (st n = 0; n < radius_vector_cell.size(); ++n)
+        {
+            cdbl hypo = sqrt(
+                    radius_vector_cell[n](x)*radius_vector_cell[n](x)+
+                    radius_vector_cell[n](y)*radius_vector_cell[n](y)
+                    );
+            cdbl sin = radius_vector_cell[n](y)/hypo;
+            cdbl cos = radius_vector_cell[n](x)/hypo;
+            arr<arr<dbl,3>,3> A = {
+                arr<dbl,3>{cos, -sin, 0.0},
+                arr<dbl,3>{sin,  cos, 0.0},
+                arr<dbl,3>{0.0,  0.0, 1.0}
+            };
+            // arr<arr<dbl,3>,3> A = {
+            //     arr<dbl,3>{1.0, 0.0, 0.0},
+            //     arr<dbl,3>{0.0,  1.0, 0.0},
+            //     arr<dbl,3>{0.0,  0.0, 1.0}
+            // };
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(C[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     C[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     C[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+
+            for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+            for (st k = 0; k < 3; ++k)
+            for (st l = 0; l < 3; ++l)
+            {
+                element_matrix.C[n][i][j][k][l] = 0.0;
+
+                for (st a = 0; a < 3; ++a)
+                for (st b = 0; b < 3; ++b)
+                for (st c = 0; c < 3; ++c)
+                for (st d = 0; d < 3; ++d)
+                {
+                    element_matrix.C[n][i][j][k][l] += 
+                        // C[i][j][k][l];
+                        A[i][a]*A[j][b]*A[k][c]*A[l][d]*C[a][b][c][d];
+
+                };
+            };
+
+            // printf("\n");
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(element_matrix.C[n][im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     element_matrix.C[n][im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     element_matrix.C[n][im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            // break;
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
+        };
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+            // exit(1);
 
         // const dbl abld = 
         //     element_matrix.C[0][x][x][x][x] +
@@ -5212,20 +5505,54 @@ void solve_elastic_problem_3d (cst flag)
         // // bound[1].boundary_type = TBV::Dirichlet;
         // bound[1].boundary_type = TBV::Neumann;
 
-        vec<BoundaryValueVector<3>> bound (2);
-        bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{-1.0, 0.0, 0.0};};
+        // vec<BoundaryValueVector<3>> bound (2);
+        // bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{-1.0, 0.0, 0.0};};
+        // bound[0].boundary_id   = 1;
+        // // bound[0].boundary_type = TBV::Neumann;
+        // bound[0].boundary_type = TBV::Dirichlet;
+        // bound[1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{1.0, 0.0, 0.0};};
+        // bound[1].boundary_id   = 2;
+
+        // vec<BoundaryValueVector<3>> bound (2);
+        // bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{1.0, 0.0, 0.0};};
+        // bound[0].boundary_id   = 1;
+        // // bound[0].boundary_type = TBV::Neumann;
+        // bound[0].boundary_type = TBV::Dirichlet;
+        // bound[1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 1.0};};
+        // bound[1].boundary_id   = 2;
+        // // bound[1].boundary_type = TBV::Neumann;
+        // bound[1].boundary_type = TBV::Dirichlet;
+
+        cdbl P = 1.0;
+        vec<BoundaryValueVector<3>> bound (radius_vector.size()+2);
+        bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
         bound[0].boundary_id   = 1;
         bound[0].boundary_type = TBV::Neumann;
-        // bound[0].boundary_type = TBV::Dirichlet;
-        bound[1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{1.0, 0.0, 0.0};};
+        bound[1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
         bound[1].boundary_id   = 2;
         bound[1].boundary_type = TBV::Neumann;
-        // bound[1].boundary_type = TBV::Dirichlet;
+        for (st i = 0; i < radius_vector.size(); ++i)
+        {
+            cdbl a = radius_vector[i](0);
+            cdbl b = radius_vector[i](1);
+            cdbl tmp = 1/std::sqrt(a*a + b*b);
+            cdbl Px = P*a*tmp;
+            cdbl Py = P*b*tmp;
+            // printf("%f %f\n", Px, Py);
+            bound[i+2].function      = [Px, Py] (const dealii::Point<3> &p) {return arr<dbl, 3>{Px, Py, 0.0};};
+            bound[i+2].boundary_id   = i+3;
+            bound[i+2].boundary_type = TBV::Neumann;
+            // bound[i].boundary_type = TBV::Dirichlet;
+        };
+        // bound[bound.size()-1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
+        // bound[bound.size()-1].boundary_id   = 1;
+        // // bound[1].boundary_type = TBV::Neumann;
+        // bound[bound.size()-1].boundary_type = TBV::Dirichlet;
 
         for (auto b : bound)
             ATools ::apply_boundary_value_vector<3> (b) .to_slae (slae, domain);
 
-        dealii::SolverControl solver_control (10000, 1e-12);
+        dealii::SolverControl solver_control (1000000, 1e-12);
         dealii::SolverCG<> solver (solver_control);
         solver.solve (
                 slae.matrix,
@@ -5234,11 +5561,17 @@ void solve_elastic_problem_3d (cst flag)
                 ,dealii::PreconditionIdentity()
                 );
         // EPTools ::print_move<3> (slae.solution, domain.dof_handler, "move.gpd");
+        // EPTools ::print_move<3> (slae.solution, domain.dof_handler, "move.vtk", dealii::DataOutBase::vtk);
         // HCPTools ::print_temperature<3> (slae.solution, domain.dof_handler, "move.vtk", dealii::DataOutBase::vtk);
         // HCPTools ::print_temperature_slice (slae.solution, domain.dof_handler, "temperature_slice.gpd", x, len_rod);
-        EPTools ::print_move_slice (slae.solution, domain.dof_handler, "move_slice.gpd", z, 0.5);
-        EPTools ::print_elastic_deformation_mean_other_3d_binary (
-                slae.solution, domain.dof_handler, "deform_other.gpd");
+        EPTools ::print_move_slice (slae.solution, domain.dof_handler, "move_slice_z.gpd", z, 0.5);
+        EPTools ::print_move_slice (slae.solution, domain.dof_handler, "move_slice_y.gpd", y, 0.0);
+
+        // print_move_slice_with_vera_func (
+        //         slae.solution, domain.dof_handler, "move_slice_with_vera_func.gpd", z, 0.0,
+        //         Ri, Ro, 1.0, 0.25, P);
+        // EPTools ::print_elastic_deformation_mean_other_3d_binary (
+        //         slae.solution, domain.dof_handler, "deform_other.gpd");
         // dbl sum_x = 0.0;
         // dbl sum_y = 0.0;
         // st n_x = 0;
@@ -5271,7 +5604,7 @@ void solve_elastic_problem_on_cell_3d (cst flag)
         enum {x, y, z};
         Domain<3> domain;
         {
-            set_cylinder(domain.grid, 0.4, z, 3);
+            set_cylinder(domain.grid, 0.4, z, 4);
             // set_ball(domain.grid, 0.4, 4);
                 // set_rect_3d(domain.grid,
                 //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -5366,7 +5699,7 @@ void solve_elastic_problem_on_cell_3d (cst flag)
         auto size = slae.solution[0].size();
         out.write ((char *) &size, sizeof size);
         out.close ();
-        printf("SIZE %d %d %d %f\n", size, slae.solution[0].size(), 8 * slae.solution[0].size(),
+        printf("SIZE %ld %ld %ld %f\n", size, slae.solution[0].size(), 8 * slae.solution[0].size(),
                 slae.solution[0][10]);
         };
 
@@ -5704,7 +6037,7 @@ void solve_approx_cell_heat_problem (cst flag)
     };
 };
 
-void create_arbitrary_grid_arbitrary_with_circle_include (
+void create_arbitrary_grid_with_circle_include (
         Domain<2> &domain,
         cdbl radius,
         cst num_border_point,
@@ -5765,7 +6098,7 @@ void solve_cell_elastic_problem_and_print_along_line (cst flag)
     {
         enum {x, y, z};
         Domain<2> domain;
-        create_arbitrary_grid_arbitrary_with_circle_include (domain, 0.25, 1, 10);
+        create_arbitrary_grid_with_circle_include (domain, 0.25, 1, 100);
 
         dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
         domain.dof_init (fe);
@@ -5838,6 +6171,7 @@ void solve_cell_elastic_problem_and_print_along_line (cst flag)
         {
             EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
         };
+        // EPTools ::print_move<2> (problem_of_torsion_rod_slae.solution[0], domain.dof_handler, "move_xz.gpd");
         // EPTools ::print_elastic_stress (slae.solution[0], domain.dof_handler, 
         //         element_matrix.C[0], "cell_stress_xx.gpd");
         // EPTools ::print_elastic_deformation (slae.solution[0], domain.dof_handler, "cell_deform.gpd");
@@ -5875,7 +6209,7 @@ void solve_approx_cell_elastic_problem (cst flag)
 
         OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
-        cst number_of_approx = 3; // Начиная с нулевой
+        cst number_of_approx = 2; // Начиная с нулевой
         // arr<arr<i32, 3>, number_of_approx> approximations = {
         //     arr<i32, 3>({1, 0, 0}),
         //     arr<i32, 3>({0, 1, 0})};
@@ -10003,6 +10337,1283 @@ void get_line_deform_and_stress(
     
 };
 
+void get_flat_deform_and_stress(
+        cst ort_slice,
+        cdbl coor_slice,
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> &cell_flat_stress,
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> &cell_flat_deform,
+        vec<vec<dealii::Point<3>>> &coor_flat_cell,
+        cst number_of_approx,
+        cst n_ref
+        )
+{
+        enum {x, y, z};
+
+        ///////////////////////////////// Техническая часть, добывание из файлов, сформированных решением
+        ///////////////////////////////// двух задач выше и формирование линии вдоль которой будут 
+        ///////////////////////////////// вычислятся напряжения в дальнейшем.
+
+        st size_sol_cell = 0;
+        {
+            std::ifstream in ("cell/solution_on_cell_size.bin", std::ios::in | std::ios::binary);
+            // std::ifstream in ("cell/solution_on_cell_size.bin", std::ios::in | std::ios::binary);
+            in.read ((char *) &size_sol_cell, sizeof size_sol_cell);
+            in.close ();
+        };
+
+        // cst number_of_approx = 3;
+
+        OnCell::ArrayWithAccessToVector<arr<arr<vec<dbl>, 3>, 3>> cell_stress (number_of_approx);
+        for (auto &&a : cell_stress.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                        e .resize (size_sol_cell);
+
+        OnCell::ArrayWithAccessToVector<arr<arr<vec<dbl>, 3>, 3>> cell_deform (number_of_approx);
+        for (auto &&a : cell_deform.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                        e .resize (size_sol_cell);
+
+        {
+        arr<str, 3> ort = {"x", "y", "z"};
+        arr<str, 3> aprx = {"0", "1", "2"};
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                for (st alpha = 0; alpha < 3; ++alpha)
+                                {
+                                    str name = aprx[i]+str("_")+aprx[j]+str("_")+aprx[k]+str("_")+ort[nu]+str("_")+ort[alpha];
+                                    {
+                                        // std::cout << "cell/stress_"+name+".bin" << std::endl;
+                                        std::ifstream in ("cell/stress_"+name+".bin", std::ios::in | std::ios::binary);
+                                        // std::ifstream in ("cell/stress_"+name+".bin", std::ios::in | std::ios::binary);
+                                        // std::cout << in.is_open() << std::endl;
+                                        arr<dbl, 3> tmp;
+                                        for (st i = 0; i < size_sol_cell; ++i)
+                                        {
+                                            // in.read ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
+                                            dbl tmp = 0.0;
+                                            in.read ((char *) &(tmp), sizeof(dbl));
+                                            cell_stress[approximation][nu][alpha][i] = tmp;
+                                        };
+                                        in.close ();
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                for (st alpha = 0; alpha < 3; ++alpha)
+                                {
+                                    str name = aprx[i]+str("_")+aprx[j]+str("_")+aprx[k]+str("_")+ort[nu]+str("_")+ort[alpha];
+                                    {
+                                        std::ifstream in (
+                                                "cell/deform_"+name+".bin", std::ios::in | std::ios::binary);
+                                        arr<dbl, 3> tmp;
+                                        for (st i = 0; i < size_sol_cell; ++i)
+                                        {
+                                            dbl tmp = 0.0;
+                                            in.read ((char *) &(tmp), sizeof(dbl));
+                                            cell_deform[approximation][nu][alpha][i] = tmp;
+                                        };
+                                        in.close ();
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        };
+        // {
+        //     // std::cout << "cell/stress_"+name+".bin" << std::endl;
+        //     std::ifstream in ("cell/stress_1_0_0_x_x.bin", std::ios::in | std::ios::binary);
+        //     // std::cout << in.is_open() << std::endl;
+        //     arr<dbl, 3> tmp;
+        //     for (st i = 0; i < size_sol_cell; ++i)
+        //     {
+        //         // in.read ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
+        //         dbl tmp = 0.0;
+        //         in.read ((char *) &(tmp), sizeof(dbl));
+        //         cell_stress[arr<i32, 3>{1, 0, 0}][x][x][i] = tmp;
+        //     };
+        //     in.close ();
+        // };
+
+        vec<dealii::Point<3>> coor_cell (size_sol_cell);
+        {
+            std::ifstream in ("cell/coor_cell.bin", std::ios::in | std::ios::binary);
+            // std::ifstream in ("cell/coor_cell.bin", std::ios::in | std::ios::binary);
+            for (st i = 0; i < size_sol_cell; ++i)
+            {
+                in.read ((char *) &coor_cell[i](x), sizeof(dbl));
+                in.read ((char *) &coor_cell[i](y), sizeof(dbl));
+                in.read ((char *) &coor_cell[i](z), sizeof(dbl));
+            };
+            in.close ();
+        };
+        // {
+        //     FILE *F;
+        //     F = fopen("stress_cell_yyy.gpd", "w");
+        //     for (st i = 0; i < size_sol_cell; ++i)
+        //     {
+        //         if (i % 3 == y)
+        //             fprintf(F,"%f %f %f\n", coor_cell[i](x), coor_cell[i](z), cell_stress[arr<i32,3>{0,1,0}][y][y][i]);
+        //     };
+        //     fclose(F);
+        // };
+        // for (st i = 0; i < 10; ++i)
+        // {
+        //     printf("%f %f %f\n", coor_cell[i](x), coor_cell[i](y), coor_cell[i](z));
+        // };
+        st size_flat_cell = 0;
+        // {
+        //     // FILE *F;
+        //     // F = fopen("stress_cell_flat.gpd", "w");
+        //     for (st i = 0; i < size_sol_cell; ++i)
+        //     {
+        //         if (
+        //                 (std::abs(coor_cell[i](ort_slice) - coor_slice) < 1.0e-10)
+        //            )
+        //
+        //         {
+        //             if ((i % 3) == y)
+        //             {
+        //                 // fprintf(F,"%f %f\n", coor_cell[i](x), cell_stress[arr<i32,3>{0,1,0}][y][y][i]);
+        //                 ++size_flat_cell;
+        //             };
+        //         };
+        //     };
+        //     // fclose(F);
+        // };
+
+        // to flat stress
+        // for (auto &&a : cell_flat_stress.content)
+        //     for (auto &&b : a)
+        //         for (auto &&c : b)
+        //             for (auto &&d : c)
+        //                 for (auto &&e : d)
+        //                     for (auto &&j : e)
+        //                         j .resize (size_flat_cell);
+        // coor_flat_cell .resize(size_flat_cell);
+        std::cout << coor_flat_cell.size() << std::endl;
+        cst coort_1 = (ort_slice + 1) % 3; 
+        cst coort_2 = (ort_slice + 2) % 3; 
+        for (st m = 0; m < size_sol_cell; ++m)
+        {
+            if (
+                    (std::abs(coor_cell[m](ort_slice) - coor_slice) < 1.0e-10)
+               )
+            {
+                auto p = coor_cell[m];
+                cst i_x = st(p(coort_1) * ((1 << n_ref)));
+                cst i_y = st(p(coort_2) * ((1 << n_ref)));
+                // std::cout << i_x << " " << i_y << " " << p(x) * ((1 << n_ref))<< " " <<  p(z) * ((1 << n_ref))
+                //     << " " << p(x) << " " << p(z) << std::endl;
+                coor_flat_cell[i_x][i_y] = coor_cell[m];
+            };
+        };
+
+        {
+            st n = 0;
+            for (st m = 0; m < size_sol_cell; ++m)
+            {
+                if (
+                        (std::abs(coor_cell[m](ort_slice) - coor_slice) < 1.0e-10)
+                   )
+                {
+                    for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+                    {
+                        for (st i = 0; i < approx_number+1; ++i)
+                        {
+                            for (st j = 0; j < approx_number+1; ++j)
+                            {
+                                for (st k = 0; k < approx_number+1; ++k)
+                                {
+                                    if ((i+j+k) == approx_number)
+                                    {
+                                        arr<i32, 3> approximation = {i, j, k};
+                                        for (st nu = 0; nu < 3; ++nu)
+                                        {
+                                            for (st alpha = 0; alpha < 3; ++alpha)
+                                            {
+                                                st beta = m % 3;
+                                                // if ((i == 1) and (j == 0) and (k == 0) and (nu == x) and (alpha == x))
+                                                // for (st beta = 0; beta < 3; ++beta)
+                                                // {
+                                                //     if ((m % 3) == beta)
+                                                //     {
+                                                auto p = coor_cell[m];
+                                                cst i_x = st(p(coort_1) * ((1 << n_ref)));
+                                                cst i_y = st(p(coort_2) * ((1 << n_ref)));
+                                                cell_flat_stress[approximation][nu][alpha][beta][i_x][i_y] = 
+                                                    cell_stress[approximation][nu][alpha][m];
+                                                        // printf("%d %d %d %d %d\n", i, j, k, nu, alpha);
+                                                //     };
+                                                // };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+        //                             // printf("%d\n", n);
+                    // if ((m % 3) == z)
+                    // {
+                    //     // coor_flat_cell[n] = coor_cell[m];
+                    //     ++n;
+                    // };
+                    // if (n == size_flat_cell)
+                    //     break;
+                };
+            };
+        };
+
+        // to flat deform
+        // for (auto &&a : cell_flat_deform.content)
+        //     for (auto &&b : a)
+        //         for (auto &&c : b)
+        //             for (auto &&d : c)
+        //                 for (auto &&e : d)
+        //                     for (auto &&j : e)
+        //                         j .resize (size_flat_cell);
+        // coor_flat_cell .resize(size_flat_cell);
+        vec<dbl> move_x(size_flat_cell);
+        {
+            st n = 0;
+            for (st m = 0; m < size_sol_cell; ++m)
+            {
+                if (
+                        (std::abs(coor_cell[m](ort_slice) - coor_slice) < 1.0e-10)
+                   )
+
+                {
+                    for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+                    {
+                        for (st i = 0; i < approx_number+1; ++i)
+                        {
+                            for (st j = 0; j < approx_number+1; ++j)
+                            {
+                                for (st k = 0; k < approx_number+1; ++k)
+                                {
+                                    if ((i+j+k) == approx_number)
+                                    {
+                                        arr<i32, 3> approximation = {i, j, k};
+                                        for (st nu = 0; nu < 3; ++nu)
+                                        {
+                                            for (st alpha = 0; alpha < 3; ++alpha)
+                                            {
+                                                st beta = m % 3;
+                                                // if ((i == 1) and (j == 0) and (k == 0) and (nu == x) and (alpha == x))
+                                                // for (st beta = 0; beta < 3; ++beta)
+                                                // {
+                                                //     if ((m % 3) == beta)
+                                                //     {
+                                                auto p = coor_cell[m];
+                                                cst i_x = st(p(coort_1) * ((1 << n_ref)));
+                                                cst i_y = st(p(coort_2) * ((1 << n_ref)));
+                                                cell_flat_deform[approximation][nu][alpha][beta][i_x][i_y] = 
+                                                    cell_deform[approximation][nu][alpha][m];
+                                                        // printf("%d %d %d %d %d\n", i, j, k, nu, alpha);
+                                                //     };
+                                                // };
+                                            };
+                                        };
+                                    };
+                                };
+                            };
+                        };
+                    };
+        //                             // printf("%d\n", n);
+                    // if ((m % 3) == z)
+                    // {
+                    //     // coor_flat_cell[n] = coor_cell[m];
+                    //     ++n;
+                    // };
+                    // if (n == size_flat_cell)
+                    //     break;
+                };
+            };
+        };
+        {
+            std::ofstream f("stress_xxxx.gpd", std::ios::out);
+            for (st i = 0; i < (1 << n_ref) + 1; ++i)
+            for (st j = 0; j < (1 << n_ref) + 1; ++j)
+            {
+                f << coor_flat_cell[i][j](x) << " " << coor_flat_cell[i][j](z) << " " << 
+                    cell_flat_stress[arr<i32,3>{1,0,0}][x][x][x][i][j] << std::endl;
+                // f << "dfdgdf" << std::endl;
+            };
+            f.close ();
+        };
+
+        // printf("size_flat %d %d\n", size_flat_hole, size_flat_cell);
+        // printf("size %d %d\n", size_sol_hole, size_sol_cell);
+    
+};
+
+void solve_ring_problem_3d (cst flag)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+
+        cst n_cell_ref = 3;
+
+        cst n_ref = 2;
+
+        cst ratio = 2;
+        cdbl width = 2 / ratio;
+        cdbl Ri = 10.5;
+        cdbl Ro = Ri + width;
+
+        if(0)
+        {
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_stress(3);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_deform(3);
+        vec<vec<dealii::Point<3>>> coor_flat_cell;
+
+        for (auto &&a : cell_flat_deform.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            for (auto &&j : e)
+                            {
+                                j .resize ((1 << n_cell_ref) + 1);
+                                for (auto &&o :j)
+                                    o .resize ((1 << n_cell_ref) + 1);
+                            };
+
+        for (auto &&a : cell_flat_stress.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            for (auto &&j : e)
+                            {
+                                j .resize ((1 << n_cell_ref) + 1);
+                                for (auto &&o :j)
+                                    o .resize ((1 << n_cell_ref) + 1);
+                            };
+
+        coor_flat_cell .resize((1 << n_cell_ref) + 1);
+        for (auto &&o : coor_flat_cell)
+            o .resize ((1 << n_cell_ref) + 1);
+
+
+        get_flat_deform_and_stress (
+                y,
+                0.5,
+                cell_flat_stress,
+                cell_flat_deform,
+                coor_flat_cell,
+                2,
+                n_cell_ref
+                );
+
+        auto stress_in_cell = [&cell_flat_stress, &coor_flat_cell] 
+            (cst i, cst j, arr<i32, 3> k, cst nu, cst alpha, cst beta, cdbl px, cdbl py){
+            arr<prmt::Point<2>, 4> points = {
+                prmt::Point<2>(coor_flat_cell[i][j](0),     coor_flat_cell[i][j](2)),
+                prmt::Point<2>(coor_flat_cell[i+1][j](0),   coor_flat_cell[i+1][j](2)),
+                prmt::Point<2>(coor_flat_cell[i+1][j+1](0), coor_flat_cell[i+1][j+1](2)),
+                prmt::Point<2>(coor_flat_cell[i][j+1](0),   coor_flat_cell[i][j+1](2))};
+            // std::cout << i << " " << j << " ";
+            // for (st i = 0; i < 4; ++i)
+            // {
+            //     std::cout << "(" << points[i].x() << ", " << points[i].y() << ") ";
+            // };
+            // std::cout << std::endl;
+            arr<dbl, 4> values = {
+                cell_flat_stress[k][nu][alpha][beta][i][j],
+                cell_flat_stress[k][nu][alpha][beta][i+1][j],
+                cell_flat_stress[k][nu][alpha][beta][i+1][j+1],
+                cell_flat_stress[k][nu][alpha][beta][i][j+1]};
+
+                Scalar4PointsFunc<2> func(points, values);
+
+                // return   cell_flat_stress[k][nu][alpha][beta][i][j];
+                return func(prmt::Point<2>(px, py));
+            };
+
+        cst Ncx = 4;
+        cst Ncy = Ncx * ratio;
+        cdbl bx = width / Ncx;
+        cdbl by = 1.0 / Ncy;
+        cst Npx = 100;
+        cst Npy = 100;
+        cdbl dx = width / (Npx-1);
+        cdbl dy = 1.0 / (Npy-1);
+        arr<arr<vec<vec<dbl>>,3>,3> grad;
+        for (st i = 0; i < 3; ++i)
+        for (st j = 0; j < 3; ++j)
+        {
+            grad[i][j] .resize (Npx); 
+            for (st k = 0; k < Npx; ++k)
+            {
+                grad[i][j][k] .resize (Npy); 
+            };
+        };
+        for (st ort_1 = 0; ort_1 < 1; ++ort_1)
+            for (st ort_2 = 0; ort_2 < 1; ++ort_2)
+        {
+            for (st i = 0; i < Npx-1; ++i)
+            {
+                for (st j = 0; j < Npy-1; ++j)
+                {
+                    cdbl coor_x = Ri + dx * i;
+                    cdbl coor_y = dy * j;
+
+                    cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+                    cst i_y = st(coor_y * (1 << n_ref));
+
+                    dbl ksi_x = coor_x - Ri;
+                    while (ksi_x > bx)
+                        ksi_x -= bx;
+                    ksi_x /= bx;
+                    cst i_ksi_x = st(ksi_x * (1 << n_cell_ref));
+
+                    dbl ksi_y = coor_y;
+                    while (ksi_y > by)
+                        ksi_y -= by;
+                    ksi_y /= by;
+                    cst i_ksi_y = st(ksi_y * (1 << n_cell_ref));
+                    // std::cout <<
+                    //     "x=" << coor_x << " y=" << coor_y <<
+                    //     // " px=" << coor_flat_cell[i][j](x) << " py=" <<  coor_flat_cell[i][j](z) <<
+                    //     " i_x=" << i_x << " i_y= " << i_y << 
+                    //     " i_ksi_x=" << i_ksi_x << " i_ksi_y=" << i_ksi_y << 
+                    //     std::endl;
+
+                    grad[0][0][i][j] = stress_in_cell (i_ksi_y, i_ksi_x, arr<i32, 3>{1,0,0}, x, x, x, ksi_x, ksi_y);
+                    // grad[0][0][i][j] = stress_in_cell (i, j, arr<i32, 3>{1,0,0}, x, x, x, coor_x, coor_y);
+                };
+            };
+        };
+        {
+            std::ofstream f("stress_xxxx_test.gpd", std::ios::out);
+            for (st i = 0; i < Npx; ++i)
+            {
+                for (st j = 0; j < Npy; ++j)
+                {
+                // f << coor_flat_cell[i][j](x) << " " << coor_flat_cell[i][j](z) << " " << grad[0][0][i][j] << std::endl;
+                    cdbl coor_x = Ri + dx * i;
+                    cdbl coor_y = dy * j;
+
+                    cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+                    cst i_y = st(coor_y * (1 << n_ref));
+                    f << coor_x << " " << coor_y << " " << 
+                        grad[0][0][i][j] << std::endl;
+                    // cell_flat_stress[arr<i32,3>{1,0,0}][x][x][x][i][j] << std::endl;
+                };
+            };
+
+            f.close ();
+        };
+        };
+        // exit(1);
+        // std::cout << "!@!!!!!!!!!!!!!!" << std::endl;
+        // {
+        // OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_stress(3);
+        // OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_deform(3);
+        // vec<vec<dealii::Point<3>>> coor_flat_cell;
+        // //
+        // for (auto &&a : cell_flat_deform.content)
+        //     for (auto &&b : a)
+        //         for (auto &&c : b)
+        //             for (auto &&d : c)
+        //                 for (auto &&e : d)
+        //                     for (auto &&j : e)
+        //                     {
+        //                         j .resize ((1 << n_cell_ref) + 1);
+        //                         for (auto &&o :j)
+        //                             o .resize ((1 << n_cell_ref) + 1);
+        //                     };
+        //
+        // for (auto &&a : cell_flat_stress.content)
+        //     for (auto &&b : a)
+        //         for (auto &&c : b)
+        //             for (auto &&d : c)
+        //                 for (auto &&e : d)
+        //                     for (auto &&j : e)
+        //                     {
+        //                         j .resize ((1 << n_cell_ref) + 1);
+        //                         for (auto &&o :j)
+        //                             o .resize ((1 << n_cell_ref) + 1);
+        //                     };
+        //
+        // coor_flat_cell .resize((1 << n_cell_ref) + 1);
+        // for (auto &&o : coor_flat_cell)
+        //     o .resize ((1 << n_cell_ref) + 1);
+        //
+        //
+        // get_flat_deform_and_stress (
+        //         y,
+        //         0.5,
+        //         cell_flat_stress,
+        //         cell_flat_deform,
+        //         coor_flat_cell,
+        //         2,
+        //         n_cell_ref
+        //         );
+        //
+        // auto stress_in_cell = [&cell_flat_stress, &coor_flat_cell] 
+        //     (cst i, cst j, arr<i32, 3> k, cst nu, cst alpha, cst beta, cdbl px, cdbl py){
+        //     arr<prmt::Point<2>, 4> points = {
+        //         prmt::Point<2>(coor_flat_cell[i][j](0),     coor_flat_cell[i][j](2)),
+        //         prmt::Point<2>(coor_flat_cell[i+1][j](0),   coor_flat_cell[i+1][j](2)),
+        //         prmt::Point<2>(coor_flat_cell[i+1][j+1](0), coor_flat_cell[i+1][j+1](2)),
+        //         prmt::Point<2>(coor_flat_cell[i][j+1](0),   coor_flat_cell[i][j+1](2))};
+        //     // std::cout << i << " " << j << " ";
+        //     // for (st i = 0; i < 4; ++i)
+        //     // {
+        //     //     std::cout << "(" << points[i].x() << ", " << points[i].y() << ") ";
+        //     // };
+        //     // std::cout << std::endl;
+        //     arr<dbl, 4> values = {
+        //         cell_flat_stress[k][nu][alpha][beta][i][j],
+        //         cell_flat_stress[k][nu][alpha][beta][i+1][j],
+        //         cell_flat_stress[k][nu][alpha][beta][i+1][j+1],
+        //         cell_flat_stress[k][nu][alpha][beta][i][j+1]};
+        //
+        //         Scalar4PointsFunc<2> func(points, values);
+        //
+        //         // return   cell_flat_stress[k][nu][alpha][beta][i][j];
+        //         return func(prmt::Point<2>(px, py));
+        //     };
+        //
+        // // auto move_in_macro = [&v, &coor] 
+        // //     (cst i, cst j, cst alpha){
+        // //     arr<prmt::Point<2>, 4> points = {
+        // //         prmt::Point<2>(coor[i][j](0),     coor[i][j](1)),
+        // //         prmt::Point<2>(coor[i+1][j](0),   coor[i+1][j](1)),
+        // //         prmt::Point<2>(coor[i+1][j+1](0), coor[i+1][j+1](1)),
+        // //         prmt::Point<2>(coor[i][j+1](0),   coor[i][j+1](1))};
+        // //     // std::cout << i << " " << j << " ";
+        // //     // for (st i = 0; i < 4; ++i)
+        // //     // {
+        // //     //     std::cout << "(" << points[i].x() << ", " << points[i].y() << ") ";
+        // //     // };
+        // //     // std::cout << std::endl;
+        // //     arr<dbl, 4> values = {
+        // //         v[i][j][alpha],
+        // //         v[i+1][j][alpha],
+        // //         v[i+1][j+1][alpha],
+        // //         v[i][j+1][alpha]};
+        // //
+        // //         Scalar4PointsFunc<2> func(points, values);
+        // //
+        // //         // return v[i][j][x];
+        // //         return func;//.dy(prmt::Point<2>(px, py));
+        // //     };
+        //
+        // cst Ncx = 4;
+        // cst Ncy = Ncx * ratio;
+        // cdbl bx = width / Ncx;
+        // cdbl by = 1.0 / Ncy;
+        // cst Npx = 100;
+        // cst Npy = 100;
+        // cdbl dx = width / (Npx-1);
+        // cdbl dy = 1.0 / (Npy-1);
+        // arr<arr<vec<vec<dbl>>,3>,3> grad;
+        // for (st i = 0; i < 3; ++i)
+        // for (st j = 0; j < 3; ++j)
+        // {
+        //     grad[i][j] .resize (Npx); 
+        //     for (st k = 0; k < Npx; ++k)
+        //     {
+        //         grad[i][j][k] .resize (Npy); 
+        //     };
+        // };
+        // for (st ort_1 = 0; ort_1 < 1; ++ort_1)
+        //     for (st ort_2 = 0; ort_2 < 1; ++ort_2)
+        // {
+        //     for (st i = 0; i < Npx-1; ++i)
+        //     {
+        //         for (st j = 0; j < Npy-1; ++j)
+        //         {
+        //             cdbl coor_x = Ri + dx * i;
+        //             cdbl coor_y = dy * j;
+        //
+        //             cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+        //             cst i_y = st(coor_y * (1 << n_ref));
+        //
+        //             dbl ksi_x = coor_x - Ri;
+        //             while (ksi_x > bx)
+        //                 ksi_x -= bx;
+        //             ksi_x /= bx;
+        //             cst i_ksi_x = st(ksi_x * (1 << n_cell_ref));
+        //
+        //             dbl ksi_y = coor_y;
+        //             while (ksi_y > by)
+        //                 ksi_y -= by;
+        //             ksi_y /= by;
+        //             cst i_ksi_y = st(ksi_y * (1 << n_cell_ref));
+        //             // std::cout <<
+        //             //     "x=" << coor_x << " y=" << coor_y <<
+        //             //     // " px=" << coor_flat_cell[i][j](x) << " py=" <<  coor_flat_cell[i][j](z) <<
+        //             //     " i_x=" << i_x << " i_y= " << i_y << 
+        //             //     " i_ksi_x=" << i_ksi_x << " i_ksi_y=" << i_ksi_y << 
+        //             //     std::endl;
+        //
+        //             grad[0][0][i][j] = stress_in_cell (i_ksi_y, i_ksi_x, arr<i32, 3>{1,0,0}, x, x, x, ksi_x, ksi_y);
+        //             // grad[0][0][i][j] = stress_in_cell (i, j, arr<i32, 3>{1,0,0}, x, x, x, coor_x, coor_y);
+        //         };
+        //     };
+        // };
+        // {
+        //     std::ofstream f("stress_xxxx_test.gpd", std::ios::out);
+        //     for (st i = 0; i < Npx; ++i)
+        //     {
+        //         for (st j = 0; j < Npy; ++j)
+        //         {
+        //         // f << coor_flat_cell[i][j](x) << " " << coor_flat_cell[i][j](z) << " " << grad[0][0][i][j] << std::endl;
+        //             cdbl coor_x = Ri + dx * i;
+        //             cdbl coor_y = dy * j;
+        //
+        //             cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+        //             cst i_y = st(coor_y * (1 << n_ref));
+        //             f << coor_x << " " << coor_y << " " << 
+        //                 grad[0][0][i][j] << std::endl;
+        //             // cell_flat_stress[arr<i32,3>{1,0,0}][x][x][x][i][j] << std::endl;
+        //         };
+        //     };
+        //
+        //     f.close ();
+        // };
+        // };
+        // exit(1);
+
+        Domain<3> domain;
+
+        vec<dealii::Point<2>> radius_vector;
+        vec<dealii::Point<2>> radius_vector_cell;
+        {
+            auto center = dealii::Point<2>(0.0, 0.0);
+            dealii::GridGenerator::cylinder_shell(domain.grid, 1.0, Ri, Ro, 64, 1);
+            auto cell = domain.grid .begin_active();
+            auto end_cell = domain.grid .end();
+            for (; cell != end_cell; ++cell)
+            {
+                for (st i = 0; i < 6; ++i)
+                {
+                    if (cell->face(i)->at_boundary())
+                    {
+                        auto p = cell->face(i)->center();
+                        auto p2d = dealii::Point<2>(p(0), p(1));
+                        if (std::abs(center.distance(p2d) - Ri) < 0.1)
+                        {
+                            radius_vector .push_back(p2d);
+                            cell->face(i)->set_boundary_indicator(radius_vector.size()+2);
+                        };
+                        // if (!flag)
+                        if (std::abs(p(2) - 0.0) < 1.0e-5)
+                        {
+                            cell->face(i)->set_boundary_indicator(1);
+                            // flag = true;
+                        };
+                        if (std::abs(p(2) - 1.0) < 1.0e-5)
+                        {
+                            cell->face(i)->set_boundary_indicator(2);
+                        };
+                    };
+                };
+
+                dealii::Point<2> midle_p(0.0, 0.0);
+                for (size_t i = 0; i < 8; ++i)
+                {
+                    midle_p(0) += cell->vertex(i)(0);
+                    midle_p(1) += cell->vertex(i)(1);
+                };
+                midle_p(0) /= 8.0;
+                midle_p(1) /= 8.0;
+                cell->set_material_id(radius_vector_cell.size());
+                radius_vector_cell .push_back(midle_p);
+            };
+            domain.grid.refine_global(n_ref);
+        };
+        dealii::FESystem<3,3> fe 
+            (dealii::FE_Q<3,3>(1), 3);
+        domain.dof_init (fe);
+
+        SystemsLinearAlgebraicEquations slae;
+        ATools ::trivial_prepare_system_equations (slae, domain);
+
+        LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
+
+        ATools::FourthOrderTensor C;
+        {
+            ATools::FourthOrderTensor Cxy;
+            std::ifstream in ("meta_coef.bin", std::ios::in | std::ios::binary);
+            in.read ((char *) &Cxy, sizeof Cxy);
+            in.close ();
+            arr<arr<dbl,3>,3> A = {
+                arr<dbl,3>{1.0, 0.0, 0.0},
+                arr<dbl,3>{0.0,  0.0, -1.0},
+                arr<dbl,3>{0.0,  1.0, 0.0}
+            };
+            // arr<arr<dbl,3>,3> A = {
+            //     arr<dbl,3>{1.0, 0.0, 0.0},
+            //     arr<dbl,3>{0.0,  1.0, 0.0},
+            //     arr<dbl,3>{0.0,  0.0, 1.0}
+            // };
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(Cxy[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     Cxy[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     Cxy[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            //     {
+            //     auto newcoef = unphysical_to_physicaly (Cxy);
+            // printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+            //             newcoef[0][0][0][0],
+            //             newcoef[0][0][1][1],
+            //             newcoef[0][0][2][2],
+            //             newcoef[1][1][0][0],
+            //             newcoef[1][1][1][1],
+            //             newcoef[1][1][2][2],
+            //             newcoef[2][2][0][0],
+            //             newcoef[2][2][1][1],
+            //             newcoef[2][2][2][2],
+            //             Cxy[0][1][0][1],
+            //             Cxy[0][2][0][2]
+            //             );
+            //     };
+
+            for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+            for (st k = 0; k < 3; ++k)
+            for (st l = 0; l < 3; ++l)
+            {
+                C[i][j][k][l] = 0.0;
+
+                for (st a = 0; a < 3; ++a)
+                for (st b = 0; b < 3; ++b)
+                for (st c = 0; c < 3; ++c)
+                for (st d = 0; d < 3; ++d)
+                {
+                    C[i][j][k][l] += 
+                        // C[i][j][k][l];
+                        A[i][a]*A[j][b]*A[k][c]*A[l][d]*Cxy[a][b][c][d];
+
+                };
+            };
+
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(C[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     C[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     C[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            //     {
+            //     auto newcoef = unphysical_to_physicaly (C);
+            // printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+            //             newcoef[0][0][0][0],
+            //             newcoef[0][0][1][1],
+            //             newcoef[0][0][2][2],
+            //             newcoef[1][1][0][0],
+            //             newcoef[1][1][1][1],
+            //             newcoef[1][1][2][2],
+            //             newcoef[2][2][0][0],
+            //             newcoef[2][2][1][1],
+            //             newcoef[2][2][2][2],
+            //             C[0][1][0][1],
+            //             C[0][2][0][2]
+            //             );
+            //     };
+
+        };
+            // exit(1);
+
+        element_matrix.C .resize (radius_vector_cell.size());
+        for (st n = 0; n < radius_vector_cell.size(); ++n)
+        {
+            cdbl hypo = sqrt(
+                    radius_vector_cell[n](x)*radius_vector_cell[n](x)+
+                    radius_vector_cell[n](y)*radius_vector_cell[n](y)
+                    );
+            cdbl sin = radius_vector_cell[n](y)/hypo;
+            cdbl cos = radius_vector_cell[n](x)/hypo;
+            arr<arr<dbl,3>,3> A = {
+                arr<dbl,3>{cos, -sin, 0.0},
+                arr<dbl,3>{sin,  cos, 0.0},
+                arr<dbl,3>{0.0,  0.0, 1.0}
+            };
+            // arr<arr<dbl,3>,3> A = {
+            //     arr<dbl,3>{1.0, 0.0, 0.0},
+            //     arr<dbl,3>{0.0,  1.0, 0.0},
+            //     arr<dbl,3>{0.0,  0.0, 1.0}
+            // };
+
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(C[im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     C[im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     C[im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+
+            for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+            for (st k = 0; k < 3; ++k)
+            for (st l = 0; l < 3; ++l)
+            {
+                element_matrix.C[n][i][j][k][l] = 0.0;
+
+                for (st a = 0; a < 3; ++a)
+                for (st b = 0; b < 3; ++b)
+                for (st c = 0; c < 3; ++c)
+                for (st d = 0; d < 3; ++d)
+                {
+                    element_matrix.C[n][i][j][k][l] += 
+                        // C[i][j][k][l];
+                        A[i][a]*A[j][b]*A[k][c]*A[l][d]*C[a][b][c][d];
+
+                };
+            };
+
+            // printf("\n");
+            // for (size_t i = 0; i < 9; ++i)
+            // {
+            //     uint8_t im = i / (3 + 1);
+            //     uint8_t in = i % (3 + 1);
+            //
+            //     for (size_t j = 0; j < 9; ++j)
+            //     {
+            //         uint8_t jm = j / (3 + 1);
+            //         uint8_t jn = j % (3 + 1);
+            //
+            //         if (std::abs(element_matrix.C[n][im][in][jm][jn]) > 0.0000001)
+            //             printf("\x1B[31m%f\x1B[0m   ", 
+            //                     element_matrix.C[n][im][in][jm][jn]);
+            //         else
+            //             printf("%f   ", 
+            //                     element_matrix.C[n][im][in][jm][jn]);
+            //     };
+            //     for (size_t i = 0; i < 2; ++i)
+            //         printf("\n");
+            // };
+            // break;
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
+        };
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+            // exit(1);
+
+        arr<std::function<dbl (const dealii::Point<3>&)>, 3> func {
+            [] (const dealii::Point<3>) {return 0.0;},
+            [] (const dealii::Point<3>) {return 0.0;},
+            [] (const dealii::Point<3>) {return 0.0;}
+        };
+        SourceVector<3> element_rhsv (func, domain.dof_handler.get_fe());
+
+        Assembler ::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler);
+
+        cdbl P = 1.0;
+        vec<BoundaryValueVector<3>> bound (radius_vector.size()+2);
+        bound[0].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
+        bound[0].boundary_id   = 1;
+        bound[0].boundary_type = TBV::Neumann;
+        bound[1].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
+        bound[1].boundary_id   = 2;
+        bound[1].boundary_type = TBV::Neumann;
+        for (st i = 0; i < radius_vector.size(); ++i)
+        {
+            cdbl a = radius_vector[i](0);
+            cdbl b = radius_vector[i](1);
+            cdbl tmp = 1/std::sqrt(a*a + b*b);
+            cdbl Px = P*a*tmp;
+            cdbl Py = P*b*tmp;
+            // printf("%f %f\n", Px, Py);
+            bound[i+2].function      = [Px, Py] (const dealii::Point<3> &p) {return arr<dbl, 3>{Px, Py, 0.0};};
+            bound[i+2].boundary_id   = i+3;
+            bound[i+2].boundary_type = TBV::Neumann;
+            // bound[i].boundary_type = TBV::Dirichlet;
+        };
+
+        for (auto b : bound)
+            ATools ::apply_boundary_value_vector<3> (b) .to_slae (slae, domain);
+
+        dealii::SolverControl solver_control (1000000, 1e-12);
+        dealii::SolverCG<> solver (solver_control);
+        solver.solve (
+                slae.matrix,
+                slae.solution,
+                slae.rhsv
+                ,dealii::PreconditionIdentity()
+                );
+        // EPTools ::print_move<3> (slae.solution, domain.dof_handler, "move.gpd");
+        // EPTools ::print_move<3> (slae.solution, domain.dof_handler, "move.vtk", dealii::DataOutBase::vtk);
+        // HCPTools ::print_temperature<3> (slae.solution, domain.dof_handler, "move.vtk", dealii::DataOutBase::vtk);
+        // HCPTools ::print_temperature_slice (slae.solution, domain.dof_handler, "temperature_slice.gpd", x, len_rod);
+        EPTools ::print_move_slice (slae.solution, domain.dof_handler, "move_slice_z.gpd", z, 0.5);
+        EPTools ::print_move_slice (slae.solution, domain.dof_handler, "move_slice_y.gpd", y, 0.0);
+
+        arr<arr<arr<dbl,3>,(1 << n_ref) + 1>,(1 << n_ref) + 1> v;
+        arr<arr<dealii::Point<2>,(1 << n_ref) + 1>,(1 << n_ref) + 1> coor;
+        {
+            auto cell = domain.dof_handler .begin_active();
+            auto end_cell = domain.dof_handler .end();
+            for (; cell != end_cell; ++cell)
+            {
+                for (st i = 0; i < 8; ++i)
+                {
+                    auto p = cell->vertex(i);
+                    if ((p(x) > 0.0) and (abs(p(y)) < 1.0e-5))
+                    {
+                        p(x) -= Ri;
+                        p(x) /= width;
+                        cst i_x = st(p(x) * ((1 << n_ref)));
+                        cst i_y = st(p(z) * ((1 << n_ref)));
+                        // std::cout << i_x << " " << i_y << std::endl;
+                        v[i_x][i_y][x] = slae.solution((cell->vertex_dof_index (i, x)));
+                        v[i_x][i_y][y] = slae.solution((cell->vertex_dof_index (i, y)));
+                        v[i_x][i_y][z] = slae.solution((cell->vertex_dof_index (i, z)));
+                        coor[i_x][i_y](x) = cell->vertex(i)(x);
+                        coor[i_x][i_y](y) = cell->vertex(i)(z);
+                    };
+                };
+            };
+        };
+        {
+            std::ofstream f("move_ring.gpd", std::ios::out);
+            for (st i = 0; i < 5; ++i)
+            {
+                for (st j = 0; j < 5; ++j)
+                {
+                    f << coor[i][j](x) << " " << coor[i][j](y) << " " << v[i][j][z] << std::endl;
+                };
+            };
+            f.close ();
+        };
+
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_stress(3);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<vec<vec<dbl>>, 3>, 3>, 3>> cell_flat_deform(3);
+        vec<vec<dealii::Point<3>>> coor_flat_cell;
+        //
+        for (auto &&a : cell_flat_deform.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            for (auto &&j : e)
+                            {
+                                j .resize ((1 << n_cell_ref) + 1);
+                                for (auto &&o :j)
+                                    o .resize ((1 << n_cell_ref) + 1);
+                            };
+
+        for (auto &&a : cell_flat_stress.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            for (auto &&j : e)
+                            {
+                                j .resize ((1 << n_cell_ref) + 1);
+                                for (auto &&o :j)
+                                    o .resize ((1 << n_cell_ref) + 1);
+                            };
+
+        coor_flat_cell .resize((1 << n_cell_ref) + 1);
+        for (auto &&o : coor_flat_cell)
+            o .resize ((1 << n_cell_ref) + 1);
+
+
+        get_flat_deform_and_stress (
+                y,
+                0.5,
+                cell_flat_stress,
+                cell_flat_deform,
+                coor_flat_cell,
+                2,
+                n_cell_ref
+                );
+
+        // auto stress_in_cell = [&cell_flat_stress, &coor_flat_cell] 
+        //     (cst i, cst j, arr<i32, 3> k, cst nu, cst alpha, cst beta, cdbl px, cdbl py){
+        //     arr<prmt::Point<2>, 4> points = {
+        //         prmt::Point<2>(coor_flat_cell[i][j](0),     coor_flat_cell[i][j](2)),
+        //         prmt::Point<2>(coor_flat_cell[i+1][j](0),   coor_flat_cell[i+1][j](2)),
+        //         prmt::Point<2>(coor_flat_cell[i+1][j+1](0), coor_flat_cell[i+1][j+1](2)),
+        //         prmt::Point<2>(coor_flat_cell[i][j+1](0),   coor_flat_cell[i][j+1](2))};
+        //     std::cout << i << " " << j << " ";
+        //     for (st k = 0; k < 4; ++k)
+        //     {
+        //         std::cout << "(" << points[k].x() << ", " << points[k].y() << ") ";
+        //     };
+        //     std::cout << std::endl;
+        //     arr<dbl, 4> values = {
+        //         cell_flat_stress[k][nu][alpha][beta][i][j],
+        //         cell_flat_stress[k][nu][alpha][beta][i+1][j],
+        //         cell_flat_stress[k][nu][alpha][beta][i+1][j+1],
+        //         cell_flat_stress[k][nu][alpha][beta][i][j+1]};
+        //
+        //         Scalar4PointsFunc<2> func(points, values);
+        //
+        //         // return   cell_flat_stress[k][nu][alpha][beta][i][j];
+        //         return func(prmt::Point<2>(px, py));
+        //     };
+        auto stress_in_cell = [&cell_flat_stress, &coor_flat_cell] 
+            (cst i, cst j, arr<i32, 3> k, cst nu, cst alpha, cst beta, cdbl px, cdbl py){
+            arr<prmt::Point<2>, 4> points = {
+                prmt::Point<2>(coor_flat_cell[i][j](0),     coor_flat_cell[i][j](2)),
+                prmt::Point<2>(coor_flat_cell[i+1][j](0),   coor_flat_cell[i+1][j](2)),
+                prmt::Point<2>(coor_flat_cell[i+1][j+1](0), coor_flat_cell[i+1][j+1](2)),
+                prmt::Point<2>(coor_flat_cell[i][j+1](0),   coor_flat_cell[i][j+1](2))};
+            // std::cout << i << " " << j << " ";
+            // for (st i = 0; i < 4; ++i)
+            // {
+            //     std::cout << "(" << points[i].x() << ", " << points[i].y() << ") ";
+            // };
+            // std::cout << std::endl;
+            arr<dbl, 4> values = {
+                cell_flat_stress[k][nu][alpha][beta][i][j],
+                cell_flat_stress[k][nu][alpha][beta][i+1][j],
+                cell_flat_stress[k][nu][alpha][beta][i+1][j+1],
+                cell_flat_stress[k][nu][alpha][beta][i][j+1]};
+
+                Scalar4PointsFunc<2> func(points, values);
+
+                // return   cell_flat_stress[k][nu][alpha][beta][i][j];
+                return func(prmt::Point<2>(px, py));
+            };
+
+        auto move_in_macro = [&v, &coor] 
+            (cst i, cst j, cst alpha){
+            arr<prmt::Point<2>, 4> points = {
+                prmt::Point<2>(coor[i][j](0),     coor[i][j](1)),
+                prmt::Point<2>(coor[i+1][j](0),   coor[i+1][j](1)),
+                prmt::Point<2>(coor[i+1][j+1](0), coor[i+1][j+1](1)),
+                prmt::Point<2>(coor[i][j+1](0),   coor[i][j+1](1))};
+            // std::cout << i << " " << j << " ";
+            // for (st i = 0; i < 4; ++i)
+            // {
+            //     std::cout << "(" << points[i].x() << ", " << points[i].y() << ") ";
+            // };
+            // std::cout << std::endl;
+            arr<dbl, 4> values = {
+                v[i][j][alpha],
+                v[i+1][j][alpha],
+                v[i+1][j+1][alpha],
+                v[i][j+1][alpha]};
+
+                Scalar4PointsFunc<2> func(points, values);
+
+                // return v[i][j][x];
+                return func;//.dy(prmt::Point<2>(px, py));
+            };
+
+        cst Ncx = 2;
+        cst Ncy = Ncx * ratio;
+        cdbl bx = width / Ncx;
+        cdbl by = 1.0 / Ncy;
+        cst Npx = 10;
+        cst Npy = 10;
+        cdbl dx = width / (Npx-1);
+        cdbl dy = 1.0 / (Npy-1);
+        arr<arr<vec<vec<dbl>>,3>,3> grad;
+        // for (st i = 0; i < 3; ++i)
+        // for (st j = 0; j < 3; ++j)
+        // {
+        //     grad[i][j] .resize (Npx); 
+        //     for (st k = 0; k < Npx; ++k)
+        //     {
+        //         grad[i][j][k] .resize (Npy); 
+        //     };
+        // };
+        // for (st ort_1 = 0; ort_1 < 1; ++ort_1)
+        //     for (st ort_2 = 0; ort_2 < 1; ++ort_2)
+        // {
+        //     for (st i = 0; i < Npx-1; ++i)
+        //     {
+        //         for (st j = 0; j < Npy-1; ++j)
+        //         {
+        //             cdbl coor_x = Ri + dx * i;
+        //             cdbl coor_z = dy * j;
+        //
+        //             cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+        //             cst i_z = st(coor_z * (1 << n_ref));
+        //
+        //             dbl ksi_x = coor_x - Ri;
+        //             while (ksi_x > bx)
+        //                 ksi_x -= bx;
+        //             ksi_x /= bx;
+        //             cst i_ksi_x = st(ksi_x * (1 << n_cell_ref));
+        //
+        //             dbl ksi_z = coor_z;
+        //             while (ksi_z > by)
+        //                 ksi_z -= by;
+        //             ksi_z /= by;
+        //             cst i_ksi_z = st(ksi_z * (1 << n_cell_ref));
+        //             std::cout <<
+        //                 "x=" << coor_x << " y=" << coor_z <<
+        //                 // " px=" << coor_flat_cell[i][j](x) << " py=" <<  coor_flat_cell[i][j](z) <<
+        //                 " i_x=" << i_x << " i_z= " << i_z << 
+        //                 " i_ksi_x=" << i_ksi_x << " i_ksi_z=" << i_ksi_z << 
+        //                 std::endl;
+        //
+        //             grad[0][0][i][j] = stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{1,0,0}, x, x, x, ksi_x, ksi_z);
+        //             // grad[0][0][i][j] = move_in_macro (i_x, i_z, x).dx(coor_x, coor_z);
+        //             // dy == dz
+        //             // grad[ort_1][ort_2][i][j] =
+        //             //     stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1, 0, 0}, x, ort_1, ort_2, ksi_x, ksi_z) *
+        //             //     // move_in_macro(i_x, i_z, x).dx(coor_x, coor_z) +
+        //             //     // stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, x, ort_1, ort_2, ksi_x, ksi_z) *
+        //             //     // move_in_macro(i_x, i_z, x).dy(coor_x, coor_z) +
+        //             //     // stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{1, 0, 0}, z, ort_1, ort_2, ksi_x, ksi_z) *
+        //             //     // move_in_macro(i_x, i_z, z).dx(coor_x, coor_z) +
+        //             //     // stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, z, ort_1, ort_2, ksi_x, ksi_z) *
+        //             //     move_in_macro(i_x, i_z, z).dy(coor_x, coor_z);
+        //             // grad[0][0][i][j] = stress_in_cell (i, j, arr<i32, 3>{1,0,0}, x, x, x, coor_x, coor_z);
+        //         };
+        //     };
+        // };
+        for (st i = 0; i < 3; ++i)
+        for (st j = 0; j < 3; ++j)
+        {
+            grad[i][j] .resize (Npx); 
+            for (st k = 0; k < Npx; ++k)
+            {
+                grad[i][j][k] .resize (Npy); 
+            };
+        };
+        for (st ort_1 = 0; ort_1 < 1; ++ort_1)
+            for (st ort_2 = 0; ort_2 < 1; ++ort_2)
+        {
+            for (st i = 0; i < Npx-1; ++i)
+            {
+                for (st j = 0; j < Npy-1; ++j)
+                {
+                    cdbl coor_x = Ri + dx * i;
+                    cdbl coor_y = dy * j;
+
+                    cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+                    cst i_y = st(coor_y * (1 << n_ref));
+
+                    dbl ksi_x = coor_x - Ri;
+                    while (ksi_x > bx)
+                        ksi_x -= bx;
+                    ksi_x /= bx;
+                    cst i_ksi_x = st(ksi_x * (1 << n_cell_ref));
+
+                    dbl ksi_y = coor_y;
+                    while (ksi_y > by)
+                        ksi_y -= by;
+                    ksi_y /= by;
+                    cst i_ksi_y = st(ksi_y * (1 << n_cell_ref));
+                    // std::cout <<
+                    //     "x=" << coor_x << " y=" << coor_y <<
+                    //     // " px=" << coor_flat_cell[i][j](x) << " py=" <<  coor_flat_cell[i][j](z) <<
+                    //     " i_x=" << i_x << " i_y= " << i_y << 
+                    //     " i_ksi_x=" << i_ksi_x << " i_ksi_y=" << i_ksi_y << 
+                    //     std::endl;
+
+                    grad[0][0][i][j] = stress_in_cell (i_ksi_y, i_ksi_x, arr<i32, 3>{1,0,0}, x, x, x, ksi_x, ksi_y);
+                    // grad[0][0][i][j] = stress_in_cell (i, j, arr<i32, 3>{1,0,0}, x, x, x, coor_x, coor_y);
+                };
+            };
+        };
+        {
+            std::ofstream f("stress_xxxx_test.gpd", std::ios::out);
+            for (st i = 0; i < Npx-1; ++i)
+            {
+                for (st j = 0; j < Npy-1; ++j)
+                {
+                // f << coor_flat_cell[i][j](x) << " " << coor_flat_cell[i][j](z) << " " << grad[0][0][i][j] << std::endl;
+                    cdbl coor_x = Ri + dx * i;
+                    cdbl coor_y = dy * j;
+
+                    cst i_x = st(((coor_x - Ri) / width) * (1 << n_ref));
+                    cst i_y = st(coor_y * (1 << n_ref));
+                    // f << coor_x << " " << coor_y << " " << 
+                    //     grad[0][0][i][j] << std::endl;
+                    // cell_flat_stress[arr<i32,3>{1,0,0}][x][x][x][i][j] << std::endl;
+                };
+            };
+
+            f.close ();
+        };
+        // exit(1);
+    };
+};
+
 void calculate_real_stress (
         cst flag, cst num_cells, cdbl E, cdbl pua, cst flg1, cst flg2, cdbl R, cst refine_cell, cst refine_hole,
         const str f_name_cell, const str f_name_hole)
@@ -10440,7 +12051,9 @@ int main()
 
     solve_two_stress (0);
 
-    solve_cell_elastic_problem_and_print_along_line(1);
+    solve_cell_elastic_problem_and_print_along_line(0);
+
+    solve_ring_problem_3d(1);
 
     // solve_approx_cell_elastic_problem (1, 10.0, 0.25);
 
@@ -10510,7 +12123,7 @@ int main()
     // solve_elastic_problem (1);
     // solve_two_stress (1, 5.0, 0.25);
     //
-    // solve_approx_cell_elastic_problem (1, 10.0, 0.25);
+    solve_approx_cell_elastic_problem (0, 10.0, 0.25);
     // solve_approx_cell_elastic_problem (1);
     // solve_elastic_problem (1);
     // solve_two_stress (1, 10.0, 0.25);

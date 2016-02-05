@@ -54,7 +54,8 @@ class CFM(QMainWindow, cfm_ui.Ui_MainWindow):
         line_coor = [[] for i in range(num_plots)]
         line = [[] for i in range(num_plots)]
         for n in range(num_plots):
-            path = ("/home/primat/hoz_block_disk/cell_func_bd"
+            # path = ("/home/primat/hoz_block_disk/cell_func_bd"
+            path = ("/media/primat/b9ef6a43-441a-458d-9f0a-76b1042d57fb/cell_func_bd"
                     + "/" + self.num_mat.displayText()
                     + "/" + "_".join([str(self.tableArgs.item(n,i).text()) for i in range(6,12)])
                     + "/" + "_".join([str(self.tableArgs.item(n,i).text()) for i in range(12,18)])
@@ -86,10 +87,10 @@ class CFM(QMainWindow, cfm_ui.Ui_MainWindow):
                     + "/" + self.tableArgs.item(n,4).text())
 
             f = open(file_name+".bin")
-            stress = struct.Struct(pattern).unpack(f.read())
+            solution = struct.Struct(pattern).unpack(f.read())
             f.close()
 
-            line[n] = [stress[i] for i in xrange(size) if ((abs(coor[y][i]-0.5) < 1e-10) and (abs(coor[z][i]-0.5) < 1e-10))]
+            line[n] = [solution[i] for i in xrange(size) if ((abs(coor[y][i]-0.5) < 1e-10) and (abs(coor[z][i]-0.5) < 1e-10))]
             line_coor[n] = [coor[x][i] for i in xrange(size) if ((abs(coor[y][i]-0.5) < 1e-10) and (abs(coor[z][i]-0.5) < 1e-10))]
 
         plt.plot(*[(line_coor[i/2] if ((i % 2) == 0) else line[i/2]) for i in xrange(num_plots*2)])
