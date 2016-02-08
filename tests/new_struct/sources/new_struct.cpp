@@ -10691,7 +10691,7 @@ void solve_ring_problem_3d (cst flag)
     {
         enum {x, y, z};
 
-        cst n_cell_ref = 3;
+        cst n_cell_ref = 4;
 
         cst n_ref = 4;
 
@@ -11024,11 +11024,15 @@ void solve_ring_problem_3d (cst flag)
         vec<dealii::Point<2>> radius_vector_cell;
         {
             auto center = dealii::Point<2>(0.0, 0.0);
-            dealii::GridGenerator::cylinder_shell(domain.grid, 1.0, Ri, Ro, 64, 1);
+            dealii::GridGenerator::cylinder_shell(domain.grid, 1.0, Ri, Ro, 1 << 6, 1);
             auto cell = domain.grid .begin_active();
             auto end_cell = domain.grid .end();
             for (; cell != end_cell; ++cell)
             {
+                // cell->set_refinement_case (
+                //         dealii::RefinementCase<3>(dealii::RefinementPossibilities<3>::Possibilities::cut_x));
+                // dealii::RefinementCase<3> ref_case(2);
+                // cell->set_refine_flag (ref_case);
                 for (st i = 0; i < 6; ++i)
                 {
                     if (cell->face(i)->at_boundary())
@@ -11064,7 +11068,22 @@ void solve_ring_problem_3d (cst flag)
                 cell->set_material_id(radius_vector_cell.size());
                 radius_vector_cell .push_back(midle_p);
             };
-            domain.grid.refine_global(n_ref);
+            // domain.grid.refine_global(n_ref);
+            // domain.grid.execute_coarsening_and_refinement();
+        };
+        {
+            for (st i = 0; i < n_ref; ++i)
+            {
+                
+            auto cell = domain.grid .begin_active();
+            auto end_cell = domain.grid .end();
+            for (; cell != end_cell; ++cell)
+            {
+                dealii::RefinementCase<3> ref_case(6);
+                cell->set_refine_flag (ref_case);
+            };
+            domain.grid.execute_coarsening_and_refinement();
+            };
         };
         dealii::FESystem<3,3> fe 
             (dealii::FE_Q<3,3>(1), 3);
@@ -11353,9 +11372,9 @@ void solve_ring_problem_3d (cst flag)
         };
         {
             std::ofstream f("move_ring.gpd", std::ios::out);
-            for (st i = 0; i < 5; ++i)
+            for (st i = 0; i < (1 << n_ref) + 1; ++i)
             {
-                for (st j = 0; j < 5; ++j)
+                for (st j = 0; j < (1 << n_ref) + 1; ++j)
                 {
                     f << coor[i][j](x) << " " << coor[i][j](y) << " " << v[i][j][z] << std::endl;
                 };
@@ -11751,14 +11770,20 @@ void calculate_real_stress_in_ring(
                 };
             in.close ();
         };
+        cdbl Vxx = (v[(1 << n_ref)][0][x] - v[0][0][x]) / width;
+        cdbl Vzz = (v[0][(1 << n_ref)][z] - v[0][0][z]) / 1.0;
+        std::cout << Vxx << " " << Vzz << std::endl;
+        std::cout << v[(1 << n_ref)][0][x]<< " " << v[0][0][x] << std::endl;
 
         {
             std::ofstream f("move_ring_1.gpd", std::ios::out);
-            for (st i = 0; i < 5; ++i)
+            for (st i = 0; i < (1 << n_ref) + 1; ++i)
             {
-                for (st j = 0; j < 5; ++j)
+                for (st j = 0; j < (1 << n_ref) + 1; ++j)
                 {
-                    f << coor[i][j](x) << " " << coor[i][j](y) << " " << v[i][j][z] << std::endl;
+                    f << coor[i][j](x) << " " << coor[i][j](y)
+                        << " " << v[i][j][x]
+                        << " " << v[i][j][z]  << std::endl;
                 };
             };
             f.close ();
@@ -11899,21 +11924,63 @@ void calculate_real_stress_in_ring(
 
                     // grad[0][0][i][j] = stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1,0,0}, x, x, x, ksi_x, ksi_z);
                     // grad[0][0][i][j] = stress_in_cell (i, j, arr<i32, 3>{1,0,0}, x, x, x, coor_x, coor_z);
+                    // grad[ort_1][ort_2][i][j] =
+                    //     stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1, 0, 0}, x, ort_1, ort_2, ksi_x, ksi_z) *
+                    //     move_in_macro(i_x, i_z, x).dx(coor_x, coor_z) +
+                    //     stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, x, ort_1, ort_2, ksi_x, ksi_z) *
+                    //     move_in_macro(i_x, i_z, x).dy(coor_x, coor_z) +
+                    //     stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{1, 0, 0}, z, ort_1, ort_2, ksi_x, ksi_z) *
+                    //     move_in_macro(i_x, i_z, z).dx(coor_x, coor_z) +
+                    //     stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, z, ort_1, ort_2, ksi_x, ksi_z) *
+                    //     move_in_macro(i_x, i_z, z).dy(coor_x, coor_z);
                     grad[ort_1][ort_2][i][j] =
                         stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1, 0, 0}, x, ort_1, ort_2, ksi_x, ksi_z) *
-                        move_in_macro(i_x, i_z, x).dx(coor_x, coor_z) +
-                        stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, x, ort_1, ort_2, ksi_x, ksi_z) *
-                        move_in_macro(i_x, i_z, x).dy(coor_x, coor_z) +
-                        stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{1, 0, 0}, z, ort_1, ort_2, ksi_x, ksi_z) *
-                        move_in_macro(i_x, i_z, z).dx(coor_x, coor_z) +
+                        0.0 +
                         stress_in_cell (i_ksi_x, i_ksi_z, arr<i32, 3>{0, 0, 1}, z, ort_1, ort_2, ksi_x, ksi_z) *
-                        move_in_macro(i_x, i_z, z).dy(coor_x, coor_z);
+                        1.0;
+                    // grad[ort_1][ort_2][i][j] =
+                    //     stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1, 0, 0}, x, ort_1, ort_2, ksi_x, ksi_z);
                     // grad[ort_1][ort_2][i][j] =
                     //     stress_in_cell (i_ksi_z, i_ksi_x, arr<i32, 3>{1, 0, 0}, x, ort_1, ort_2, ksi_x, ksi_z);
                         // move_in_macro(i_x, i_z, ort_1).dx(coor_x, coor_z);
                         // move_in_macro(i_x, i_z, ort_1)(coor_x, coor_z);
                 };
             };
+        };
+        {
+        arr<str, 3> ort = {"x", "y", "z"};
+        arr<str, 3> aprx = {"0", "1", "2"};
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                for (st alpha = 0; alpha < 3; ++alpha)
+                                {
+                                    str name = aprx[i]+str("_")+aprx[j]+str("_")+aprx[k]+str("_")+ort[nu]+str("_")+ort[alpha];
+                                    {
+                                        std::ofstream out ("ring/stress_"+name+".bin", std::ios::out | std::ios::binary);
+                                        for (st i = 0; i < slae.solution[0].size(); ++i)
+                                        {
+                                            out.write ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
+                                        };
+                                        out.close ();
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
         };
         arr<str, 3> ort = {"x", "y", "z"};
         for (st ort_1 = 0; ort_1 < 3; ++ort_1)
@@ -12386,17 +12453,17 @@ int main()
 
         cst n_ref = 4;
 
-        cst ratio = 2;
-        cdbl width = 2 / ratio;
+        cst ratio = 1;
+        cdbl width = 1 / ratio;
         cdbl Ri = 10.5;
         cdbl Ro = Ri + width;
 
-        cst Ncx = 2;
+        cst Ncx = 1;
         cst Ncy = Ncx * ratio;
         cdbl bx = width / Ncx;
         cdbl by = 1.0 / Ncy;
-        cst Npx = 80;
-        cst Npy = 80;
+        cst Npx = 100;
+        cst Npy = 100;
         cdbl dx = width / (Npx-1);
         cdbl dy = 1.0 / (Npy-1);
         calculate_real_stress_in_ring<n_ref, n_cell_ref>(1, ratio, Ri, Ro, Ncx, Npx, Npy);
