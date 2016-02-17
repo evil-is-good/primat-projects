@@ -26,7 +26,6 @@ namespace OnCell
     void prepare_system_equations (
             ::OnCell::SystemsLinearAlgebraicEquations<num_tasks> &se,
             ::OnCell::BlackOnWhiteSubstituter &bows,
-            // BlackOnWhiteSubstituter &bows,
             const Domain<dim> &domain)
     {
         dealii::CompressedSparsityPattern c_sparsity (
@@ -47,10 +46,10 @@ namespace OnCell
                 bows,
                 c_sparsity);
 
-        {
-        std::ofstream output ("csp_old.gpd");
-        c_sparsity .print_gnuplot (output);
-        };
+        // {
+        // std::ofstream output ("csp_old.gpd");
+        // c_sparsity .print_gnuplot (output);
+        // };
 
         c_sparsity.compress ();
 

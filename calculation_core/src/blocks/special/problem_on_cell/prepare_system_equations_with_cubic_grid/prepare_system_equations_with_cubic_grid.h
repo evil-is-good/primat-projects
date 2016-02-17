@@ -46,10 +46,10 @@ namespace OnCell
                 bows,
                 c_sparsity);
 
-        {
-        std::ofstream output ("csp_new.gpd");
-        c_sparsity .print_gnuplot (output);
-        };
+        // {
+        // std::ofstream output ("csp_new.gpd");
+        // c_sparsity .print_gnuplot (output);
+        // };
 
         c_sparsity.compress ();
 
