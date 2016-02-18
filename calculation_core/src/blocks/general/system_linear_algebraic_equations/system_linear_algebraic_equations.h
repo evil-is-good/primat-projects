@@ -10,7 +10,7 @@
 struct  SystemsLinearAlgebraicEquations 
 {
     //! Формирование матрици из паттерна разреженности
-    void matrix_reinit (dealii::CompressedSparsityPattern &csp)
+    void matrix_reinit (dealii::SparsityPattern &csp)
     {
         this->sparsity_pattern .copy_from (csp);
         this->matrix .reinit (this->sparsity_pattern);

@@ -361,7 +361,7 @@ set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows)
 template<bool type_space>
 void DomainLooper<2, type_space>::
 add_nodes_in_csp (const OnCell::BlackOnWhiteSubstituter &bows, 
-        dealii::CompressedSparsityPattern &csp)
+        dealii::SparsityPattern &csp)
 {
     for (st i = 0; i < type_space + 1; ++i)
         for (st j = 0; j < (num_angles - 1); ++j) 
@@ -486,7 +486,7 @@ template<bool type_space>
 void DomainLooper<2, type_space>::loop_domain (
         const dealii::DoFHandler<2> &dof_h, 
         OnCell::BlackOnWhiteSubstituter &bows,
-        dealii::CompressedSparsityPattern &csp)
+        dealii::SparsityPattern &csp)
 {
     // if ((dof_h.n_boundary_dofs() > 0) && (not csp.empty()))
     // {

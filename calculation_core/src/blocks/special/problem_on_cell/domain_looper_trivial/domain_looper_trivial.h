@@ -188,7 +188,7 @@ namespace OnCell
 
                 void loop_domain (const dealii::DoFHandler<2> &dof_h,
                         OnCell::BlackOnWhiteSubstituter &bows,
-                        dealii::CompressedSparsityPattern &csp)
+                        dealii::SparsityPattern &csp)
                 {
                     CubeOfNumbers<dim, type_space> cube(dof_h.get_tria().n_global_levels()-1);
 
@@ -259,7 +259,7 @@ namespace OnCell
 
                 void loop_domain (const dealii::DoFHandler<3> &dof_h,
                         OnCell::BlackOnWhiteSubstituter &bows,
-                        dealii::CompressedSparsityPattern &csp)
+                        dealii::SparsityPattern &csp)
                 {
                     puts("i1");
                     CubeOfNumbers<dim, type_space> cube(dof_h.get_tria().n_global_levels()-1);

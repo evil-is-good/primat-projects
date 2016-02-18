@@ -38,7 +38,7 @@ namespace DOMAIN_LOOPER_TOOLS
 
     template<uint8_t dim>
     Border<dim> get_borders (const dealii::DoFHandler<dim> &dof_h,
-            dealii::CompressedSparsityPattern &csp);
+            dealii::SparsityPattern &csp);
     
     template<uint8_t dim>
     bool at_boundary (
@@ -81,7 +81,7 @@ class DomainLooper
     public:
         void loop_domain (const dealii::DoFHandler<dim> &dof_h,
                             OnCell::BlackOnWhiteSubstituter &bows,
-                            dealii::CompressedSparsityPattern &csp);
+                            dealii::SparsityPattern &csp);
 
     OPERATOR_REPORT;
 };

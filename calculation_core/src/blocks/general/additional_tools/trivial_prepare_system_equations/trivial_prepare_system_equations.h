@@ -25,8 +25,8 @@ namespace ATools
             SystemsLinearAlgebraicEquations &se,
             const Domain<dim> &domain)
     {
-        dealii::CompressedSparsityPattern c_sparsity (
-                domain.dof_handler.n_dofs());
+        dealii::SparsityPattern c_sparsity;
+                // domain.dof_handler.n_dofs());
 
         dealii::DoFTools ::make_sparsity_pattern (
                 domain.dof_handler, c_sparsity);
