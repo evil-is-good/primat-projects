@@ -25,7 +25,7 @@ namespace OnCell
             st   subst    (cst index) const; //!< Если index черный, то заменяет его на белый, иначе оставляет тот же
             bool is_black (cst index) const; //!< Проверить черный index или нет
 
-        private:
+        // private:
             void add_white_and_black (cst w, cst b); //!< Добавить пару связанных точек
 
             //FIELDS

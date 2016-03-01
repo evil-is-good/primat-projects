@@ -28,32 +28,34 @@ namespace OnCell
             ::OnCell::BlackOnWhiteSubstituter &bows,
             const Domain<dim> &domain)
     {
-        dealii::SparsityPattern c_sparsity;// (
-                // domain.dof_handler.n_dofs());
+        dealii::SparsityPattern sp;
+        {
+            dealii::DynamicSparsityPattern dsp (domain.dof_handler.n_dofs());
+            dealii::DoFTools::make_sparsity_pattern (domain.dof_handler, dsp);
 
-        dealii::DoFTools ::make_sparsity_pattern (
-                domain.dof_handler, c_sparsity);
+            // {
+            // std::ofstream output ("csp1.gpd");
+            // c_sparsity .print_gnuplot (output);
+            // };
 
-        // {
-        // std::ofstream output ("csp1.gpd");
-        // c_sparsity .print_gnuplot (output);
-        // };
+            ::OnCell::DomainLooper<dim, type_space> dl;
+            // DomainLooper<dim, 0> dl;
+            dl .loop_domain(
+                    domain.dof_handler,
+                    bows,
+                    dsp);
 
-        ::OnCell::DomainLooper<dim, type_space> dl;
-        // DomainLooper<dim, 0> dl;
-        dl .loop_domain(
-                domain.dof_handler,
-                bows,
-                c_sparsity);
+            sp .copy_from (dsp);
+        };
 
         // {
         // std::ofstream output ("csp_old.gpd");
         // c_sparsity .print_gnuplot (output);
         // };
 
-        c_sparsity.compress ();
+        sp .compress ();
 
-        se .matrix_reinit (c_sparsity);
+        se .matrix_reinit (sp);
 
         for (st i = 0; i < num_tasks; ++i)
         {

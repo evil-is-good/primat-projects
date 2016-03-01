@@ -20,6 +20,7 @@
 // #include "../../../calculation_core/src/blocks/special/problem_on_cell/black_on_white_substituter/black_on_white_substituter.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/source/scalar/source_scalar.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/prepare_system_equations/prepare_system_equations.h"
+#include "../../../calculation_core/src/blocks/special/problem_on_cell/prepare_system_equations_alternate/prepare_system_equations_alternate.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/prepare_system_equations_with_cubic_grid/prepare_system_equations_with_cubic_grid.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/system_linear_algebraic_equations/system_linear_algebraic_equations.h"
 #include "../../../calculation_core/src/blocks/special/problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
@@ -1317,7 +1318,7 @@ void give_rectangle_with_border_condition(
     };
 
 void set_cylinder_true(dealii::Triangulation< 3 > &triangulation, 
-            const double radius, cst ort, const size_t n_slices)
+            const double radius, cst ort, cst n_points_on_includ_border, cst n_slices)
 {
     dealii::Triangulation<2> tria2d;
     vec<prmt::Point<2>> border;
@@ -1330,7 +1331,7 @@ void set_cylinder_true(dealii::Triangulation< 3 > &triangulation,
             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
     vec<vec<prmt::Point<2>>> inclusion(1);
     dealii::Point<2> center (0.5, 0.5);
-    give_circ(inclusion[0], 32, radius, prmt::Point<2>(center));
+    give_circ(inclusion[0], n_points_on_includ_border, radius, prmt::Point<2>(center));
     ::set_grid(tria2d, border, inclusion, type_border);
 
     {
@@ -3991,42 +3992,84 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
             // {
                 Domain<2> domain;
                 {
-                    dealii::GridGenerator ::hyper_cube (domain.grid, 0.0, 1.0);
-                    // auto map = dealii::GridTools ::get_all_vertices_at_boundary (domain.grid);
-                    auto map = dealii::GridTools ::diameter (domain.grid);
-                    std::cout << map << std::endl;
-                    exit(1);
-                    // const size_t material_id[4][4] =
-                    // {
-                    //     {0, 0, 0, 0},
-                    //     {0, 1, 1, 0},
-                    //     {0, 1, 1, 0},
-                    //     {0, 0, 0, 0}
-                    // };
-                    // const double dot[5] = 
-                    // {
-                    //     (0.0),
-                    //     (0.5 - size / 2.0),
-                    //     (0.5),
-                    //     (0.5 + size / 2.0),
-                    //     (1.0)
-                    // };
-                    // ::set_tria <5> (domain.grid, dot, material_id);
-                    // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
-                    // set_circ(domain.grid, 0.475, 4);
-                    // set_circ(domain.grid, 0.25, 7);
-                    // domain.grid .refine_global (3);
-                    // vec<prmt::Point<2>> border;
-                    // vec<prmt::Point<2>> inclusion;
-                    // cdbl radius = 0.25;
-                    // dealii::Point<2> center (0.5, 0.5);
-                    // // give_circ(inclusion, 16, radius, prmt::Point<2>(center));
-                    // give_rectangle(inclusion, 16,
-                    //         prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
-                    // give_rectangle(border, 16,
-                    //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
-                    // ::set_grid(domain.grid, border, inclusion);
-
+                    // dealii::GridGenerator ::hyper_cube (domain.grid, 0.0, 1.0);
+                    // domain.grid .refine_global (2);
+                //     auto map = dealii::GridTools ::get_all_vertices_at_boundary (domain.grid);
+                //     auto ver = domain.grid.get_vertices();
+                //     // auto map = dealii::GridTools ::diameter (domain.grid);
+                //     // std::cout << map.at(6) << std::endl;
+                //     for (auto &&m : map)
+                //         std::cout << m.first << " " << m.second << " : " << ver[m.first] << std::endl;
+                //
+                //     dealii::FESystem<2,2> fe (dealii::FE_Q<2,2>(1), 2);
+                //     domain.dof_init (fe);
+                // OnCell::SystemsLinearAlgebraicEquations<4> slae;
+                // OnCell::BlackOnWhiteSubstituter bows;
+                //
+                // const bool vector_type = 1;
+                // OnCell::prepare_system_equations_alternate<2, 2, 4> (slae, bows, domain);
+                //     // domain.dof_handler.vertex_dofs;
+                //
+                // exit(1);
+                //    
+                //     auto cell = domain.dof_handler.begin_active();
+                //     auto endc = domain.dof_handler.end();
+                //     for (; cell != endc; ++cell)
+                //     {
+                //         auto dof  = cell -> vertex_dof_index(0,0);
+                //         auto vert = cell -> vertex_index(0);
+                //         if (map.find(vert) != map.end())
+                //         std::cout << dof << " " << vert << " " << map[vert] << std::endl;
+                //     };
+                //     dealii::DynamicSparsityPattern dsp(domain.dof_handler.n_dofs());
+                //     dealii::DoFTools::make_sparsity_pattern (domain.dof_handler, dsp);
+                //     dealii::SparsityPattern sparsity;
+                //     sparsity.copy_from(dsp);
+                //     // dealii::DoFTools ::make_sparsity_pattern (
+                //     //         domain.dof_handler, c_sparsity);
+                //     dsp .add (1,10);
+                //     std::cout << dsp.exists(1,10) << std::endl;
+                //     auto mapd = dealii::GridTools ::get_all_vertices_at_boundary (domain.dof_handler.get_tria());
+                //     auto verd = domain.dof_handler.get_tria().get_vertices();
+                //     // puts ("");
+                //     // for (auto &&v : ver)
+                //     //     std::cout << v << std::endl;
+                //     // for (st i = 0; i < map.size(); ++i)
+                //     // {
+                //     //     std::cout << map[i] << " : " << ver[i] << std::endl;
+                //     // };
+                //     exit(1);
+                //     // const size_t material_id[4][4] =
+                //     // {
+                //     //     {0, 0, 0, 0},
+                //     //     {0, 1, 1, 0},
+                //     //     {0, 1, 1, 0},
+                //     //     {0, 0, 0, 0}
+                //     // };
+                //     // const double dot[5] = 
+                //     // {
+                //     //     (0.0),
+                //     //     (0.5 - size / 2.0),
+                //     //     (0.5),
+                //     //     (0.5 + size / 2.0),
+                //     //     (1.0)
+                //     // };
+                //     // ::set_tria <5> (domain.grid, dot, material_id);
+                //     // ::set_hexagon_grid_pure (domain.grid, 1.0, size);
+                //     // set_circ(domain.grid, 0.475, 4);
+                //     // set_circ(domain.grid, 0.25, 7);
+                //     // domain.grid .refine_global (3);
+                //     // vec<prmt::Point<2>> border;
+                //     // vec<prmt::Point<2>> inclusion;
+                //     // cdbl radius = 0.25;
+                //     // dealii::Point<2> center (0.5, 0.5);
+                //     // // give_circ(inclusion, 16, radius, prmt::Point<2>(center));
+                //     // give_rectangle(inclusion, 16,
+                //     //         prmt::Point<2>(0.25, 0.25), prmt::Point<2>(0.75, 0.75));
+                //     // give_rectangle(border, 16,
+                //     //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+                //     // ::set_grid(domain.grid, border, inclusion);
+                //
                     vec<prmt::Point<2>> border;
                     vec<st> type_border;
                     give_rectangle_with_border_condition(
@@ -4037,7 +4080,7 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
                     vec<vec<prmt::Point<2>>> inclusion(1);
                     cdbl radius = 0.25;
-                    // cdbl radius_2 = 0.255;
+                //     // cdbl radius_2 = 0.255;
                     dealii::Point<2> center (0.5, 0.5);
                     give_circ(inclusion[0], 62, radius, prmt::Point<2>(center));
                     // give_rectangle(inclusion[0], 10, prmt::Point<2>(0.0, 0.0), prmt::Point<2>(0.5, 0.5));
@@ -4087,7 +4130,9 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 domain.dof_init (fe);
 
                 OnCell::SystemsLinearAlgebraicEquations<4> slae;
+                OnCell::SystemsLinearAlgebraicEquations<4> slae_2;
                 OnCell::BlackOnWhiteSubstituter bows;
+                OnCell::BlackOnWhiteSubstituter bows_2;
 
                 LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
                 element_matrix.C .resize (2);
@@ -4099,7 +4144,67 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
                 u8 dim = 2;
 
                 const bool vector_type = 1;
-                OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+                // OnCell::prepare_system_equations<vector_type> (slae, bows, domain);
+                // OnCell::prepare_system_equations_alternate<2, 2, 4> (slae_2, bows_2, domain);
+                OnCell::prepare_system_equations_alternate<2, 2, 4> (slae, bows, domain);
+                // std::cout << bows.size << " " << bows_2.size << std::endl;
+                // for (st i = 0; i < bows.size; ++i)
+                // {
+                //     std::cout << bows.white[i] << " " << bows.black[i] << std::endl;
+                // };
+                // puts("???????????????????");
+                // for (st i = 0; i < bows_2.size; ++i)
+                // {
+                //     std::cout << bows_2.white[i] << " " << bows_2.black[i] << std::endl;
+                // };
+                // for (st i = 0; i < 18; ++i)
+                // {
+                //     for (st j = 0; j < 18; ++j)
+                //     {
+                //         std::cout << slae.sparsity_pattern.exists(i,j) << " ";
+                //     };
+                //     std::cout << std::endl;
+                // };
+                // std::cout << std::endl;
+                // for (st i = 0; i < 18; ++i)
+                // {
+                //     for (st j = 0; j < 18; ++j)
+                //     {
+                //         std::cout << slae_2.sparsity_pattern.exists(i,j) << " ";
+                //     };
+                //     std::cout << std::endl;
+                // };
+                // std::cout << std::endl;
+                // exit(1);
+        //         for (st i = 0; i < bows.size; ++i)
+        //         {
+        //             std::cout << bows.white[i] << " " << bows.black[i] << " " << bows.subst(bows.black[i])<< std::endl;
+        //         };
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp1.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp2.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae_2.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // exit(1);
 
                 OnCell::Assembler::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
@@ -7556,8 +7661,8 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua)
         enum {x, y, z};
         Domain<3> domain;
         {
-            set_cylinder(domain.grid, 0.25, y, 5);
-            // set_cylinder_true(domain.grid, 0.25, z, 5);
+            // set_cylinder(domain.grid, 0.25, y, 2);
+            set_cylinder_true(domain.grid, 0.25, z, 40, 5);
             // set_ball(domain.grid, 0.4, 3);
             // set_rect_3d(domain.grid,
             //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -7568,6 +7673,8 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua)
 
         OnCell::SystemsLinearAlgebraicEquations<1> slae;
         OnCell::BlackOnWhiteSubstituter bows;
+        OnCell::SystemsLinearAlgebraicEquations<1> slae_2;
+        OnCell::BlackOnWhiteSubstituter bows_2;
 
         LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
         element_matrix.C .resize (2);
@@ -7638,7 +7745,74 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua)
         //     };
         // };
 
-        OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
+        // OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
+        OnCell::prepare_system_equations_alternate<3, 3, 1> (slae, bows, domain);
+        // OnCell::prepare_system_equations_alternate<3, 3, 1> (slae_2, bows_2, domain);
+        // std::cout << bows.size << " " << bows_2.size << std::endl;
+        // {
+        //     std::ofstream f("/home/primat/tmp/bows1.txt", std::ios::out);
+        //     for (st i = 0; i < bows.size; ++i)
+        //     {
+        //         f << bows.white[i] << " " << bows.black[i] << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // {
+        //     std::ofstream f("/home/primat/tmp/bows2.txt", std::ios::out);
+        //     for (st i = 0; i < bows_2.size; ++i)
+        //     {
+        //         f << bows_2.white[i] << " " << bows_2.black[i] << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // puts("???????????????????");
+        // for (st i = 0; i < bows_2.size; ++i)
+        // {
+        //     std::cout << bows_2.white[i] << " " << bows_2.black[i] << std::endl;
+        // };
+        // for (st i = 0; i < 81; ++i)
+        // {
+        //     for (st j = 0; j < 81; ++j)
+        //     {
+        //         std::cout << slae.sparsity_pattern.exists(i,j) << "";
+        //     };
+        //     std::cout << std::endl;
+        // };
+        // std::cout << std::endl;
+        // for (st i = 0; i < 81; ++i)
+        // {
+        //     for (st j = 0; j < 81; ++j)
+        //     {
+        //         std::cout << slae_2.sparsity_pattern.exists(i,j) << "";
+        //     };
+        //     std::cout << std::endl;
+        // };
+        // std::cout << std::endl;
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp1.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp2.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae_2.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // exit(1);
 
         OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
@@ -11957,7 +12131,7 @@ int main()
     solve_elastic_problem (0);
 
     // elasstic_problem_on_cell
-    solve_elastic_problem_on_cell (1);
+    solve_elastic_problem_on_cell (0);
     
     //heat_conduction_nikola_problem
     solve_heat_conduction_nikola_problem (0);
@@ -12109,7 +12283,7 @@ int main()
     // solve_elastic_problem (1);
     // solve_two_stress (1, 5.0, 0.25);
     //
-    solve_approx_cell_elastic_problem (0, 10.0, 0.25);
+    solve_approx_cell_elastic_problem (1, 10.0, 0.25);
     // solve_approx_cell_elastic_problem (1);
     // solve_elastic_problem (1);
     // solve_two_stress (1, 10.0, 0.25);

@@ -8,7 +8,7 @@ namespace DOMAIN_LOOPER_TOOLS
 {
     template<uint8_t dim>
     Border<dim> get_borders (const dealii::DoFHandler<dim> &dof_h,
-            dealii::SparsityPattern &csp)
+            dealii::DynamicSparsityPattern &csp)
     {
         Border<dim> border;
 
@@ -58,7 +58,7 @@ template<uint8_t dim, bool type_space>
 void DomainLooper<dim, type_space>::loop_domain (
         const dealii::DoFHandler<dim> &dof_h, 
         OnCell::BlackOnWhiteSubstituter &bows,
-        dealii::SparsityPattern &csp)
+        dealii::DynamicSparsityPattern &csp)
 {
 //    std::cout << "ssdf" << std::endl;
 //    if ((size == 0) && (dof_h.n_boundary_dofs() > 0) && (not csp.empty()))

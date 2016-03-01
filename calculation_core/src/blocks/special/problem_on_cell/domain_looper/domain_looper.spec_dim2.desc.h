@@ -36,7 +36,7 @@ class DomainLooper<2, type_space>
     public:
         void loop_domain (const dealii::DoFHandler<dim> &dof_h,
                             OnCell::BlackOnWhiteSubstituter &bows,
-                            dealii::SparsityPattern &csp);
+                            dealii::DynamicSparsityPattern &csp);
     private:
 //        size_t get_num_dofs_on_edge (const dealii::DoFHandler<dim> &dof_h) const;
         
@@ -69,7 +69,7 @@ class DomainLooper<2, type_space>
         void set_ratio_black_to_white (OnCell::BlackOnWhiteSubstituter &bows);
 
         void add_nodes_in_csp (const OnCell::BlackOnWhiteSubstituter &bows,
-                dealii::SparsityPattern &csp);
+                dealii::DynamicSparsityPattern &csp);
 
 
 

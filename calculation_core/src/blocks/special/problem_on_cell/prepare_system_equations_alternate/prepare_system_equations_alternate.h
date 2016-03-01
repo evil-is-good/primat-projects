@@ -1,5 +1,5 @@
-#ifndef TRIVIAL_PREPARE_SYSTEM_EQUATIONS_WITH_CUBIC_GRID_ON_CELL
-#define TRIVIAL_PREPARE_SYSTEM_EQUATIONS_WITH_CUBIC_GRID_ON_CELL
+#ifndef ALTERNATE_PREPARE_SYSTEM_EQUATIONS_ON_CELL
+#define ALTERNATE_PREPARE_SYSTEM_EQUATIONS_ON_CELL 1
 
 #include <deal.II/lac/vector.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -10,9 +10,7 @@
 #include "../../../general/domain/domain.h"
 #include "../../../general/boundary_value/boundary_value.h"
 #include "../system_linear_algebraic_equations/system_linear_algebraic_equations.h"
-#include "../domain_looper_trivial/domain_looper_trivial.h"
-// #include "../../../../../../deal/main/domain_looper/sources/domain_looper.h"
-// #include "../black_on_white_substituter/black_on_white_substituter.h"
+#include "../domain_looper_alternate/domain_looper_alternate.h"
 
 //! Задача на ячейке
 /*!
@@ -21,33 +19,35 @@
  */
 namespace OnCell
 {
-    //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке и простейшей кубической сетки, сгенерированной дилом
-    template<u8 dim, u8 type_space, u8 num_tasks>
-    void prepare_system_equations_with_cubic_grid (
+    //! Формирование СЛАУ (se) по расчетной области (domain), в случае задачи на ячейке новый способ
+    template<u8 dim, u8 spec_dim, u8 num_tasks>
+    void prepare_system_equations_alternate (
             ::OnCell::SystemsLinearAlgebraicEquations<num_tasks> &se,
             ::OnCell::BlackOnWhiteSubstituter &bows,
             const Domain<dim> &domain)
     {
-        // {
-        // std::ofstream output ("csp1.gpd");
-        // c_sparsity .print_gnuplot (output);
-        // };
-
         dealii::SparsityPattern sp;
         {
             dealii::DynamicSparsityPattern dsp (domain.dof_handler.n_dofs());
             dealii::DoFTools::make_sparsity_pattern (domain.dof_handler, dsp);
-            ::OnCell::DomainLooperTrivial<dim, type_space> dl;
-            // DomainLooper<dim, 0> dl;
-            dl .loop_domain(
+
+            // ::OnCell::DomainLooperAlternate<dim, spec_dim> dl;
+            //
+            // dl .loop_domain (
+            //         domain.dof_handler,
+            //         bows,
+            //         dsp);
+
+            loop_domain_alternate<dim, spec_dim>(
                     domain.dof_handler,
                     bows,
                     dsp);
+
             sp .copy_from (dsp);
         };
 
         // {
-        // std::ofstream output ("csp_new.gpd");
+        // std::ofstream output ("csp_old.gpd");
         // c_sparsity .print_gnuplot (output);
         // };
 
