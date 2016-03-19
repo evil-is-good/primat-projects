@@ -25,13 +25,14 @@ namespace ATools
             SystemsLinearAlgebraicEquations &se,
             const Domain<dim> &domain)
     {
-        dealii::SparsityPattern c_sparsity;
-                // domain.dof_handler.n_dofs());
+        dealii::SparsityPattern sp;
+        {
+            dealii::DynamicSparsityPattern dsp (domain.dof_handler.n_dofs());
+            dealii::DoFTools::make_sparsity_pattern (domain.dof_handler, dsp);
 
-        dealii::DoFTools ::make_sparsity_pattern (
-                domain.dof_handler, c_sparsity);
-
-        se .matrix_reinit (c_sparsity);
+            sp .copy_from (dsp);
+        };
+        se .matrix_reinit (sp);
 
         se.solution .reinit (domain.dof_handler .n_dofs());
         se.rhsv     .reinit (domain.dof_handler .n_dofs());

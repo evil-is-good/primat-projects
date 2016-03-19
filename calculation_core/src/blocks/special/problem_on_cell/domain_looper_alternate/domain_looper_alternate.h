@@ -20,7 +20,7 @@ namespace OnCell
                 {
                     for (st i = 0; i < dealii::GeometryInfo<dim>::vertices_per_cell; ++i)
                     {
-                        st v = cell -> vertex_index(i);
+                        cst v = cell -> vertex_index(i);
                         if (v_at_b.find(v) != v_at_b.end())
                         {
                             std::pair<st, arr<st, spec_dim>> dof;
@@ -126,12 +126,9 @@ namespace OnCell
                                 {
                                     for (st j = 0; j < spec_dim; ++j)
                                     {
-                                        // for (st k = 0; k < spec_dim; ++k)
-                                        // {
                                             bows.add_white_and_black(
                                                     dof_at_b[white.first][j], 
                                                     dof_at_b[black.first][j]);
-                                        // };
                                     };
                                 };
                             };
@@ -143,17 +140,13 @@ namespace OnCell
             {
                 for (st j = 0; j < dof_h.n_dofs(); ++j)
                 {
-                    // if ((dsp.exists(bows.black[i], j)) and (not bows.is_black(j)))
                     if (dsp.exists(bows.black[i], j))
                     {
                         dsp.add(bows.white[i], bows.subst(j));
                         dsp.add(bows.subst(j), bows.white[i]);
-                        // dsp.add(bows.white[i], j);
-                        // dsp.add(j, bows.white[i]);
                     };
                     
                 };
-                // dsp.add(bows.white[i], bows.white[i]);
             };
         };
 };

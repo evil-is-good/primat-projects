@@ -43,7 +43,6 @@ namespace HCPTools
         data_out.build_patches ();
 
         auto name = file_name;
-        // name += ".gpd";
 
         std::ofstream output (name);
         data_out.write (output, output_format);
