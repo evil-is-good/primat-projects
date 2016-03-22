@@ -29,7 +29,7 @@ template <u8 dim>
 struct Domain
 {
     //! Инициализация степеней свободы
-    void dof_init (const dealii::FiniteElement<dim> &pfe) 
+    void dof_init (const dealii::FiniteElement<dim> &fe) 
     {
         dof_handler .initialize (grid, fe);
     };
