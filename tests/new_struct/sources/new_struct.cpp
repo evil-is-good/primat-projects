@@ -11358,8 +11358,8 @@ void solve_ring_problem_3d (cst flag, cdbl ratio, cdbl Ri, cst n_rad_cell)
             in.close ();
             arr<arr<dbl,3>,3> A = {
                 arr<dbl,3>{1.0, 0.0, 0.0},
-                arr<dbl,3>{0.0,  0.0, -1.0},
-                arr<dbl,3>{0.0,  1.0, 0.0}
+                arr<dbl,3>{0.0, 0.0, -1.0},
+                arr<dbl,3>{0.0, 1.0, 0.0}
             };
             for (st i = 0; i < 3; ++i)
             for (st j = 0; j < 3; ++j)
@@ -11416,7 +11416,7 @@ void solve_ring_problem_3d (cst flag, cdbl ratio, cdbl Ri, cst n_rad_cell)
                 };
             };
 
-            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
         };
             // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
             // exit(1);
@@ -12572,6 +12572,37 @@ void calculate_real_stress_in_ring_arbitrary_grid(
     };
 };
 
+void get_macro_coef(ATools::FourthOrderTensor &C)
+{
+    {
+        ATools::FourthOrderTensor Cxy;
+        std::ifstream in ("meta_coef.bin", std::ios::in | std::ios::binary);
+        in.read ((char *) &Cxy, sizeof Cxy);
+        in.close ();
+        arr<arr<dbl,3>,3> A = {
+            arr<dbl,3>{1.0, 0.0, 0.0},
+            arr<dbl,3>{0.0, 0.0, -1.0},
+            arr<dbl,3>{0.0, 1.0, 0.0}
+        };
+        for (st i = 0; i < 3; ++i)
+            for (st j = 0; j < 3; ++j)
+                for (st k = 0; k < 3; ++k)
+                    for (st l = 0; l < 3; ++l)
+                    {
+                        C[i][j][k][l] = 0.0;
+
+                        for (st a = 0; a < 3; ++a)
+                            for (st b = 0; b < 3; ++b)
+                                for (st c = 0; c < 3; ++c)
+                                    for (st d = 0; d < 3; ++d)
+                                    {
+                                        C[i][j][k][l] += 
+                                            A[i][a]*A[j][b]*A[k][c]*A[l][d]*Cxy[a][b][c][d];
+                                    };
+                    };
+    };
+};
+
 template <cst n_ref>
 void get_macro_move(
         arr<dealii::Vector<dbl>, 3> &move, Domain<2> &domain, 
@@ -12827,21 +12858,31 @@ void get_micro_deform_stress (
     domain.dof_init (fe);
     puts("!!!!!!!!!!!!!!!!!!!!!2");
 
-    for (auto &&a : stress.content)
-        for (auto &&b : a)
-            for (auto &&c : b)
-                for (auto &&d : c)
-                    for (auto &&e : d)
-                        for (auto &&f : e)
-                            f .reinit (domain.dof_handler .n_dofs());
+    // for (auto &&a : stress.content)
+    //     for (auto &&b : a)
+    //         for (auto &&c : b)
+    //             for (auto &&d : c)
+    //                 for (auto &&e : d)
+    //                     for (auto &&f : e)
+    //                         f .reinit (domain.dof_handler .n_dofs());
 
-    for (auto &&a : deform.content)
-        for (auto &&b : a)
-            for (auto &&c : b)
-                for (auto &&d : c)
-                    for (auto &&e : d)
-                        for (auto &&f : e)
-                            f .reinit (domain.dof_handler .n_dofs());
+    approx_iteration (number_of_approx, 
+            [&stress, &deform, &domain]
+            (arr<i32, 3> a, cst nu, cst alpha){
+            for (st beta = 0; beta < 3; ++beta)
+            {
+            stress[a][nu][alpha][beta] .reinit (domain.dof_handler .n_dofs());     
+            deform[a][nu][alpha][beta] .reinit (domain.dof_handler .n_dofs());     
+            };
+            });
+
+    // for (auto &&a : deform.content)
+    //     for (auto &&b : a)
+    //         for (auto &&c : b)
+    //             for (auto &&d : c)
+    //                 for (auto &&e : d)
+    //                     for (auto &&f : e)
+    //                         f .reinit (domain.dof_handler .n_dofs());
     puts("!!!!!!!!!!!!!!!!!!!!!3");
 
     // Распихивание имеющихся напряжений и деформаций по треангуляции
@@ -12858,11 +12899,12 @@ void get_micro_deform_stress (
                 for (st j = 0; j < coor_flat_cell.size(); ++j)
                 {
                     if (
-                            (std::abs(p(x) - coor_flat_cell[j][x]) < 1.0e-10) and
-                            (std::abs(p(y) - coor_flat_cell[j][y]) < 1.0e-10)
+                            (std::abs(p(x) - coor_flat_cell[j](x)) < 1.0e-10) and
+                            (std::abs(p(y) - coor_flat_cell[j](y)) < 1.0e-10)
                        )
                     {
 
+                        stress[arr<i32,3>{1,0,0}][0][0][0](0) = 0.0;//cell_flat_stress[a][nu][alpha][beta][j];
                         approx_iteration (number_of_approx, 
                                 [&stress, &deform, &cell_flat_stress, &cell_flat_deform, indx, j]
                                 (arr<i32, 3> a, cst nu, cst alpha){
@@ -12879,6 +12921,152 @@ void get_micro_deform_stress (
         };
     };
     puts("!!!!!!!!!!!!!!!!!!!!!4");
+};
+
+template <cst n_ref>
+void get_real_move_and_stress(
+        arr<dealii::Vector<dbl>, 3> &move_macro_a,
+        OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> &move_micro_a,
+        arr<dealii::Vector<dbl>, 3> &move,
+        arr<arr<dealii::Vector<dbl>, 3>, 3> &deform_macro_a,
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<dealii::Vector<dbl>, 3>, 3>, 3>> &stress_micro_a,
+        arr<arr<dealii::Vector<dbl>, 3>, 3> &stress, 
+        Domain<2> &domain_macro, 
+        Domain<2> &domain_micro, 
+        Domain<2> &domain, 
+        const dealii::FiniteElement<2> &fe,
+        cst Ncx, cst Ncy)
+{
+    enum {x, y, z};
+
+    cdbl bx = 1.0 / Ncx;
+    cdbl by = 1.0 / Ncy;
+
+    puts("!!!!!!11");
+    dealii::GridGenerator::hyper_cube(domain.grid);
+    domain.grid.refine_global(n_ref);
+    domain.dof_init (fe);
+    move[x] .reinit (domain.dof_handler.n_dofs());
+    move[y] .reinit (domain.dof_handler.n_dofs());
+    move[z] .reinit (domain.dof_handler.n_dofs());
+    puts("!!!!!!11");
+
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            stress[i][j] .reinit (domain.dof_handler.n_dofs());
+        };
+    };
+    puts("!!!!!!12");
+
+    auto stress_micro = [&stress_micro_a, &domain_micro] 
+        (arr<i32, 3> k, cst nu, cst alpha, cst beta, const dealii::Point<2> &p){
+            return dealii::VectorTools::point_value(
+                    domain_micro.dof_handler, stress_micro_a[k][nu][alpha][beta], p);
+        };
+    puts("!!!!!!13");
+
+    auto deform_macro = [&deform_macro_a, &domain_macro] 
+        (cst i, cst j, const dealii::Point<2> &p){
+            return dealii::VectorTools::point_value(
+                    domain_macro.dof_handler, deform_macro_a[i][j], p);
+            // return dealii::VectorTools::point_gradient(domain.dof_handler, move_macro_a[i], p)[j];
+            // if
+            //     const dealii::Point<2> p = cell -> vertex(i);
+            //     cst indx = cell ->vertex_dof_index (i, 0);
+            //     cdbl r = p(x) * W + Ri;
+            //     deform[y][y](indx) = move[x](indx) / r;
+        };
+
+    arr<arr<dealii::Vector<dbl>, 3>, 3> deform_macro_approx;
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            deform_macro_approx[i][j] .reinit (domain.dof_handler.n_dofs());
+        };
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            for (st n = 0; n < dealii::GeometryInfo<2>::vertices_per_cell; ++n)
+            {
+                const dealii::Point<2> p = cell -> vertex(n);
+                cst indx = cell ->vertex_dof_index(n, 0);
+                for (st i = 0; i < 3; ++i)
+                {
+                    for (st j = 0; j < 3; ++j)
+                    {
+                        deform_macro_approx[i][j](indx) = dealii::VectorTools::point_value(
+                                domain_macro.dof_handler, deform_macro_a[i][j], p);
+                    };
+                };
+            };
+        };
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            for (st n = 0; n < dealii::GeometryInfo<2>::vertices_per_cell; ++n)
+            // for (st n = 0; n< 16641;++n)
+            // cst n = 0;
+            {
+                const dealii::Point<2> p = cell -> vertex(n);
+                cst indx = cell ->vertex_dof_index(n, 0);
+                // const dealii::Point<2> p(0.1, 0.25);
+                // cst indx = 0;;
+                dealii::Point<2> p_ksi = p;
+                for (st i = 0; i < Ncx; ++i)
+                {
+                    if (p_ksi(x) < bx) break;
+                    p_ksi(x) -= bx;
+                };
+                p_ksi(x) /= bx;
+                for (st i = 0; i < Ncy; ++i)
+                {
+                    if (p_ksi(y) < by) break;
+                    p_ksi(y) -= by;
+                };
+                p_ksi(y) /= by;
+                // std::cout << p << " " << p_ksi << std::endl;
+                for (st i = 0; i < 3; ++i)
+                {
+                    for (st j = 0; j < 3; ++j)
+                    {
+                        stress[i][j](indx) =
+                            // deform_macro(x, x, p);
+                            // deform_macro_approx[x][x](indx);
+            // dealii::VectorTools::point_value(
+            //         domain_micro.dof_handler, stress_micro_a[arr<i32, 3>{1, 0, 0}][x][x][x], p);
+                            // stress_micro(arr<i32, 3>{1, 0, 0}, x, i, j, p_ksi) * deform_macro(x, x, p) +
+                            // stress_micro(arr<i32, 3>{1, 0, 0}, y, i, j, p_ksi) * deform_macro(x, y, p) +
+                            // stress_micro(arr<i32, 3>{1, 0, 0}, z, i, j, p_ksi) * deform_macro(x, z, p) +
+                            // stress_micro(arr<i32, 3>{0, 1, 0}, x, i, j, p_ksi) * deform_macro(y, x, p) +
+                            // stress_micro(arr<i32, 3>{0, 1, 0}, y, i, j, p_ksi) * deform_macro(y, y, p) +
+                            // stress_micro(arr<i32, 3>{0, 1, 0}, z, i, j, p_ksi) * deform_macro(y, z, p) +
+                            // stress_micro(arr<i32, 3>{0, 0, 1}, x, i, j, p_ksi) * deform_macro(z, x, p) +
+                            // stress_micro(arr<i32, 3>{0, 0, 1}, y, i, j, p_ksi) * deform_macro(z, y, p) +
+                            // stress_micro(arr<i32, 3>{0, 0, 1}, z, i, j, p_ksi) * deform_macro(z, z, p);
+                            stress_micro(arr<i32, 3>{1, 0, 0}, x, i, j, p_ksi) * deform_macro_approx[x][x](indx) +
+                            stress_micro(arr<i32, 3>{1, 0, 0}, y, i, j, p_ksi) * deform_macro_approx[x][y](indx) +
+                            stress_micro(arr<i32, 3>{1, 0, 0}, z, i, j, p_ksi) * deform_macro_approx[x][z](indx) +
+                            stress_micro(arr<i32, 3>{0, 1, 0}, x, i, j, p_ksi) * deform_macro_approx[y][x](indx) +
+                            stress_micro(arr<i32, 3>{0, 1, 0}, y, i, j, p_ksi) * deform_macro_approx[y][y](indx) +
+                            stress_micro(arr<i32, 3>{0, 1, 0}, z, i, j, p_ksi) * deform_macro_approx[y][z](indx) +
+                            stress_micro(arr<i32, 3>{0, 0, 1}, x, i, j, p_ksi) * deform_macro_approx[z][x](indx) +
+                            stress_micro(arr<i32, 3>{0, 0, 1}, y, i, j, p_ksi) * deform_macro_approx[z][y](indx) +
+                            stress_micro(arr<i32, 3>{0, 0, 1}, z, i, j, p_ksi) * deform_macro_approx[z][z](indx);
+                    };
+                };
+            };
+        };
+    };
+    puts("!!!!!!14");
 };
 
 template <cst n_ref_macro, cst n_ref_real>
@@ -13133,13 +13321,14 @@ void test(cst flag, cdbl Ri, cdbl W)
 };
 
 template <cst n_ref_macro, cst n_ref_real>
-void calculate_real_stress_in_ring_arbitrary_grid_alternate(cst flag, cdbl Ri, cdbl W)
+void calculate_real_stress_in_ring_arbitrary_grid_alternate(cst flag, cdbl Ri, cdbl W, cst Ncx, cst Ncy)
         // cst flag, cdbl ratio, cdbl Ri, cdbl Ro,
         // cst Ncx, cst Npx, cst Npy)
 {
     if (flag)
     {  
         enum {x, y, z};
+        arr<str, 3> ort = {"x", "y", "z"};
 
         dealii::FE_Q<2> fe(1);
 
@@ -13151,26 +13340,89 @@ void calculate_real_stress_in_ring_arbitrary_grid_alternate(cst flag, cdbl Ri, c
         HCPTools::print_temperature<2>(move_macro[y], domain_macro.dof_handler, "ring/macro_move_y.gpd");
         HCPTools::print_temperature<2>(move_macro[z], domain_macro.dof_handler, "ring/macro_move_z.gpd");
 
+        arr<arr<dealii::Vector<dbl>, 3>, 3> deform_macro;
+        get_macro_deform(move_macro, domain_macro, deform_macro, Ri, W);
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                HCPTools::print_temperature<2>(deform_macro[i][j], domain_macro.dof_handler, 
+                        str("ring/macro_deform_") + ort[i] + ort[j] + ".gpd");
+            };
+        };
 
+        arr<arr<dealii::Vector<dbl>, 3>, 3> stress_macro;
+        ATools::FourthOrderTensor C;
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(C);
+        get_macro_coef(C);
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                stress_macro[i][j] .reinit (domain_macro.dof_handler.n_dofs());
+                for (st n = 0; n < domain_macro.dof_handler.n_dofs(); ++n)
+                {
+                    stress_macro[i][j](n) = 0.0;
+                    for (st k = 0; k < 3; ++k)
+                    {
+                        for (st l = 0; l < 3; ++l)
+                        {
+                            stress_macro[i][j](n) += C[i][j][k][l] * deform_macro[k][l](n);
+                        };
+                    };
+                };
+            };
+        };
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                HCPTools::print_temperature<2>(stress_macro[i][j], domain_macro.dof_handler, 
+                        str("ring/macro_stress_") + ort[i] + ort[j] + ".gpd");
+            };
+        };
+
+
+        OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> move_micro;
         OnCell::ArrayWithAccessToVector<arr<arr<arr<dealii::Vector<dbl>, 3>, 3>, 3>> stress_micro;
         OnCell::ArrayWithAccessToVector<arr<arr<arr<dealii::Vector<dbl>, 3>, 3>, 3>> deform_micro;
         Domain<2> domain_micro;
         get_micro_deform_stress (z, 0.0, stress_micro, deform_micro, domain_micro, 2, fe);
+        puts("!!!!!!!!!5");
         approx_iteration (2, 
                 [&stress_micro, &deform_micro, &domain_micro]
                 (arr<i32, 3> a, cst nu, cst alpha){
-        arr<str, 3> ort = {"x", "y", "z"};
-        arr<str, 3> aprx = {"0", "1", "2"};
+                arr<str, 3> ort = {"x", "y", "z"};
+                arr<str, 3> aprx = {"0", "1", "2"};
                 for (st i = 0; i < 3; ++i)
                 {
                 str name = aprx[a[0]]+str("_")+aprx[a[1]]+str("_")+aprx[a[2]]+str("_")+ort[nu]+str("_")+ort[alpha]+ort[i];
                 std::ofstream out ("cell/stress_"+name+".bin", std::ios::out | std::ios::binary);
-        HCPTools::print_temperature<2>(
-            stress_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro_stress_") + name +".gpd");
-        HCPTools::print_temperature<2>(
-            deform_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro_deform_") + name +".gpd");
+                HCPTools::print_temperature<2>(
+                    stress_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro_stress_") + name +".gpd");
+                HCPTools::print_temperature<2>(
+                    deform_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro_deform_") + name +".gpd");
                 };
                 });
+    puts("!!!!!!10");
+
+
+        // arr<dealii::Vector<dbl>, 3> move_real;
+        // arr<arr<dealii::Vector<dbl>, 3>, 3> stress_real;
+        // Domain<2> domain_real;
+        // get_real_move_and_stress<n_ref_real>(
+        //         move_macro,   move_micro,   move_real, 
+        //         deform_macro, stress_micro, stress_real, 
+        //         domain_macro, domain_micro, domain_real,
+        //         fe, Ncx, Ncy);
+        // for (st i = 0; i < 3; ++i)
+        // {
+        //     for (st j = 0; j < 3; ++j)
+        //     {
+        //         HCPTools::print_temperature<2>(stress_real[i][j], domain_real.dof_handler, 
+        //                 str("ring/real_stress_") + ort[i] + ort[j] + ".gpd");
+        //     };
+        // };
     };
 //
 //         cdbl width = 1.0 / ratio;
@@ -13995,13 +14247,14 @@ int main()
 
     {
         cst n_ref = 4;
+        cst n_ref_real = 7;
 
         cdbl ratio = 1.0;
         cdbl width = 1.0 / ratio;
         cdbl Ri = 20.0;
         cdbl Ro = Ri + width;
 
-        cst Ncx = 4;
+        cst Ncx = 5;
         cst Ncy = Ncx * ratio;
         cdbl bx = width / Ncx;
         cdbl by = 1.0 / Ncy;
@@ -14012,7 +14265,7 @@ int main()
         solve_ring_problem_3d<n_ref>(0, ratio, Ri, 1 << 4);
         puts("33333333333333334");
         calculate_real_stress_in_ring_arbitrary_grid<n_ref>(0, ratio, Ri, Ro, Ncx, Npx, Npy);
-        calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, 3>(1, Ri, width);
+        calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(1, Ri, width, Ncx, Ncy);
         test<n_ref, 3>(0, Ri, width);
     };
     
@@ -14114,7 +14367,7 @@ int main()
     // solve_elastic_problem (1);
     // solve_two_stress (1, 5.0, 0.25);
     //
-    solve_approx_cell_elastic_problem (0, 10.0, 0.25);
+    solve_approx_cell_elastic_problem (1, 10.0, 0.25);
     // solve_approx_cell_elastic_problem (1);
     // solve_elastic_problem (1);
     // solve_two_stress (1, 10.0, 0.25);
