@@ -7705,7 +7705,7 @@ void solve_approx_cell_elastic_problem (cst flag, cdbl E, cdbl pua)
         Domain<3> domain;
         {
             // set_cylinder(domain.grid, 0.25, y, 2);
-            set_cylinder_true(domain.grid, 0.25, z, 40, 5);
+            set_cylinder_true(domain.grid, 0.125, z, 40, 5);
             // set_ball(domain.grid, 0.4, 3);
             // set_rect_3d(domain.grid,
             //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
@@ -11429,7 +11429,7 @@ void solve_ring_problem_3d (cst flag, cdbl ratio, cdbl Ri, cst n_rad_cell, cdbl 
                 };
             };
 
-            EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
+            // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[n]);
         };
             // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
             // exit(1);
@@ -11492,7 +11492,7 @@ void solve_ring_problem_3d (cst flag, cdbl ratio, cdbl Ri, cst n_rad_cell, cdbl 
             {
                 for (st i = 0; i < 8; ++i)
                 {
-                    if (std::abs(cell->vertex(i)(z)  /* - length / 2.0 */  ) < 1.0e-5)
+                    if (std::abs(cell->vertex(i)(z) - length / 2.0 ) < 1.0e-5)
                     {
                         cst v = cell->vertex_dof_index(i, z);
                         if (list_boundary_values.find(v) == list_boundary_values.end())
@@ -12744,16 +12744,45 @@ void get_macro_deform_2(
             deform[i][j] .reinit (domain.dof_handler.n_dofs());
         };
     };
+    // {
+    //     auto cell = domain.dof_handler.begin_active();
+    //     auto endc = domain.dof_handler.end();
+    //     for (; cell != endc; ++cell)
+    //     {
+    //         if ((std::abs(cell->vertex(0)(x) - 0.5) < 1.0e-8) and (std::abs(cell->vertex(0)(y) - 0.5) < 1.0e-8))
+    //         {
+    //         cdbl px1 = cell->vertex(0)(x)*W+Ri;
+    //         cdbl px2 = cell->vertex(1)(x)*W+Ri;
+    //         cdbl py1 = cell->vertex(0)(y);
+    //         cdbl py2 = cell->vertex(3)(y);
+    //         arr<prmt::Point<2>, 4> points = {
+    //             prmt::Point<2>(px1, py1),
+    //             prmt::Point<2>(px2, py1),
+    //             prmt::Point<2>(px2, py2),
+    //             prmt::Point<2>(px1, py2)
+    //         };
+    //             
+    //         };
+    //     };
+    // };
     {
         auto cell = domain.dof_handler.begin_active();
         auto endc = domain.dof_handler.end();
         for (; cell != endc; ++cell)
         {
+            cdbl px1 = cell->vertex(0)(x)*W+Ri;
+            cdbl px2 = cell->vertex(1)(x)*W+Ri;
+            cdbl py1 = cell->vertex(0)(y);
+            cdbl py2 = cell->vertex(3)(y);
             arr<prmt::Point<2>, 4> points = {
-                cell->vertex(0),
-                cell->vertex(1),
-                cell->vertex(3),
-                cell->vertex(2)
+                prmt::Point<2>(px1, py1),
+                prmt::Point<2>(px2, py1),
+                prmt::Point<2>(px2, py2),
+                prmt::Point<2>(px1, py2)
+                    // cell->vertex(0),
+                    // cell->vertex(1),
+                    // cell->vertex(3),
+                    // cell->vertex(2)
             };
             for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
             {
@@ -13453,13 +13482,13 @@ void calculate_real_stress_in_ring_arbitrary_grid_alternate(cst flag, cdbl Ri, c
         arr<dealii::Vector<dbl>, 3> move_macro;
         Domain<2> domain_macro;
 
-        get_macro_move<n_ref_macro>(move_macro, domain_macro, fe, "ring_move_anal.bin");
+        get_macro_move<n_ref_macro>(move_macro, domain_macro, fe, "ring_move.bin");
         HCPTools::print_temperature<2>(move_macro[x], domain_macro.dof_handler, "ring/macro_move_x.gpd");
         HCPTools::print_temperature<2>(move_macro[y], domain_macro.dof_handler, "ring/macro_move_y.gpd");
         HCPTools::print_temperature<2>(move_macro[z], domain_macro.dof_handler, "ring/macro_move_z.gpd");
 
         arr<arr<dealii::Vector<dbl>, 3>, 3> deform_macro;
-        get_macro_deform(move_macro, domain_macro, deform_macro, Ri, W);
+        get_macro_deform_2(move_macro, domain_macro, deform_macro, Ri, W);
         for (st i = 0; i < 3; ++i)
         {
             for (st j = 0; j < 3; ++j)
@@ -13491,6 +13520,8 @@ void calculate_real_stress_in_ring_arbitrary_grid_alternate(cst flag, cdbl Ri, c
                 };
             };
         };
+        puts("C[][][][]");
+        std::cout << C[x][x][x][x] << " " << C[x][x][y][y] << " " << C[x][x][z][z] << std::endl;
         for (st i = 0; i < 3; ++i)
         {
             for (st j = 0; j < 3; ++j)
@@ -14374,17 +14405,17 @@ int main()
     };
 
     {
-        cst n_ref = 4;
-        cst n_ref_real = 5;
+        cst n_ref = 5;
+        cst n_ref_real = 7;
 
-        cdbl ratio = 1.0;
+        cdbl ratio = 0.125;
         cdbl width = 1.0 / ratio;
         cdbl Ri = 20.0;
         cdbl Ro = Ri + width;
-        cdbl P = 1.0 / ratio;
+        cdbl P = 1.0;// / ratio;
 
         cst Ncx = 5;
-        cst Ncy = Ncx * ratio;
+        cst Ncy = 5; //Ncx * ratio;
         cdbl bx = width / Ncx;
         cdbl by = 1.0 / Ncy;
         cst Npx = 100;
@@ -14392,10 +14423,7 @@ int main()
         cdbl dx = width / (Npx-1);
         cdbl dy = 1.0 / (Npy-1);
         solve_ring_problem_3d<n_ref>(1, ratio, Ri, 1 << 4, P);
-        puts("33333333333333334");
-        calculate_real_stress_in_ring_arbitrary_grid<n_ref>(0, ratio, Ri, Ro, Ncx, Npx, Npy);
         calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(1, Ri, width, Ncx, Ncy);
-        test<n_ref, 3>(0, Ri, width);
     };
     
     // vec<vec<dbl>> A(3);
