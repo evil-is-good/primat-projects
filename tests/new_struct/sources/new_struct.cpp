@@ -13575,6 +13575,7 @@ void get_macro_deform_2(
             deform[i][j] .reinit (domain.dof_handler.n_dofs());
         };
     };
+    std::cout << "W=" << " " << W << std::endl;
     // {
     //     auto cell = domain.dof_handler.begin_active();
     //     auto endc = domain.dof_handler.end();
@@ -13601,8 +13602,8 @@ void get_macro_deform_2(
         auto endc = domain.dof_handler.end();
         for (; cell != endc; ++cell)
         {
-            cdbl px1 = cell->vertex(0)(x)*W+Ri;
-            cdbl px2 = cell->vertex(1)(x)*W+Ri;
+            cdbl px1 = cell->vertex(0)(x)*W;//+Ri;
+            cdbl px2 = cell->vertex(1)(x)*W;//+Ri;
             cdbl py1 = cell->vertex(0)(y);
             cdbl py2 = cell->vertex(3)(y);
             arr<prmt::Point<2>, 4> points = {
@@ -14464,7 +14465,7 @@ void calculate_real_stress_in_ring_arbitrary_grid_alternate(
             for (st j = 0; j < 3; ++j)
             {
                 HCPTools::print_temperature<2>(deform_macro[i][j], domain_macro.dof_handler, 
-                        str("ring/real_stress_") + ort[i] + ort[j] + ".gpd");
+                        str("ring/macro_deform_") + ort[i] + ort[j] + ".gpd");
             };
         };
 
@@ -15394,11 +15395,11 @@ int main()
         cst n_ref = 5;
         cst n_ref_real = 7;
 
-        cdbl ratio = 0.125;
+        cdbl ratio = 4.0;
         cdbl width = 1.0 / ratio;
         cdbl Ri = 20.0;
         cdbl Ro = Ri + width;
-        cdbl P = 1.0;// / ratio;
+        cdbl P = 0.125;//1.0 / 8.0;// / ratio;
         cdbl R_fiber = 0.25;
         cst n_p = 64;
 
