@@ -14,8 +14,8 @@ set size 1.0, 1.0
 set term png enhanced size 1024, 1024
 unset key
 set pm3d map
-set xlabel "X"
-set ylabel "Y"
+set xlabel "X" font "Serif, 30"
+set ylabel "Z" font "Serif, 30"
 
 #gray > 0.25 ? gray < 0.75 ? (gray-0.25)*2.0 : 1.0 : 0.0  (((0.5-gray)*8.0)**0.5)/4.0
 #set palette rgbformulae 30, 31, 32
@@ -53,10 +53,9 @@ set palette function \
 
 
 set title "Stress {/Symbol s}_{yy} for R = 0.3" font "Serif, 30"
-set output "stress_xx.png"
+set output "stress_zz.png"
 #set zrange [-0.22:-0.04]
-splot "stress_xx.gpd" using ($1):($2):($3) with pm3d
-#splot sin(x) w pm3d
+splot "ring/real/stress/zz.gpd" using ($1):($2):($3) with pm3d
 
 #set title "Stress {/Symbol s}_{1} for R = 0.3" font "Serif, 30"
 #set output "main_stress_1.png"

@@ -139,19 +139,21 @@ namespace OnCell
                             this->fe_values.JxW(q_point);
                     };
                 };
-                // ++(N[global_dof_indices[m]]); 
+                ++(N[global_dof_indices[m]]); 
             };
 
             for (st i = 0; i < 8; ++i)
             {
-                deform[global_dof_indices[i*3] / 3] += (tmp / cell_area);// / N[i];
-                ++(N[global_dof_indices[i*3] / 3]); 
+                // deform[global_dof_indices[i*3] / 3] += (tmp / cell_area);// / N[i];
+                // ++(N[global_dof_indices[i*3] / 3]); 
+                deform[global_dof_indices[i*3+beta]] += (tmp / cell_area);// / N[i];
             };
         };
 
         for (st i = 0; i < deform.size(); ++i)
         {
-            deform[i] /= N[i];
+            if ((i%3) == beta)
+                deform[i] /= N[i];
         };
 
     };
