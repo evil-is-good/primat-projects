@@ -201,6 +201,24 @@ namespace OnCell
         return  meta_coefficient;
     };
 
+    // //! Расчет теплового потока
+    // template<u8 dim>
+    // void calculate_heat_flow(
+    //         const arr<dealii::Vector<dbl>, dim> &solution,
+    //         const arr<dealii::Vector<dbl>, dim> &rhs,
+    //         const vec<ATools::SecondOrderTensor> &coef,
+    //         arr<arr<dealii::Vector<dbl>, dim>, dim> &heat_flow)
+    // {
+    //     for (st i = 0; i < dim; ++i)
+    //         for (st j = 0; j < dim; ++j)
+    //         {
+    //             heat_flow[i][j].reinit(solution[i].size());
+    //
+    //             for (st k = 0; k < solution[i].size(); ++k)
+    //                 heat_flow[i][j](k) = solution[i](k) * (-rhs[j](k));// + coef[i][j];
+    //         };
+    // };
+
     //! Расчет метакоэффициентов, плоская задача упругости
     template<u8 dim>
     ATools::FourthOrderTensor calculate_meta_coefficients_2d_elastic(

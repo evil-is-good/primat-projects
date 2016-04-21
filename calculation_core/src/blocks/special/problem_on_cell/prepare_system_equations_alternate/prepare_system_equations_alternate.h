@@ -46,10 +46,10 @@ namespace OnCell
             sp .copy_from (dsp);
         };
 
-        // {
-        // std::ofstream output ("csp_old.gpd");
-        // c_sparsity .print_gnuplot (output);
-        // };
+        {
+            std::ofstream output ("csp_alternate.gpd");
+            sp .print_gnuplot (output);
+        };
 
         sp .compress ();
 

@@ -4021,6 +4021,124 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
         };
     };
 
+void solve_plate_with_hole_problem (cst flag)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+        Domain<2> domain;
+        {
+            dealii::GridGenerator::hyper_cube_with_cylindrical_holei<2>(domain.grid);
+            {
+                std::ofstream out ("grid-igor.eps");
+                dealii::GridOut grid_out;
+                grid_out.write_eps (domain.grid, out);
+            };
+        };
+        // dealii::FESystem<2,2> fe 
+        //     (dealii::FE_Q<2,2>(1), 2);
+        // domain.dof_init (fe);
+        //
+        // SystemsLinearAlgebraicEquations slae;
+        // ATools ::trivial_prepare_system_equations (slae, domain);
+        //
+        // LaplacianVector<2> element_matrix (domain.dof_handler.get_fe());
+        // element_matrix.C .resize (1);
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+        // ATools::FourthOrderTensor meta_coef;
+        // std::ifstream in ("cell/meta_coef.bin", std::ios::in | std::ios::binary);
+        // in.read ((char *) &meta_coef, sizeof meta_coef);
+        // in.close ();
+        // // for (st i = 0; i < 3; ++i)
+        // // {
+        // //     for (st j = 0; j < 3; ++j)
+        // //     {
+        // //         for (st k = 0; k < 3; ++k)
+        // //         {
+        // //             for (st l = 0; l < 3; ++l)
+        // //             {
+        // // element_matrix.C[0][i][j][k][l] = meta_coef[i][j][k][l];
+        // //             };
+        // //         };
+        // //     };
+        // // };
+        // for (size_t i = 0; i < 9; ++i)
+        // {
+        //     uint8_t im = i / (2 + 1);
+        //     uint8_t in = i % (2 + 1);
+        //
+        //     for (size_t j = 0; j < 9; ++j)
+        //     {
+        //         uint8_t jm = j / (2 + 1);
+        //         uint8_t jn = j % (2 + 1);
+        //
+        //         if (std::abs(element_matrix.C[0][im][in][jm][jn]) > 0.0000001)
+        //             printf("\x1B[31m%f\x1B[0m   ", 
+        //                     element_matrix.C[0][im][in][jm][jn]);
+        //         else
+        //             printf("%f   ", 
+        //                     element_matrix.C[0][im][in][jm][jn]);
+        //     };
+        //     for (size_t i = 0; i < 2; ++i)
+        //         printf("\n");
+        // };
+        //
+        //
+        // arr<std::function<dbl (const dealii::Point<2>&)>, 2> func {
+        //     // [=] (const dealii::Point<2>) {return -2.0*abld;},
+        //     [] (const dealii::Point<2>) {return 0.0;},
+        //     [] (const dealii::Point<2>) {return 0.0;}
+        // };
+        // // auto func = [] (dealii::Point<2>) {return arr<dbl, 2>{-2.0, 0.0};};
+        // SourceVector<2> element_rhsv (func, domain.dof_handler.get_fe());
+        //
+        // Assembler ::assemble_matrix<2> (slae.matrix, element_matrix, domain.dof_handler);
+        // Assembler ::assemble_rhsv<2> (slae.rhsv, element_rhsv, domain.dof_handler);
+        //
+        // vec<BoundaryValueVector<2>> bound (4);
+        // bound[2].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, -1.0};};
+        // bound[2].boundary_id   = 3;
+        // bound[2].boundary_type = TBV::Neumann;
+        // // bound[0].boundary_type = TBV::Dirichlet;
+        // bound[3].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 1.0};};
+        // bound[3].boundary_id   = 4;
+        // bound[3].boundary_type = TBV::Neumann;
+        // bound[0].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
+        // bound[0].boundary_id   = 1;
+        // bound[0].boundary_type = TBV::Neumann;
+        // bound[1].function      = [] (const dealii::Point<2> &p) {return arr<dbl, 2>{0.0, 0.0};};
+        // bound[1].boundary_id   = 2;
+        // bound[1].boundary_type = TBV::Neumann;
+        //
+        // for (auto b : bound)
+        //     ATools ::apply_boundary_value_vector<2> (b) .to_slae (slae, domain);
+        //
+        // dealii::SolverControl solver_control (50000, 1e-12);
+        // dealii::SolverCG<> solver (solver_control);
+        // solver.solve (
+        //         slae.matrix,
+        //         slae.solution,
+        //         slae.rhsv
+        //         ,dealii::PreconditionIdentity()
+        //         );
+        // //
+        // // EPTools ::print_move<2> (indexes, domain.dof_handler, "move.gpd");
+        // EPTools ::print_move<2> (slae.solution, domain.dof_handler, "move.gpd");
+        // // EPTools ::print_elastic_deformation (slae.solution, domain.dof_handler, "deform.gpd");
+        // // EPTools ::print_elastic_deformation_mean (slae.solution, domain.dof_handler, "deform_mean.gpd");
+        // // EPTools ::print_elastic_deformation_mean_other (slae.solution, domain.dof_handler, "deform_other_2d.gpd");
+        // // EPTools ::print_elastic_deformation_2 (slae.solution, domain.dof_handler, "deform_2.gpd");
+        // // // EPTools ::print_elastic_deformation_quad (slae.solution, domain.dof_handler, "deform_quad.gpd");
+        // // // EPTools ::print_elastic_stress_quad (slae.solution, domain.dof_handler, 
+        // // //         element_matrix.C[0], "stress_quad.gpd");
+        // // EPTools ::print_elastic_stress (slae.solution, domain.dof_handler, 
+        // //         element_matrix.C[0], "stress.gpd");
+        // // EPTools ::print_elastic_mean_micro_stress (slae.solution, domain.dof_handler,
+        // //         element_matrix.C[0], "mean_micro_stress.gpd", 0.01);
+        // // EPTools ::print_coor_bin<2> (domain.dof_handler, "hole/coor_hole.bin");
+    };
+};
+
     void solve_elastic_problem_on_cell (cst flag)
     {
         if (flag)
@@ -5144,6 +5262,108 @@ void solve_heat_conduction_problem_3d (cst flag)
     };
 };
 
+void normalization(/* const dealii::DoFHandler<dim> &dof_h, */ dealii::Vector<dbl> &solution)
+{
+    dbl sum = 0.0;
+    for (st i = 0; i < solution.size(); ++i)
+    {
+        sum += solution(i);
+    };
+    sum /= solution.size();
+    for (st i = 0; i < solution.size(); ++i)
+    {
+        solution(i) -= sum;
+    };
+    // auto cell = dof_h.begin_active();
+    // auto endc = dof_h.end();
+    // for (; cell != endc; ++cell)
+    // {
+    //     for (st i = 0; i < dealii::GeometryInfo<dim>::vertices_per_cell; ++i)
+    //     {
+    // FOR (q_point, 0, num_quad_points)
+    //     FOR (a, 0, dim)
+    //         FOR (b, 0, dim)
+    //         {
+    //             // printf("%ld %ld %d\n", i, j, material_id);
+    //             res += C[material_id][a][b] * 
+    //                 fe_values.shape_grad (i, q_point)[a] *
+    //                 fe_values.shape_grad (j, q_point)[b] *
+    //                 fe_values.JxW(q_point);
+    //         };
+    //     };
+    // };
+};
+
+template <st dim>
+void get_micro_heat_flow (
+        const Domain<dim> &domain, 
+        const arr<dealii::Vector<dbl>, dim> &T,
+        const vec<ATools::SecondOrderTensor> &C,
+        arr<arr<dealii::Vector<dbl>, dim>, dim> &q)
+{
+    enum {x, y, z};
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            q[i][j] .reinit (domain.dof_handler.n_dofs());
+            for (st k = 0; k < q[i][j].size(); ++k)
+            {
+                q[i][j](k) = 0.0;
+            };
+        };
+    };
+    vec<st> N(domain.dof_handler.n_dofs());
+    for (st i = 0; i < N.size(); ++i)
+    {
+        N[i] = 0;
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            cst m_id = cell->material_id();
+            for (st i = 0; i < dealii::GeometryInfo<dim>::vertices_per_cell; ++i)
+            {
+                const dealii::Point<dim> p = cell -> center(); //vertex(i);
+                cst indx = cell ->vertex_dof_index (i, 0);
+                for (st j = 0; j < 3; ++j)
+                {
+                    // dealii::Tensor<1, 2, dbl> grad =
+                    auto grad =
+                        dealii::VectorTools::point_gradient(domain.dof_handler, T[j], p);
+                    for (st k = 0; k < 3; ++k)
+                    {
+                        // q[j][k](indx) = 0.0;//C[m_id][j][k];
+                        for (st l = 0; l < 3; ++l)
+                        {
+                            q[j][k](indx) += C[m_id][k][l] * grad[l];
+                            // q[j][k](indx) = grad[k];
+                        };
+                        q[j][k](indx) += C[m_id][j][k];
+                        // q[j][k](indx) = C[m_id][j][k];
+                            // q[j][k](indx) += c[m_id][j][k] * (grad[k] + 1.0);
+                            // q[j][k](indx) += grad[k];
+                            // q[j][k](indx) += C[m_id][j][k] * grad[k];
+                            ++N[indx];
+                    };
+                };
+            };
+        };
+    };
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            for (st k = 0; k < q[i][j].size(); ++k)
+            {
+                q[i][j](k) /= N[k];
+            };
+        };
+    };
+};
+
 void solve_heat_conduction_problem_on_cell_3d (cst flag)
 {
     if (flag)
@@ -5152,12 +5372,15 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
         // FILE *F;
         // F = fopen("square.gpd", "w");
         dbl size = 0.05;
+        cdbl R = 0.25;
+        cst n_p = 32;
         {
             Domain<3> domain;
             {
-                // set_cylinder(domain.grid, 0.475, z, 5);
+                // set_cylinder(domain.grid, 0.25, z, 3);
                 // set_ball(domain.grid, 0.40057, 7);
-                set_ball(domain.grid, 0.4742, 4);
+                // set_ball(domain.grid, 0.4742, 4);
+                set_cylinder_true(domain.grid, R, z, n_p, 5);
             };
             dealii::FE_Q<3> fe(1);
             domain.dof_init (fe);
@@ -5169,11 +5392,11 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
             LaplacianScalar<3> element_matrix (domain.dof_handler.get_fe());
             // {
             element_matrix.C .resize(2);
-            element_matrix.C[1][x][x] = 1.0e4;
+            element_matrix.C[1][x][x] = 1.0e1;
             element_matrix.C[1][x][y] = 0.0;
             element_matrix.C[1][y][x] = 0.0;
-            element_matrix.C[1][y][y] = 1.0e4;
-            element_matrix.C[1][z][z] = 1.0e4;
+            element_matrix.C[1][y][y] = 1.0e1;
+            element_matrix.C[1][z][z] = 1.0e1;
             element_matrix.C[0][x][x] = 1.0;
             element_matrix.C[0][x][y] = 0.0;
             element_matrix.C[0][y][x] = 0.0;
@@ -5181,11 +5404,10 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
             element_matrix.C[0][z][z] = 1.0;
             // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
             // };
-    debputs();
             const bool scalar_type = 0;
             // OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
-            OnCell::prepare_system_equations_with_cubic_grid<3, 1> (slae, bows, domain);
-    debputs();
+            // OnCell::prepare_system_equations_with_cubic_grid<3, 1> (slae, bows, domain);
+            OnCell::prepare_system_equations_alternate<3, 1, 3> (slae, bows, domain);
 
             OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
 
@@ -5202,20 +5424,6 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                 OnCell::SourceScalar<3> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
                 // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
                 OnCell::Assembler::assemble_rhsv<3> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
-                // for (auto a : slae.rhsv[i])
-                //     printf("%f\n", a);
-                // {
-                //     dealii::DataOut<2> data_out;
-                //     data_out.attach_dof_handler (domain.dof_handler);
-                //     data_out.add_data_vector (slae.rhsv[0], "xb");
-                //     data_out.add_data_vector (slae.rhsv[1], "yb");
-                //     data_out.build_patches ();
-                //
-                //     auto name = "b.gpd";
-                //
-                //     std::ofstream output (name);
-                //     data_out.write_gnuplot (output);
-                // };
 
                 dealii::SolverControl solver_control (5000000, 1e-12);
                 dealii::SolverCG<> solver (solver_control);
@@ -5225,17 +5433,16 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                         slae.rhsv[i]
                         ,dealii::PreconditionIdentity()
                         );
+
                 FOR(j, 0, slae.solution[i].size())
                     slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+
+                normalization(/* domain.dof_handler, */ slae.solution[i]);
             };
-            debputs();
-            // {
-            //     FILE* F;
-            //     F = fopen("Sol.gpd", "w");
-            //     for (size_t i = 0; i < slae.solution[0].size(); ++i)
-            //         fprintf(F, "%ld %.10f\n", i, slae.solution[0](i));
-            //     fclose(F);
-            // };
+
+            arr<arr<dealii::Vector<dbl>, 3>, 3> heat_flow_reale;
+            // OnCell::calculate_heat_flow<3>(slae.solution, slae.rhsv, element_matrix.C, heat_flow_reale);
+            get_micro_heat_flow<3>(domain, slae.solution, element_matrix.C, heat_flow_reale);
 
             {
                 arr<str, 3> vr = {"temperature_x.gpd", "temperature_y.gpd", "temperature_z.gpd"};
@@ -5248,6 +5455,12 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                     HCPTools ::print_temperature<3> (slae.solution[i], domain.dof_handler, vr[i], dealii::DataOutBase::vtk);
             };
             HCPTools ::print_temperature_slice (slae.solution[x], domain.dof_handler, "temperature_slice_x.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][x], domain.dof_handler, "heat_flow_slice_xx.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[y][y], domain.dof_handler, "heat_flow_slice_yy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[z][z], domain.dof_handler, "heat_flow_slice_zz.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][y], domain.dof_handler, "heat_flow_slice_xy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[z][y], domain.dof_handler, "heat_flow_slice_zy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][z], domain.dof_handler, "heat_flow_slice_xz.gpd", z, 0.5);
 
             auto meta_coef = OnCell::calculate_meta_coefficients_scalar<3> (
                     domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
@@ -5255,13 +5468,7 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
             printf("META %.15f %.15f %.15f %.15f %.15f %.15f\n", 
                     meta_coef[x][x], meta_coef[y][y], meta_coef[z][z],
                     meta_coef[x][y], meta_coef[x][z], meta_coef[y][z]);
-            // fprintf(F, "%f %f %f\n", size*size, meta_coef[x][x], meta_coef[y][y]);
-            // puts("111111111");
-            // size+=0.05;
-            // puts("2222222");
-            // printf("%f %f\n", size, size*size);
         };
-            // fclose(F);
 
     };
 };
@@ -15335,28 +15542,6 @@ int main()
     solve_cell_elastic_problem_and_print_along_line(0);
 
 
-    // {
-    //     cst n_cell_ref = 5;
-    //
-    //     cst n_ref = 4;
-    //
-    //     cst ratio = 1;
-    //     cdbl width = 1 / ratio;
-    //     cdbl Ri = 10.5;
-    //     cdbl Ro = Ri + width;
-    //
-    //     cst Ncx = 1;
-    //     cst Ncy = Ncx * ratio;
-    //     cdbl bx = width / Ncx;
-    //     cdbl by = 1.0 / Ncy;
-    //     cst Npx = 100;
-    //     cst Npy = 100;
-    //     cdbl dx = width / (Npx-1);
-    //     cdbl dy = 1.0 / (Npy-1);
-    //     solve_ring_problem_3d<n_ref>(0, ratio, width, Ri, 1.0);
-    //     calculate_real_stress_in_ring<n_ref, n_cell_ref>(0, ratio, width, Ri, Ro, Ncx, Npx, Npy);
-    // };
-
     {
         cst n_ref = 5;
         cst n_ref_real = 7;
@@ -15383,6 +15568,9 @@ int main()
         calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(
                 0, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
     };
+
+
+    solve_plate_with_hole_problem (cst flag)
     
     // vec<vec<dbl>> A(3);
     // for (st i = 0; i < 3; ++i)

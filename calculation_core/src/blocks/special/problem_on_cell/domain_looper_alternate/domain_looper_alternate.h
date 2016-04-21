@@ -62,8 +62,11 @@ namespace OnCell
                 {-1,  1,  1}, {0,  1,  1}, {1,  1,  1}
             };
 
+            // Количество чёрных точек берётся с запасом, в 1d это 3 штуки, в эти точки входит и сама белая точка и
+            // точки с двух её сторон на расстоянии max. Это сделано чтобы избавиться от if-оф. В одномерном слечае
+            // бесполезно, но пригождается в 2d и  3d.
             st max_num_black_points = 1;
-            for (st i = 0; i < dim; ++i)
+            for (st i = 0; i < dim-0; ++i)
             {
                 max_num_black_points *= 3;
             };
@@ -90,26 +93,26 @@ namespace OnCell
                 {
                     for (st i = 0; i < max_num_black_points; ++i)
                     {
-                        bool coor_suit = true;
+                        bool coor_suitiable = true;
                         arr<dbl, dim> coor_black;
-                        for (st j = 0; j < dim; ++j)
+                        for (st j = 0; j < dim; ++j) //Проверяем, не выходит ли предпологаемая точка за пределы области
                         {
                             coor_black[j] = white.second(j) + direction[i][j] * max[j];
                             if ((coor_black[j] < -1.0e-10) or (coor_black[j] > (max[j] + 1.0e-10)))
-                                coor_suit = false;
+                                coor_suitiable = false;
                         };
-                        if (coor_suit)
+                        if (coor_suitiable) // Проверяем, не попадает ли эта точка на белую
                         {
-                            coor_suit = false;
-                            for (st j = 0; j < spec_dim; ++j)
+                            coor_suitiable = false;
+                            for (st j = 0; j < dim; ++j)
                             {
                                 if (direction[i][j] != 0)
                                 {
-                                    coor_suit = true;
+                                    coor_suitiable = true;
                                 };
                             };
                         };
-                        if (coor_suit)
+                        if (coor_suitiable)
                         {
                             for (auto&& black : v_at_b)
                             {
