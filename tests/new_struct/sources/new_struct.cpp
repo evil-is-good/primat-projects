@@ -4021,6 +4021,107 @@ ATools::FourthOrderTensor solve_elastic_problem_on_cell_3d_and_meta_coef_return 
         };
     };
 
+void hyper_cube_with_cylindrical_hole_my (dealii::Triangulation<2> &triangulation,
+        const double inner_radius,
+        const double outer_radius,
+        cst N,
+        bool colorize)
+{
+    const int dim = 2;
+
+    Assert(inner_radius < outer_radius,
+            ExcMessage("outer_radius has to be bigger than inner_radius."));
+
+    dealii::Point<dim> center;
+    // We create an hyper_shell in two dimensions, and then we modify it.
+    dealii::GridGenerator::hyper_shell (triangulation,
+            center, inner_radius, outer_radius,
+            N);
+    {
+        std::ofstream out ("grid-shell.eps");
+        dealii::GridOut grid_out;
+        grid_out.write_eps (triangulation, out);
+    };
+    dealii::Triangulation<dim>::active_cell_iterator
+        cell = triangulation.begin_active(),
+             endc = triangulation.end();
+    std::vector<bool> treated_vertices(triangulation.n_vertices(), false);
+    for (; cell != endc; ++cell)
+    {
+        for (unsigned int f=0; f<dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+        {
+            if (cell->face(f)->at_boundary() and (cell->face(f)->center().distance(center) > inner_radius))
+            {
+                for (unsigned int v=0; v < dealii::GeometryInfo<dim>::vertices_per_face; ++v)
+                {
+                    unsigned int vv = cell->face(f)->vertex_index(v);
+                    if (treated_vertices[vv] == false)
+                    {
+                        treated_vertices[vv] = true;
+                        dealii::Point<dim> p = cell->face(f)->vertex(v);
+                        if (std::abs(p(0)) > std::abs(p(1)))
+                        {
+                            cell->face(f)->vertex(v) = dealii::Point<dim>(1.0, p(1)/p(0));
+                            if (p(0) > 0)
+                            {
+                                 cell->face(f)->vertex(v) *= outer_radius;
+                            }
+                            else
+                            {
+                                 cell->face(f)->vertex(v) *= -outer_radius;
+                            };
+                        }
+                        else
+                        {
+                            cell->face(f)->vertex(v) = dealii::Point<dim>(p(0)/p(1), 1.0);
+                            if (p(1) > 0)
+                            {
+                                 cell->face(f)->vertex(v) *= outer_radius;
+                            }
+                            else
+                            {
+                                 cell->face(f)->vertex(v) *= -outer_radius;
+                            };
+                        };
+                    }
+                }
+            }
+        }
+    }
+    double eps = 1e-3 * outer_radius;
+    cell = triangulation.begin_active();
+    for (; cell != endc; ++cell)
+    {
+        for (unsigned int f=0; f<dealii::GeometryInfo<dim>::faces_per_cell; ++f)
+            if (cell->face(f)->at_boundary())
+            {
+                double dx = cell->face(f)->center()(0) - center(0);
+                double dy = cell->face(f)->center()(1) - center(1);
+                if (colorize)
+                {
+                    if (std::abs(dx + outer_radius) < eps)
+                        cell->face(f)->set_boundary_id(0);
+                    else if (std::abs(dx - outer_radius) < eps)
+                        cell->face(f)->set_boundary_id(1);
+                    else if (std::abs(dy + outer_radius) < eps)
+                        cell->face(f)->set_boundary_id(2);
+                    else if (std::abs(dy - outer_radius) < eps)
+                        cell->face(f)->set_boundary_id(3);
+                    else
+                        cell->face(f)->set_boundary_id(4);
+                }
+                else
+                {
+                    double d = (cell->face(f)->center() - center).norm();
+                    if (d-inner_radius < 0)
+                        cell->face(f)->set_boundary_id(1);
+                    else
+                        cell->face(f)->set_boundary_id(0);
+                }
+            }
+    }
+}
+
 void solve_plate_with_hole_problem (cst flag)
 {
     if (flag)
@@ -4028,7 +4129,9 @@ void solve_plate_with_hole_problem (cst flag)
         enum {x, y, z};
         Domain<2> domain;
         {
-            dealii::GridGenerator::hyper_cube_with_cylindrical_holei<2>(domain.grid);
+            hyper_cube_with_cylindrical_hole_my(
+                    domain.grid, 0.25, 0.5, 16, true);
+                    domain.grid .refine_global (2);
             {
                 std::ofstream out ("grid-igor.eps");
                 dealii::GridOut grid_out;
@@ -15523,7 +15626,7 @@ int main()
     solve_heat_conduction_problem_3d (0);
 
     //heat_conduction_problem_on_cell_3d
-    solve_heat_conduction_problem_on_cell_3d (1);
+    solve_heat_conduction_problem_on_cell_3d (0);
 
     // elasstic_problem_3d
     solve_elastic_problem_3d (0);
@@ -15570,7 +15673,10 @@ int main()
     };
 
 
-    solve_plate_with_hole_problem (cst flag)
+    solve_plate_with_hole_problem (1);
+    std::cout << std::signbit(1.0) << " " << std::signbit(-1.0)<< std::endl;
+
+
     
     // vec<vec<dbl>> A(3);
     // for (st i = 0; i < 3; ++i)
