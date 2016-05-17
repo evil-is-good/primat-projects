@@ -21,29 +21,29 @@ set ytics font "Monospace, 40"
 #set xtics ("20" 0.0, "20.25" 0.25, "20.5" 0.5, "20.75" 0.75, "21" 0.99)"20.5" 0.5, "22.5" 0.5
 set xtics ("20" 0.0, "20.25" 0.25, "20.75" 0.75, "21" 0.99) offset 0,-0.7
 
-set ytics 0,1,3
-set output "stress_line_zz_H.png"
-plot "H/stress_line_zz_2.gpd" w l ls 1
+set ytics 0,0.1,0.3
+set output "ring_fig/stress_line_zz_H.png"
+plot "H/stress_line_zz_2.gpd" u 1:($2/10) w l ls 1
 
-set yrange [0:800]
-set ytics 0,200,800
-set output"stress_line_yy_H.png"
-plot "H/stress_line_yy_1.gpd" w l ls 1
+set yrange [0:80]
+set ytics 0,20,80
+set output"ring_fig/stress_line_yy_H.png"
+plot "H/stress_line_yy_1.gpd" u 1:($2/10) w l ls 1
 
 
 set xtics ("20" 0.0, "21.25" 0.25, "23.25" 0.75, "25" 0.99) offset 0,-0.7
 
-set yrange [0:900]
-set ytics 0,300,900
+set yrange [0:90]
+set ytics 0,30,90
 #set ylabel "{/Symbol s_{/Nosymbol θθ}}" font "Serif, 30"
-set output "stress_line_yy_W.png"
-plot "W/stress_line_yy_1.gpd" w l ls 1
+set output "ring_fig/stress_line_yy_W.png"
+plot "W/stress_line_yy_1.gpd" u 1:($2/10) w l ls 1
 
-set yrange [-4:10]
-set ytics -2,2,8
+set yrange [-0.4:1]
+set ytics -0.2,0.2,0.8
 #set ylabel "{/Symbol s_{/Nosymbol zz}}" font "Serif, 30"
-set output "stress_line_zz_W.png"
-plot "W/stress_line_zz_2.gpd" w l ls 1
+set output "ring_fig/stress_line_zz_W.png"
+plot "W/stress_line_zz_2.gpd" u 1:($2/10) w l ls 1
 
 
 

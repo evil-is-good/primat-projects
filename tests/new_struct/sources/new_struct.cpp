@@ -1335,10 +1335,9 @@ void give_rectangle_with_border_condition(
         };
     };
 
-void set_cylinder_true(dealii::Triangulation< 3 > &triangulation, 
-            const double radius, cst ort, cst n_points_on_includ_border, cst n_slices)
+void set_ring_true(dealii::Triangulation< 2 > &triangulation, 
+            const double radius, cst n_points_on_includ_border)
 {
-    dealii::Triangulation<2> tria2d;
     vec<prmt::Point<2>> border;
     vec<st> type_border;
     give_rectangle_with_border_condition(
@@ -1350,13 +1349,34 @@ void set_cylinder_true(dealii::Triangulation< 3 > &triangulation,
     vec<vec<prmt::Point<2>>> inclusion(1);
     dealii::Point<2> center (0.5, 0.5);
     give_circ(inclusion[0], n_points_on_includ_border, radius, prmt::Point<2>(center));
-    ::set_grid(tria2d, border, inclusion, type_border);
+    ::set_grid(triangulation, border, inclusion, type_border);
+};
 
+void set_cylinder_true(dealii::Triangulation< 3 > &triangulation, 
+            const double radius, cst ort, cst n_points_on_includ_border, cst n_slices)
+{
+    dealii::Triangulation<2> tria2d;
+    // vec<prmt::Point<2>> border;
+    // vec<st> type_border;
+    // give_rectangle_with_border_condition(
+    //         border,
+    //         type_border,
+    //         arr<st, 4>{1,3,2,4},
+    //         10,
+    //         prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+    // vec<vec<prmt::Point<2>>> inclusion(1);
+    // dealii::Point<2> center (0.5, 0.5);
+    // give_circ(inclusion[0], n_points_on_includ_border, radius, prmt::Point<2>(center));
+    // ::set_grid(tria2d, border, inclusion, type_border);
+
+    set_ring_true (tria2d, radius, n_points_on_includ_border); 
     {
         std::ofstream out ("grid-igor.eps");
         dealii::GridOut grid_out;
         grid_out.write_eps (tria2d, out);
     };
+
+    dealii::Point<2> center (0.5, 0.5);
 
     dealii::GridGenerator::extrude_triangulation (tria2d, n_slices, 1.0, triangulation);
 
@@ -5623,6 +5643,7 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                     pp[cell->vertex_dof_index(i,0)] = cell->vertex(i);
                 };
             };
+            st size_2D = 0;
             for (st i = 0; i < 3; ++i)
             {
                 std::ofstream out (path+"temperature_2D_"+ort[i]+".bin", std::ios::out | std::ios::binary);
@@ -5631,6 +5652,7 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                     if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
                     {
                         out.write ((char *) &(slae.solution[i](j)), sizeof(dbl));
+                        ++size_2D;
                     };
                 };
                 out.close ();
@@ -5662,6 +5684,12 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                 };
                 out.close ();
             };
+
+            {
+                std::ofstream out (path+"solution_size_2D.bin", std::ios::out | std::ios::binary);
+                out.write ((char *) &size_2D, sizeof size_2D);
+                out.close ();
+            };
             for (st i = 0; i < 3; ++i)
             {
                 std::ofstream f(path+"temperature_2D_"+ort[i]+".gpd", std::ios::out);
@@ -5670,6 +5698,224 @@ void solve_heat_conduction_problem_on_cell_3d (cst flag)
                     if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
                     {
                         f << pp[j](x) << " " << pp[j](y) << " " << slae.solution[i](j) << std::endl;
+                    };
+                };
+                f.close ();
+            };
+        };
+    };
+};
+
+void solve_heat_conduction_problem_on_cell_3d_for_ring (cst flag, cdbl R, cst n_p)
+{
+    if (flag)
+    {  
+        enum {x, y, z};
+        // FILE *F;
+        // F = fopen("square.gpd", "w");
+        dbl size = 0.05;
+        // cdbl R = 0.25;
+        // cst n_p = 32;
+        {
+            Domain<3> domain;
+            {
+                // set_cylinder(domain.grid, 0.25, z, 3);
+                // set_ball(domain.grid, 0.40057, 7);
+                // set_ball(domain.grid, 0.4742, 4);
+                set_cylinder_true(domain.grid, R, z, n_p, 5);
+            };
+            dealii::FE_Q<3> fe(1);
+            domain.dof_init (fe);
+
+            OnCell::SystemsLinearAlgebraicEquations<3> slae;
+            OnCell::BlackOnWhiteSubstituter bows;
+            // BlackOnWhiteSubstituter bows;
+
+            LaplacianScalar<3> element_matrix (domain.dof_handler.get_fe());
+            // {
+            element_matrix.C .resize(2);
+            element_matrix.C[1][x][x] = 1.0e1;
+            element_matrix.C[1][x][y] = 0.0;
+            element_matrix.C[1][y][x] = 0.0;
+            element_matrix.C[1][y][y] = 1.0e1;
+            element_matrix.C[1][z][z] = 1.0e1;
+            element_matrix.C[0][x][x] = 1.0;
+            element_matrix.C[0][x][y] = 0.0;
+            element_matrix.C[0][y][x] = 0.0;
+            element_matrix.C[0][y][y] = 1.0;
+            element_matrix.C[0][z][z] = 1.0;
+            // HCPTools ::set_thermal_conductivity<2> (element_matrix.C, coef);  
+            // };
+            const bool scalar_type = 0;
+            // OnCell::prepare_system_equations<scalar_type> (slae, bows, domain);
+            // OnCell::prepare_system_equations_with_cubic_grid<3, 1> (slae, bows, domain);
+            OnCell::prepare_system_equations_alternate<3, 1, 3> (slae, bows, domain);
+
+            OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+            FOR(i, 0, 3)
+            {
+                vec<arr<dbl, 3>> coef_for_rhs(2);
+                FOR(j, 0, element_matrix.C.size())
+                {
+                    FOR(k, 0, 3)
+                    {
+                        coef_for_rhs[j][k] = element_matrix.C[j][i][k];
+                    };
+                };
+                OnCell::SourceScalar<3> element_rhsv (coef_for_rhs, domain.dof_handler.get_fe());
+                // Assembler::assemble_rhsv<2> (slae.rhsv[i], element_rhsv, domain.dof_handler);
+                OnCell::Assembler::assemble_rhsv<3> (slae.rhsv[i], element_rhsv, domain.dof_handler, bows);
+
+                dealii::SolverControl solver_control (5000000, 1e-12);
+                dealii::SolverCG<> solver (solver_control);
+                solver.solve (
+                        slae.matrix,
+                        slae.solution[i],
+                        slae.rhsv[i]
+                        ,dealii::PreconditionIdentity()
+                        );
+
+                FOR(j, 0, slae.solution[i].size())
+                    slae.solution[i][j] = slae.solution[i][bows.subst (j)];
+
+                normalization(/* domain.dof_handler, */ slae.solution[i]);
+            };
+
+            arr<arr<dealii::Vector<dbl>, 3>, 3> heat_flow_reale;
+            // OnCell::calculate_heat_flow<3>(slae.solution, slae.rhsv, element_matrix.C, heat_flow_reale);
+            calc_micro_heat_flow<3>(domain, slae.solution, element_matrix.C, heat_flow_reale);
+
+            str path = "ring_heat/raw_data/cell/";
+
+            {
+                arr<str, 3> vr = {"temperature_x.gpd", "temperature_y.gpd", "temperature_z.gpd"};
+                FOR(i, 0, 3)
+                    HCPTools ::print_temperature<3> (slae.solution[i], domain.dof_handler, path+vr[i]);
+            };
+            {
+                arr<str, 3> vr = {"temperature_x.vtk", "temperature_y.vtk", "temperature_z.vtk"};
+                FOR(i, 0, 3)
+                    HCPTools ::print_temperature<3> (slae.solution[i], domain.dof_handler, path+vr[i], dealii::DataOutBase::vtk);
+            };
+            HCPTools ::print_temperature_slice (slae.solution[x], domain.dof_handler, path+"temperature_slice_x.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][x], domain.dof_handler, path+"heat_flow_slice_xx.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[y][y], domain.dof_handler, path+"heat_flow_slice_yy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[z][z], domain.dof_handler, path+"heat_flow_slice_zz.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][y], domain.dof_handler, path+"heat_flow_slice_xy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[z][y], domain.dof_handler, path+"heat_flow_slice_zy.gpd", z, 0.5);
+            HCPTools ::print_temperature_slice (heat_flow_reale[x][z], domain.dof_handler, path+"heat_flow_slice_xz.gpd", z, 0.5);
+
+            auto meta_coef = OnCell::calculate_meta_coefficients_scalar<3> (
+                    domain.dof_handler, slae.solution, slae.rhsv, element_matrix.C);
+            printf("META %.15f %.15f %.15f\n", meta_coef[x][x], meta_coef[y][y], meta_coef[x][y]);
+            printf("META %.15f %.15f %.15f %.15f %.15f %.15f\n", 
+                    meta_coef[x][x], meta_coef[y][y], meta_coef[z][z],
+                    meta_coef[x][y], meta_coef[x][z], meta_coef[y][z]);
+
+            {
+                std::ofstream out (path+"meta_coef.bin", std::ios::out | std::ios::binary);
+                out.write ((char *) &meta_coef, sizeof meta_coef);
+                out.close ();
+            };
+
+            {
+                std::ofstream out (path+"solution_size.bin", std::ios::out | std::ios::binary);
+                auto size = slae.solution[0].size();
+                out.write ((char *) &size, sizeof size);
+                out.close ();
+            };
+
+            arr<str, 3> ort = {"x", "y", "z"};
+            // for (st i = 0; i < 3; ++i)
+            // {
+            //     std::ofstream out (path+"temperature_3D_"+ort[i]+".bin", std::ios::out | std::ios::binary);
+            //     for (st j = 0; j < slae.solution[i].size(); ++j)
+            //     {
+            //         out.write ((char *) &(slae.solution[i](j)), sizeof(dbl));
+            //     };
+            //     out.close ();
+            // };
+            // for (st i = 0; i < 3; ++i)
+            // {
+            //     for (st j = 0; j < 3; ++j)
+            //     {
+            //         std::ofstream out (path+"heat_flow_3D_"+ort[i]+ort[j]+".bin", std::ios::out | std::ios::binary);
+            //         for (st k = 0; k < heat_flow_reale[i][j].size(); ++k)
+            //         {
+            //             out.write ((char *) &(heat_flow_reale[i][j](k)), sizeof(dbl));
+            //         };
+            //         out.close ();
+            //     };
+            // };
+
+            vec<dealii::Point<3>> pp(domain.dof_handler.n_dofs());
+            for (auto cell = domain.dof_handler.begin_active (); cell != domain.dof_handler.end (); ++cell)
+            {
+                for (st i = 0; i < dealii::GeometryInfo<3>::vertices_per_cell; ++i)
+                {
+                    pp[cell->vertex_dof_index(i,0)] = cell->vertex(i);
+                };
+            };
+            st size_2D = 0;
+            for (st i = 0; i < 3; ++i)
+            {
+                std::ofstream out (path+"temperature_2D_"+ort[i]+".bin", std::ios::out | std::ios::binary);
+                for (st j = 0; j < slae.solution[i].size(); ++j)
+                {
+                    if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
+                    {
+                        out.write ((char *) &(slae.solution[i](j)), sizeof(dbl));
+                        ++size_2D;
+                    };
+                };
+                out.close ();
+            };
+            size_2D /= 3;
+            std::cout << "sizze " << " " << slae.solution[0].size() 
+                << " " << pp.size() << " " << size_2D << std::endl;
+            for (st i = 0; i < 3; ++i)
+            {
+                for (st j = 0; j < 3; ++j)
+                {
+                    std::ofstream out (path+"heat_flow_2D_"+ort[i]+ort[j]+".bin", std::ios::out | std::ios::binary);
+                    for (st k = 0; k < pp.size(); ++k)
+                    {
+                        if (std::abs(pp[k](z) - 0.5) < 1.0e-10)
+                        {
+                            out.write ((char *) &(heat_flow_reale[i][j](k)), sizeof(dbl));
+                        };
+                    };
+                    out.close ();
+                };
+            };
+            {
+                std::ofstream out (path+"coor_2D.bin", std::ios::out | std::ios::binary);
+                for (st j = 0; j < pp.size(); ++j)
+                {
+                    if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
+                    {
+                        out.write ((char *) &(pp[j](x)), sizeof(dbl));
+                        out.write ((char *) &(pp[j](y)), sizeof(dbl));
+                    };
+                };
+                out.close ();
+            };
+
+            {
+                std::ofstream out (path+"solution_size_2D.bin", std::ios::out | std::ios::binary);
+                out.write ((char *) &size_2D, sizeof size_2D);
+                out.close ();
+            };
+            for (st i = 0; i < 3; ++i)
+            {
+                std::ofstream f(path+"temperature_2D_"+ort[i]+".gpd", std::ios::out);
+                for (st j = 0; j < slae.solution[i].size(); ++j)
+                {
+                    if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
+                    {
+                        f << pp[j](x) << " " << pp[j](y) << " " << slae.solution[i](j)
+                            << " " << heat_flow_reale[i][0](j) << std::endl;
                     };
                 };
                 f.close ();
@@ -12966,6 +13212,46 @@ void solve_ring_problem_3d (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_cell, c
     };
 };
 
+void get_macro_heat_coef(ATools::SecondOrderTensor &C)
+{
+    ATools::SecondOrderTensor Cxy;
+    // std::ifstream in ("ring_heat/raw_data/cell/meta_coef.bin", std::ios::in | std::ios::binary);
+    // in.read ((char *) &Cxy, sizeof Cxy);
+    // in.close ();
+    {
+        enum {x, y, z};
+        Cxy[x][x] = 1.0;
+        Cxy[x][y] = 0.0;
+        Cxy[x][z] = 0.0;
+        Cxy[y][x] = 0.0;
+        Cxy[y][y] = 1.0;
+        Cxy[y][z] = 0.0;
+        Cxy[z][x] = 0.0;
+        Cxy[z][y] = 0.0;
+        Cxy[z][z] = 1.0;
+    };
+    arr<arr<dbl,3>,3> A = {
+        arr<dbl,3>{1.0, 0.0, 0.0},
+        arr<dbl,3>{0.0, 0.0, -1.0},
+        arr<dbl,3>{0.0, 1.0, 0.0}
+    };
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            C[i][j] = 0.0;
+
+            for (st a = 0; a < 3; ++a)
+            {
+                for (st b = 0; b < 3; ++b)
+                {
+                    C[i][j] += A[i][a]*A[j][b]*Cxy[a][b];
+                };
+            };
+        };
+    };
+};
+
 template <cst n_ref>
 void solve_ring_problem_3d_heat (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_cell, cdbl T)
 {
@@ -12999,11 +13285,11 @@ void solve_ring_problem_3d_heat (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_ce
                                 radius_vector .push_back(p2d);
                                 cell->face(i)->set_boundary_indicator(radius_vector.size()+3);
                             };
-                            if (std::abs(p(2) - 0.0) < 1.0e-5)
+                            if (std::abs(p(z) - 0.0) < 1.0e-5)
                             {
                                 cell->face(i)->set_boundary_indicator(1);
                             };
-                            if (std::abs(p(2) - H) < 1.0e-5)
+                            if (std::abs(p(z) - H) < 1.0e-5)
                             {
                                 cell->face(i)->set_boundary_indicator(2);
                             };
@@ -13053,39 +13339,40 @@ void solve_ring_problem_3d_heat (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_ce
         LaplacianScalar<3> element_matrix (domain.dof_handler.get_fe());
 
         ATools::SecondOrderTensor C;
-        {
-            ATools::SecondOrderTensor Cxy;
-            std::ifstream in ("ring_heat/raw_data/cell/meta_coef.bin", std::ios::in | std::ios::binary);
-            in.read ((char *) &Cxy, sizeof Cxy);
-            in.close ();
-            // {
-            //     Cxy[x][x] = 1.0;
-            //     Cxy[x][y] = 0.0;
-            //     Cxy[x][z] = 0.0;
-            //     Cxy[y][x] = 0.0;
-            //     Cxy[y][y] = 1.0;
-            //     Cxy[y][z] = 0.0;
-            //     Cxy[z][x] = 0.0;
-            //     Cxy[z][y] = 0.0;
-            //     Cxy[z][z] = 1.0;
-            // };
-            arr<arr<dbl,3>,3> A = {
-                arr<dbl,3>{1.0, 0.0, 0.0},
-                arr<dbl,3>{0.0, 0.0, -1.0},
-                arr<dbl,3>{0.0, 1.0, 0.0}
-            };
-            for (st i = 0; i < 3; ++i)
-            for (st j = 0; j < 3; ++j)
-            {
-                C[i][j] = 0.0;
-
-                for (st a = 0; a < 3; ++a)
-                for (st b = 0; b < 3; ++b)
-                {
-                    C[i][j] += A[i][a]*A[j][b]*Cxy[a][b];
-                };
-            };
-        };
+        get_macro_heat_coef(C);
+        // {
+        //     ATools::SecondOrderTensor Cxy;
+        //     // std::ifstream in ("ring_heat/raw_data/cell/meta_coef.bin", std::ios::in | std::ios::binary);
+        //     // in.read ((char *) &Cxy, sizeof Cxy);
+        //     // in.close ();
+        //     {
+        //         Cxy[x][x] = 1.0;
+        //         Cxy[x][y] = 0.0;
+        //         Cxy[x][z] = 0.0;
+        //         Cxy[y][x] = 0.0;
+        //         Cxy[y][y] = 1.0;
+        //         Cxy[y][z] = 0.0;
+        //         Cxy[z][x] = 0.0;
+        //         Cxy[z][y] = 0.0;
+        //         Cxy[z][z] = 1.0;
+        //     };
+        //     arr<arr<dbl,3>,3> A = {
+        //         arr<dbl,3>{1.0, 0.0, 0.0},
+        //         arr<dbl,3>{0.0, 0.0, -1.0},
+        //         arr<dbl,3>{0.0, 1.0, 0.0}
+        //     };
+        //     for (st i = 0; i < 3; ++i)
+        //     for (st j = 0; j < 3; ++j)
+        //     {
+        //         C[i][j] = 0.0;
+        //
+        //         for (st a = 0; a < 3; ++a)
+        //         for (st b = 0; b < 3; ++b)
+        //         {
+        //             C[i][j] += A[i][a]*A[j][b]*Cxy[a][b];
+        //         };
+        //     };
+        // };
 
         element_matrix.C .resize (radius_vector_cell.size());
         for (st n = 0; n < radius_vector_cell.size(); ++n)
@@ -13122,18 +13409,18 @@ void solve_ring_problem_3d_heat (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_ce
 
         // cdbl P = 1.0;
         vec<BoundaryValueScalar<3>> bound (radius_vector.size()+3);
-        bound[0].function      = [] (const dealii::Point<3> &p) {return 0.0;};
+        bound[0].function      = [] (const dealii::Point<3> &p) {return 1.0;};
         bound[0].boundary_id   = 0;
-        // bound[0].boundary_type = TBV::Dirichlet;
-        bound[0].boundary_type = TBV::Neumann;
+        bound[0].boundary_type = TBV::Dirichlet;
+        // bound[0].boundary_type = TBV::Neumann;
         bound[1].function      = [] (const dealii::Point<3> &p) {return 0.0;};
         bound[1].boundary_id   = 1;
-        bound[1].boundary_type = TBV::Dirichlet;
-        // bound[1].boundary_type = TBV::Neumann;
-        bound[2].function      = [] (const dealii::Point<3> &p) {return 1.0;};
+        // bound[1].boundary_type = TBV::Dirichlet;
+        bound[1].boundary_type = TBV::Neumann;
+        bound[2].function      = [] (const dealii::Point<3> &p) {return 0.0;};
         bound[2].boundary_id   = 2;
-        bound[2].boundary_type = TBV::Dirichlet;
-        // bound[1].boundary_type = TBV::Neumann;
+        // bound[2].boundary_type = TBV::Dirichlet;
+        bound[2].boundary_type = TBV::Neumann;
         // bound[2].function      = [] (const dealii::Point<3> &p) {return arr<dbl, 3>{0.0, 0.0, 0.0};};
         // bound[2].boundary_id   = 3;
         // bound[2].boundary_type = TBV::Neumann;
@@ -13160,9 +13447,9 @@ void solve_ring_problem_3d_heat (cst flag, cdbl H, cdbl W, cdbl Ri, cst n_rad_ce
             // bound[i+3].boundary_id   = i+4;
             // bound[i+3].boundary_type = TBV::Neumann;
             // bound[i].boundary_type = TBV::Dirichlet;
-            bound[i+3].function      = [] (const dealii::Point<3> &p) {return 1.0;};
+            bound[i+3].function      = [] (const dealii::Point<3> &p) {return 10.0;};
             bound[i+3].boundary_id   = i+3;
-            bound[i+2].boundary_type = TBV::Dirichlet;
+            bound[i+3].boundary_type = TBV::Dirichlet;
             // bound[i+3].boundary_type = TBV::Neumann;
         };
 
@@ -15846,7 +16133,8 @@ void get_macro_grad_temperature(
     };
 };
 
-void get_micro_heat_flow_2D (
+void get_micro_temperature_and_heat_flow_2D (
+        arr<dealii::Vector<dbl>, 3> &T,
         arr<arr<dealii::Vector<dbl>, 3>, 3> &q,
         Domain<2> &domain,
         const dealii::FiniteElement<2> &fe,
@@ -15864,69 +16152,293 @@ void get_micro_heat_flow_2D (
 
     // st size = domain.dof_handler.n_dofs();
 
-    auto size = 0.0;
+    st size = 0;
     {
-        std::ifstream in (path+"solution_size.bin", std::ios::out | std::ios::binary);
+        std::ifstream in (path+"solution_size_2D.bin", std::ios::out | std::ios::binary);
         in.read ((char *) &size, sizeof size);
         in.close ();
     };
     std::cout << "size" << " " << size << std::endl;
-    //
-    // vec<dealii::Point<3>> pp(size);
+
+    vec<dealii::Point<3>> pp(size);
+    {
+        std::ifstream in (path+"coor_2D.bin", std::ios::out | std::ios::binary);
+        for (st j = 0; j < size; ++j)
+        {
+            in.read ((char *) &(pp[j](x)), sizeof(dbl));
+            in.read ((char *) &(pp[j](y)), sizeof(dbl));
+        };
+        in.close ();
+    };
+
+    arr<dealii::Vector<dbl>, 3> tmp_T;
+    for (st i = 0; i < 3; ++i)
+    {
+        tmp_T[i] .reinit (size);
+        std::ifstream in (path+"temperature_2D_"+ort[i]+".bin", std::ios::out | std::ios::binary);
+        for (st j = 0; j < size; ++j)
+        {
+            in.read ((char *) &(tmp_T[i](j)), sizeof(dbl));
+        };
+        in.close ();
+    };
+
+    arr<arr<dealii::Vector<dbl>, 3>, 3> tmp_q;
+    for (st i = 0; i < 3; ++i)
+    {
+        for (st j = 0; j < 3; ++j)
+        {
+            tmp_q[i][j] .reinit (size);
+            std::ifstream in (path+"heat_flow_2D_"+ort[i]+ort[j]+".bin", std::ios::out | std::ios::binary);
+            for (st k = 0; k < size; ++k)
+            {
+                in.read ((char *) &(tmp_q[i][j](k)), sizeof(dbl));
+            };
+            in.close ();
+        };
+    };
+    // for (st i = 0; i < size; ++i)
     // {
-    //     std::ifstream in (path+"coor_2D.bin", std::ios::out | std::ios::binary);
-    //     for (st j = 0; j < size; ++j)
-    //     {
-    //         in.read ((char *) &(pp[j](x)), sizeof(dbl));
-    //         in.read ((char *) &(pp[j](y)), sizeof(dbl));
-    //     };
-    //     in.close ();
+    //     std::cout << tmp[0][0](i) << std::endl;
     // };
 
-    // arr<arr<dealii::Vector<dbl>, 3>, 3> tmp;
-    // for (st i = 0; i < 3; ++i)
+    // Строим треангуляцию
     // {
-    //     for (st j = 0; j < 3; ++j)
-    //     {
-    //         tmp .reinit ();
-    //         std::ofstream out (path+"heat_flow_2D_"+ort[i]+ort[j]+".bin", std::ios::out | std::ios::binary);
-    //         for (st k = 0; k < heat_flow_reale[i][j].size(); ++k)
-    //         {
-    //             if (std::abs(pp[j](z) - 0.5) < 1.0e-10)
-    //             {
-    //                 out.write ((char *) &(heat_flow_reale[i][j](k)), sizeof(dbl));
-    //             };
-    //         };
-    //         out.close ();
-    //     };
+    //     vec<prmt::Point<2>> border;
+    //     vec<st> type_border;
+    //     give_rectangle_with_border_condition(
+    //             border,
+    //             type_border,
+    //             arr<st, 4>{1,3,2,4},
+    //             10,
+    //             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(1.0, 1.0));
+    //     vec<vec<prmt::Point<2>>> inclusion(1);
+    //     dbl radius = R;
+    //     st n_p_on_inc = n_p;
+    //     dealii::Point<2> center (0.5, 0.5);
+    //     give_circ(inclusion[0], n_p_on_inc, radius, prmt::Point<2>(center));
+    //     ::set_grid(domain.grid, border, inclusion, type_border);
     // };
-    //
-    // T .reinit(size);
-    // {
-    //     auto cell = domain.dof_handler.begin_active();
-    //     auto endc = domain.dof_handler.end();
-    //     for (; cell != endc; ++cell)
-    //     {
-    //         for (st i = 0; i < dealii::GeometryInfo<2>::vertices_per_cell; ++i)
-    //         {
-    //             auto p = cell->vertex(i);
-    //             auto indx = cell->vertex_dof_index(i, 0);
-    //             for (st j = 0; j < size; ++j)
-    //             {
-    //                 // std::cout << p(x) << " " << p(y) << " " << pp[j](x)<< " " <<  pp[j](y) << std::endl;
-    //                 if ((std::abs(p(x) - pp[j](x)) < 1.0e-5) and (std::abs(p(y) - pp[j](y)) < 1.0e-5))
-    //                 {
-    //                     // std::cout << p(x) << " " << p(y) << std::endl;
-    //                     // puts("12345");
-    //                    T[indx] = tmp[j];
-    //                    break;
-    //                 };
-    //             };
-    //             // break;
-    //         };
-    //         // break;
-    //     };
-    // };
+    set_ring_true(domain.grid, R, n_p);
+    domain.dof_init (fe);
+    std::cout << "size " << domain.dof_handler.n_dofs() << std::endl;
+
+    for (st i = 0; i < 3; ++i)
+    {
+        T[i] .reinit(size);
+        for (st j = 0; j < 3; ++j)
+        {
+            q[i][j] .reinit(size);
+        };
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            for (st v = 0; v < dealii::GeometryInfo<2>::vertices_per_cell; ++v)
+            {
+                auto p = cell->vertex(v);
+                auto indx = cell->vertex_dof_index(v, 0);
+                for (st n = 0; n < size; ++n)
+                {
+                    if ((std::abs(p(x) - pp[n](x)) < 1.0e-5) and (std::abs(p(y) - pp[n](y)) < 1.0e-5))
+                    {
+                        // std::cout << n << std::endl;
+                        for (st i = 0; i < 3; ++i)
+                        {
+                            T[i][indx] = tmp_T[i][n];
+                            for (st j = 0; j < 3; ++j)
+                            {
+                                q[i][j][indx] = tmp_q[i][j][n];
+                            };
+                        };
+                        break;
+                    };
+                };
+            };
+        };
+    };
+};
+
+template <cst n_ref>
+void get_real_temperature_and_heat_flow(
+        dealii::Vector<dbl> &T_macro_a,
+        arr<dealii::Vector<dbl>, 3> &T_micro_a,
+        dealii::Vector<dbl> &T,
+
+        arr<dealii::Vector<dbl>, 3> &grad_macro_a,
+        arr<arr<dealii::Vector<dbl>, 3>, 3> &q_micro_a,
+        arr<dealii::Vector<dbl>, 3> &q,
+
+        Domain<2> &domain_macro, 
+        Domain<2> &domain_micro, 
+        Domain<2> &domain, 
+
+        const dealii::FiniteElement<2> &fe,
+        cst Ncx, cst Ncy)
+{
+    enum {x, y, z};
+
+    cdbl bx = 1.0 / Ncx;
+    cdbl by = 1.0 / Ncy;
+
+    puts("!!!!!!11");
+    dealii::GridGenerator::hyper_cube(domain.grid);
+    domain.grid.refine_global(n_ref);
+    domain.dof_init (fe);
+
+    T .reinit (domain.dof_handler.n_dofs());
+
+    for (st i = 0; i < 3; ++i)
+    {
+        q[i] .reinit (domain.dof_handler.n_dofs());
+    };
+    puts("!!!!!!12");
+
+    auto q_micro = [&q_micro_a, &domain_micro] 
+        (cst alpha, cst beta, const dealii::Point<2> &p){
+            return dealii::VectorTools::point_value(domain_micro.dof_handler, q_micro_a[alpha][beta], p);
+        };
+
+    puts("!!!!!!13");
+
+    auto T_micro = [&T_micro_a, &domain_micro] 
+        (cst i, const dealii::Point<2> &p){
+            return dealii::VectorTools::point_value(domain_micro.dof_handler, T_micro_a[i], p);
+        };
+
+    auto T_macro = [&T_macro_a, &domain_macro] 
+        (const dealii::Point<2> &p){
+            return dealii::VectorTools::point_value(domain_macro.dof_handler, T_macro_a, p);
+        };
+
+    arr<dealii::Vector<dbl>, 3> grad_macro_approx;
+    for (st i = 0; i < 3; ++i)
+    {
+        grad_macro_approx[i] .reinit (domain.dof_handler.n_dofs());
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            // arr<prmt::Point<2>, 4> points = {
+            //         cell->vertex(0),
+            //         cell->vertex(1),
+            //         cell->vertex(3),
+            //         cell->vertex(2)
+            // };
+            for (st n = 0; n < dealii::GeometryInfo<2>::vertices_per_cell; ++n)
+            {
+                const dealii::Point<2> p = cell -> vertex(n);
+                cst indx = cell ->vertex_dof_index(n, 0);
+                for (st i = 0; i < 3; ++i)
+                {
+                        // arr<dbl, 4> values = {
+                        //     deform_macro_a[i][j](cell ->vertex_dof_index (0, 0)),
+                        //     deform_macro_a[i][j](cell ->vertex_dof_index (1, 0)),
+                        //     deform_macro_a[i][j](cell ->vertex_dof_index (3, 0)),
+                        //     deform_macro_a[i][j](cell ->vertex_dof_index (2, 0))
+                        // };
+                        // Scalar4PointsFunc<2> func(points, values);
+                        // deform_macro_approx[i][j](indx) = func(p);
+                        // deform_macro_approx[i][j](indx) = deform_macro_a[i][j](indx);
+                        grad_macro_approx[i](indx) = dealii::VectorTools::point_value(
+                                domain_macro.dof_handler, grad_macro_a[i], p);
+                };
+            };
+        };
+    };
+    {
+        auto cell = domain.dof_handler.begin_active();
+        auto endc = domain.dof_handler.end();
+        for (; cell != endc; ++cell)
+        {
+            for (st n = 0; n < dealii::GeometryInfo<2>::vertices_per_cell; ++n)
+            // for (st n = 0; n< 16641;++n)
+            // cst n = 0;
+            {
+                const dealii::Point<2> p = cell -> vertex(n);
+                cst indx = cell ->vertex_dof_index(n, 0);
+                // const dealii::Point<2> p(0.1, 0.25);
+                // cst indx = 0;;
+                dealii::Point<2> p_ksi = p;
+                for (st i = 0; i < Ncx; ++i)
+                {
+                    if (p_ksi(x) < bx) break;
+                    p_ksi(x) -= bx;
+                };
+                p_ksi(x) /= bx;
+                for (st i = 0; i < Ncy; ++i)
+                {
+                    if (p_ksi(y) < by) break;
+                    p_ksi(y) -= by;
+                };
+                p_ksi(y) /= by;
+                // std::cout << p << " " << p_ksi << std::endl;
+                {
+                    dbl temp_T = 0.0;
+                    for (st i = 0; i < 3; ++i)
+                    {
+                        temp_T += T_micro(i, p_ksi) * grad_macro_approx[i](indx);
+                    };
+                    T(indx) = T_macro(p) + temp_T;
+                    // T(indx) = 
+                    //     // T_micro(0, p_ksi);
+                    //     // * 
+                    //     grad_macro_approx[0](indx);
+                }
+                for (st i = 0; i < 3; ++i)
+                {
+                    dbl temp_q = 0.0;
+                    for (st j = 0; j < 1; ++j)
+                    {
+                        temp_q += 
+                            q_micro(i,j, p_ksi) * 
+                            // 5.0;
+                            // 0.25 *
+                            grad_macro_approx[j](indx);
+                        // if (p(0) == 0.5)
+                        // {
+                        //     std::cout <<q_micro(i,j, p_ksi) << " " <<grad_macro_approx[j](indx) << " " << temp_q << std::endl;
+                        // };
+                    };
+                    q[i](indx) = -temp_q;
+                };
+                // for (st i = 0; i < 3; ++i)
+                // {
+                //     for (st j = 0; j < 3; ++j)
+                //     {
+                //         stress[i][j](indx) =
+                //             stress_micro(arr<i32, 3>{1, 0, 0}, x, i, j, p_ksi) * deform_macro_approx[x][x](indx) +
+                //             // stress_micro(arr<i32, 3>{1, 0, 0}, y, i, j, p_ksi) * deform_macro_approx[x][y](indx) +
+                //             // stress_micro(arr<i32, 3>{1, 0, 0}, z, i, j, p_ksi) * deform_macro_approx[x][z](indx) +
+                //             // stress_micro(arr<i32, 3>{0, 1, 0}, x, i, j, p_ksi) * deform_macro_approx[y][x](indx) +
+                //             stress_micro(arr<i32, 3>{0, 1, 0}, y, i, j, p_ksi) * deform_macro_approx[y][y](indx) +
+                //             // stress_micro(arr<i32, 3>{0, 1, 0}, z, i, j, p_ksi) * deform_macro_approx[y][z](indx) +
+                //             // stress_micro(arr<i32, 3>{0, 0, 1}, x, i, j, p_ksi) * deform_macro_approx[z][x](indx) +
+                //             // stress_micro(arr<i32, 3>{0, 0, 1}, y, i, j, p_ksi) * deform_macro_approx[z][y](indx) +
+                //             stress_micro(arr<i32, 3>{0, 0, 1}, z, i, j, p_ksi) * deform_macro_approx[z][z](indx)
+                //             ;
+                //         deform[i][j](indx) =
+                //             deform_micro(arr<i32, 3>{1, 0, 0}, x, i, j, p_ksi) * deform_macro_approx[x][x](indx) +
+                //             // deform_micro(arr<i32, 3>{1, 0, 0}, y, i, j, p_ksi) * deform_macro_approx[x][y](indx) +
+                //             // deform_micro(arr<i32, 3>{1, 0, 0}, z, i, j, p_ksi) * deform_macro_approx[x][z](indx) +
+                //             // deform_micro(arr<i32, 3>{0, 1, 0}, x, i, j, p_ksi) * deform_macro_approx[y][x](indx) +
+                //             deform_micro(arr<i32, 3>{0, 1, 0}, y, i, j, p_ksi) * deform_macro_approx[y][y](indx) +
+                //             // deform_micro(arr<i32, 3>{0, 1, 0}, z, i, j, p_ksi) * deform_macro_approx[y][z](indx) +
+                //             // deform_micro(arr<i32, 3>{0, 0, 1}, x, i, j, p_ksi) * deform_macro_approx[z][x](indx) +
+                //             // deform_micro(arr<i32, 3>{0, 0, 1}, y, i, j, p_ksi) * deform_macro_approx[z][y](indx) +
+                //             deform_micro(arr<i32, 3>{0, 0, 1}, z, i, j, p_ksi) * deform_macro_approx[z][z](indx)
+                //             ;
+                //     };
+                // };
+            };
+        };
+    };
+
+    puts("!!!!!!14");
 };
 
 template <cst n_ref_macro, cst n_ref_real>
@@ -15951,30 +16463,30 @@ void calculate_real_heat_flow_in_ring_arbitrary_grid_alternate(
         for (st i = 0; i < 3; ++i)
         {
             HCPTools::print_temperature<2>(grad_macro[i], domain_macro.dof_handler, 
+                    str("ring_heat/macro/grad_") + ort[i] + ".gpd");
+        };
+
+        arr<dealii::Vector<dbl>, 3> q_macro;
+        ATools::SecondOrderTensor C;
+        get_macro_heat_coef(C);
+        for (st i = 0; i < 3; ++i)
+        {
+            q_macro[i] .reinit (domain_macro.dof_handler.n_dofs());
+            for (st n = 0; n < domain_macro.dof_handler.n_dofs(); ++n)
+            {
+                q_macro[i](n) = 0.0;
+                for (st j = 0; j < 3; ++j)
+                {
+                    q_macro[i](n) += C[i][j] * grad_macro[j](n);
+                };
+                q_macro[i](n) *= -1.0;
+            };
+        };
+        for (st i = 0; i < 3; ++i)
+        {
+            HCPTools::print_temperature<2>(q_macro[i], domain_macro.dof_handler, 
                     str("ring_heat/macro/q_") + ort[i] + ".gpd");
         };
-        //
-        // arr<dealii::Vector<dbl>, 3> q_macro;
-        // ATools::SecondOrderTensor C;
-        // get_macro_heat_coef(C);
-        // for (st i = 0; i < 3; ++i)
-        // {
-        //     for (st j = 0; j < 3; ++j)
-        //     {
-        //         stress_macro[i][j] .reinit (domain_macro.dof_handler.n_dofs());
-        //         for (st n = 0; n < domain_macro.dof_handler.n_dofs(); ++n)
-        //         {
-        //             stress_macro[i][j](n) = 0.0;
-        //             for (st k = 0; k < 3; ++k)
-        //             {
-        //                 for (st l = 0; l < 3; ++l)
-        //                 {
-        //                     stress_macro[i][j](n) += C[i][j][k][l] * deform_macro[k][l](n);
-        //                 };
-        //             };
-        //         };
-        //     };
-        // };
         // puts("C[][][][]");
         // std::cout << C[x][x][x][x] << " " << C[x][x][y][y] << " " << C[x][x][z][z] << std::endl;
         // for (st i = 0; i < 3; ++i)
@@ -15990,31 +16502,24 @@ void calculate_real_heat_flow_in_ring_arbitrary_grid_alternate(
         arr<dealii::Vector<dbl>, 3> T_micro;
         arr<arr<dealii::Vector<dbl>, 3>, 3> q_micro;
         Domain<2> domain_micro;
-        get_micro_heat_flow_2D (q_micro, domain_micro, fe, R_fiber, n_p, "ring_heat/raw_data/cell/");
+        get_micro_temperature_and_heat_flow_2D (T_micro, q_micro, domain_micro, fe, R_fiber, n_p, "ring_heat/raw_data/cell/");
         puts("!!!!!!!!!5");
-        // approx_iteration (2, 
-        //         [&stress_micro, &deform_micro, &domain_micro]
-        //         (arr<i32, 3> a, cst nu, cst alpha){
-        //         arr<str, 3> ort = {"x", "y", "z"};
-        //         arr<str, 3> aprx = {"0", "1", "2"};
-        //         for (st i = 0; i < 3; ++i)
-        //         {
-        //         str name = aprx[a[0]]+str("_")+aprx[a[1]]+str("_")+aprx[a[2]]+str("_")+ort[nu]+str("_")+ort[alpha]+ort[i];
-        //         HCPTools::print_temperature<2>(
-        //             stress_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro/stress/") + name +".gpd");
-        //         HCPTools::print_temperature<2>(
-        //             deform_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro/deform/") + name +".gpd");
-        //         // HCPTools::print_temperature<2>(
-        //         //     deform_micro[a][nu][alpha][i], domain_micro.dof_handler, str("ring/micro_deform_") + name +".gpd");
-        //         };
-        //         });
-        // puts("!!!!!!10");
-        //
-        //
-        // arr<dealii::Vector<dbl>, 3> move_real;
-        // arr<arr<dealii::Vector<dbl>, 3>, 3> stress_real;
-        // arr<arr<dealii::Vector<dbl>, 3>, 3> deform_real;
-        // Domain<2> domain_real;
+        for (st i = 0; i < 3; ++i)
+        {
+                HCPTools::print_temperature<2>(T_micro[i], domain_micro.dof_handler, 
+                        str("ring_heat/micro/T_") + ort[i] + ".gpd");
+            for (st j = 0; j < 3; ++j)
+            {
+                HCPTools::print_temperature<2>(q_micro[i][j], domain_micro.dof_handler, 
+                        str("ring_heat/micro/q_") + ort[i] + ort[j] + ".gpd");
+            };
+        };
+
+
+
+        dealii::Vector<dbl> T_real;
+        arr<dealii::Vector<dbl>, 3> q_real;
+        Domain<2> domain_real;
         // // get_real_move_and_stress<n_ref_real>(
         // //         move_macro,   move_micro,   move_real, 
         // //         deform_macro, deform_micro, deform_real, 
@@ -16031,37 +16536,18 @@ void calculate_real_heat_flow_in_ring_arbitrary_grid_alternate(
         // //                 str("ring/real/deform/") + ort[i] + ort[j] + ".gpd");
         // //     };
         // // };
-        // get_real_move_and_stress<n_ref_real>(
-        //         move_macro,   move_micro,   move_real, 
-        //         deform_macro, deform_micro, deform_real, 
-        //         stress_micro, stress_real, 
-        //         domain_macro, domain_micro, domain_real,
-        //         fe, Ncx, Ncy);
-        // for (st i = 0; i < 3; ++i)
-        // {
-        //     for (st j = 0; j < 3; ++j)
-        //     {
-        //         HCPTools::print_temperature<2>(stress_real[i][j], domain_real.dof_handler, 
-        //                 str("ring/real/stress/") + ort[i] + ort[j] + ".gpd");
-        //         HCPTools::print_temperature<2>(deform_real[i][j], domain_real.dof_handler, 
-        //                 str("ring/real/deform/") + ort[i] + ort[j] + ".gpd");
-        //         // HCPTools::print_temperature<2>(deform_macro[i][j], domain_macro.dof_handler, 
-        //         //         str("ring/real_stress_") + ort[i] + ort[j] + ".gpd");
-        //     };
-        // };
-        // // HCPTools::print_temperature_slice (stress_real[z][z], 
-        // //         domain_real.dof_handler,
-        // //         "stress_line_zz.gpd",
-        // //         y,
-        // //         0.2);
-        // // // for (st i = 0; i < 3; ++i)
-        // // // {
-        // // //     for (st j = 0; j < 3; ++j)
-        // // //     {
-        // // //         HCPTools::print_temperature<2>(deform_real[i][j], domain_real.dof_handler, 
-        // // //                 str("ring/real_deform_") + ort[i] + ort[j] + ".gpd");
-        // // //     };
-        // // // };
+        get_real_temperature_and_heat_flow<n_ref_real>(
+                T_macro,   T_micro,   T_real, 
+                grad_macro, q_micro, q_real, 
+                domain_macro, domain_micro, domain_real,
+                fe, Ncx, Ncy);
+
+        HCPTools::print_temperature<2>(T_real, domain_real.dof_handler, str("ring_heat/real/T.gpd"));
+        for (st i = 0; i < 3; ++i)
+        {
+            HCPTools::print_temperature<2>(q_real[i], domain_real.dof_handler, 
+                    str("ring_heat/real/q_") + ort[i] + ".gpd");
+        };
     };
 };
 
@@ -16527,7 +17013,7 @@ int main()
         cdbl dx = W / (Npx-1);
         cdbl dy = 1.0 / (Npy-1);
         solve_approx_cell_elastic_problem (0, 10.0, 0.25, R_fiber, n_p);
-        solve_ring_problem_3d<n_ref>(0, H, W, Ri, 1 << 4, P);
+        solve_ring_problem_3d<n_ref>(1, H, W, Ri, 1 << 3, P);
         calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(
                 0, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
     };
@@ -16536,17 +17022,17 @@ int main()
     solve_plate_with_hole_problem (0);
 
     {
-        cst n_ref = 4;
+        cst n_ref = 6;
         cst n_ref_real = 7;
 
         cdbl ratio = 8.0;
         cdbl H = 1.0;
         cdbl W = 2.0;
-        cdbl Ri = 10.0;
+        cdbl Ri = 20.0;
         cdbl Ro = Ri + W;
         cdbl P = 5.0;//1.0 / 8.0;// / ratio;
         cdbl R_fiber = 0.25;
-        cst n_p = 64;
+        cst n_p = 32;
 
         cst Ncx = 5;
         cst Ncy = 5; //Ncx * ratio;
@@ -16557,10 +17043,10 @@ int main()
         cdbl dx = W / (Npx-1);
         cdbl dy = 1.0 / (Npy-1);
         // solve_approx_cell_elastic_problem (0, 10.0, 0.25, R_fiber, n_p);
-        solve_heat_conduction_problem_on_cell_3d (0);
-        solve_ring_problem_3d_heat<n_ref>(0, H, W, Ri, 1 << 4, P);
+        solve_heat_conduction_problem_on_cell_3d_for_ring (0, R_fiber, n_p);
+        solve_ring_problem_3d_heat<n_ref>(0, H, W, Ri, 1 << 5, P);
         calculate_real_heat_flow_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(
-                1, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
+                0, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
     };
 
 
