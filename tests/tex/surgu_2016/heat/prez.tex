@@ -1,0 +1,953 @@
+
+\documentclass{beamer} 
+\usepackage{beamerthemesplit} 
+
+\usetheme{Madrid}%Frankfurt} 
+%Boadilla}
+\usecolortheme{default}
+
+\setbeamertemplate{footline}{%
+    \hspace{0.94\paperwidth}%
+    \usebeamerfont{title in head/foot}%
+    \large{\insertframenumber}%
+}
+
+\setbeamertemplate{navigation symbols}{}
+
+% Выпишем часть возможных стилей, некоторые из них могут содержать
+
+% дополнительные опции
+
+% default, Bergen, Madrid, AnnArbor,Pittsburg, Rochester, 
+
+% Antiles, Montpellier, Berkley, Berlin, CambridgeUS
+
+% 
+
+% Далее пакеты, необходимые вам для создания презентации
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{amssymb,amsfonts,amsmath,mathtext}
+\usepackage{cite,enumerate,float,indentfirst}
+\usepackage{graphicx}
+% \usepackage[usenames]{color}
+\usepackage{colortbl}
+\usepackage{graphicx,xcolor}
+
+%\DeclareSymbolFont{letters}{OT1}{cmr}{m}{n}
+
+\usefonttheme[stillsansserifsmall]{serif}
+%\usefonttheme[onlymath]{serif}
+
+\title{Расчет температурного поля обжимного кольца выполненного из композитного волокнистого материала}
+\author{А.Ф. Власко, аспирант}
+\institute{Сургутский государственный университет (Сургут) \\
+\vspace{0.5cm}
+Научный руководитель --- д-р.ф.-м.н. {\bf Г.Л. Горынин}}
+\date{Сургут, 2016}
+
+
+\begin{document} 
+
+\maketitle
+
+\frame{ \frametitle{Периодическая среда} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{text7303}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Обжимное кольцо изготовленное из волокнистого материала} 
+
+% \begin{figure}
+%     \begin{center}
+%         \includegraphics[scale=0.45]{ring}
+%     \end{center}
+% \end{figure}
+%
+% \begin{figure}
+%     \begin{center}
+%         \includegraphics[scale=0.45]{slice}
+%     \end{center}
+% \end{figure}
+
+\begin{figure}[h]
+    \begin{center}
+        \begin{minipage}[h]{0.4\linewidth}
+            \includegraphics[width=1\linewidth]{ring} \\ \center{Кольцо}
+            % \caption{Кольцо.} %% подпись к рисунку
+        \end{minipage}
+        \hfill 
+        \begin{minipage}[h]{0.4\linewidth}
+        \includegraphics[width=1\linewidth]{slice} \\ \center{Поперечное сечение кольца}
+            % \caption{Сечение кольца.}
+        \end{minipage}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Постановка задачи} 
+
+\text{Стационарное уравнение теплового равновесия}
+\begin{equation}
+        \frac{\partial q_x}{\partial x} +
+        \frac{\partial q_y}{\partial y} + 
+        \frac{\partial q_z}{\partial z} + Q = 0
+\end{equation}
+
+\text{Закон Фурье}
+\begin{equation}
+        q_{\alpha} = -\sum\limits_{\beta \in \{x,y\}} 
+        \lambda_{\alpha \beta} 
+        \frac{\partial T}{\beta}, \alpha \in \{x,y,z\}
+\end{equation}
+
+\text{Условия сопряжения материалов}
+\begin{equation}
+        [q_{n}] = 0, [T] = 0
+\end{equation}
+
+\text{Формула контактных напряжений}
+\begin{equation}
+        [q_{n}] = 
+        [q_{x}]n_x +
+        [q_{y}]n_y +
+        [q_{z}]n_z
+\end{equation}
+
+\text{На внутренней поверхносте кольца задана температура $T_1$,} \text{ на внешней поверхности $T_2$.
+Торцы теплоизолированны.}
+} 
+
+\frame{ \frametitle{Постановка задачи в безразмерных величинах} 
+
+\begin{equation}
+    \begin{array}{c}
+        \frac{\partial q_x}{\partial x}\varepsilon +
+        \frac{\partial q_y}{\partial y}\varepsilon + 
+        \frac{\partial q_z}{\partial z}\varepsilon + Q = 0, \\ \\
+        q_{\alpha} = \sum\limits_{\beta \in \{x,y\}} 
+        \lambda_{\alpha \beta} 
+        \frac{\partial T}{\beta}\varepsilon, \alpha \in \{x,y,z\}
+    \end{array} 
+\end{equation}
+
+\text{Правила обезразмеривания}
+\begin{equation}
+    \begin{array}{c}
+    x \leftrightarrow \frac{x}{L},
+    y \leftrightarrow \frac{y}{L},
+    z \leftrightarrow \frac{z}{L},
+    T \leftrightarrow \frac{T}{T^*}, \\ \\
+    \lambda_{\alpha \beta} \leftrightarrow  
+    \frac{\lambda_{\alpha \beta}}{\lambda^*},
+    q_{\alpha} \leftrightarrow \frac{q_{\alpha}}{q^*},
+    Q \leftrightarrow \frac{Qh}{q^*}, \\ \\
+    q^*=\frac{\lambda^*T^*}{h}
+    \end{array} 
+\end{equation}
+
+\begin{equation*}
+\varepsilon = \frac{h}{L} \ll 1
+\end{equation*}
+
+}
+
+\frame{ \frametitle{Асимптотическое разложение} 
+
+\begin{equation}
+T^{(n)} = T_0^{(n)} + 
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+\Psi^{\bar{k}}
+\frac{\partial^k T_0^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right)
+\end{equation}
+
+\begin{equation}
+q_{\alpha}^{(n)} = 
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+K_{\alpha}^{\bar{k}}
+\frac{\partial^k T_0^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right),\
+\alpha \in \{x,y,z\}
+\end{equation}
+
+\text{Обозначения}
+\begin{equation}
+    \begin{array}{c}
+    \bar{k}=\{k_x,k_y,k_z\} = k_x\bar{\text{э}}_x+k_y\bar{\text{э}}_y+k_z\bar{\text{э}}_z, \\
+    |\bar{k}|=k=k_x+k_y+k_z, \\ 
+    \partial \bar{r}^{\bar{k}}= \partial x^{k_x} \partial y^{k_y} \partial z^{k_z}, \\
+    k_{\alpha} \ge 0, k_{\alpha} \in \mathbb{Z}, \\
+\alpha \in \{x,y,z\}
+    \end{array} 
+\end{equation}
+
+}
+\frame{ \frametitle{Алгоритм решения задачи} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.45]{alg}
+    \end{center}
+\end{figure}
+
+}
+
+
+
+
+
+\frame{ \frametitle{Ячейковая система координат} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{cell_xi}
+    \end{center}
+\end{figure}
+
+\begin{equation}
+    \mathrm{\xi_x,\xi_y \in [0,1]}
+\end{equation}
+
+\begin{equation}
+    \mathrm{x = x_i + \xi_x\varepsilon, \
+    y = y_i + \xi_y\varepsilon, \
+z = z.}
+\end{equation}
+
+\begin{equation*}
+    \mathrm{x_i, y_i} - \text{координаты левого нижнего угла i-ой ячейки}
+\end{equation*}
+
+}
+
+\frame{ \frametitle{Краевые задачи на ячейке} 
+
+\begin{equation}
+    %\begin{array}{l}
+        \frac
+        {\partial 
+            K_x^{\overline{\text{э}}_{\beta}}}
+        {\partial x} +
+        \frac
+        {\partial
+            K_y^{\overline{\text{э}}_{\beta}}}
+        {\partial y} = 0,\ \beta \in \{x,y\}
+\end{equation}
+\begin{equation*}
+        K_{\alpha}^{\overline{\text{э}}_{\beta}} =
+        -\left( \lambda_{\alpha \beta} + 
+        \sum\limits_{\varphi \in \{x,y\}} \lambda_{\alpha \varphi} 
+        \frac{\partial \Psi^{\overline{\text{э}}_{\beta}}}
+        {\partial \xi_{\varphi}} \right),\
+        \alpha, \beta \in \{x,y\}
+    %\end{array} 
+\end{equation*}
+%
+\text{Условие периодичности ячейковых функций}
+\begin{equation}
+    \begin{array}{c}
+        \left. \Psi^{\overline{\text{э}}_{\beta}} 
+        \right|_{\xi_{\gamma} = 0} =
+        \left. \Psi^{\overline{\text{э}}_{\beta}} 
+        \right|_{\xi_{\gamma} = 1} \\ \\
+        \left. K_{\alpha}^{\overline{\text{э}}_{\beta}}
+        \right|_{\xi_{\gamma} = 0} =
+        \left. K_{\alpha}^{\overline{\text{э}}_{\beta}}
+        \right|_{\xi_{\gamma} = 1} \\ \\
+        \gamma \in \{x, y\}
+    \end{array} 
+\end{equation}
+
+\text{Условия сопряжения материалов}
+\begin{equation}
+        \left[ \Psi^{\overline{\text{э}}_{\beta}} \right] = 0,
+        \left[ K_{\alpha}^{\overline{\text{э}}_{\beta}} \right] = 0, \
+        \alpha \in \{x,y\}
+\end{equation}
+
+}
+
+\frame{ \frametitle{Краевые задачи на ячейке} 
+
+\begin{equation}
+    %\begin{array}{l}
+        \frac
+        {\partial 
+            K_x^{\overline{\text{э}}_{\beta}}}
+        {\partial x} +
+        \frac
+        {\partial
+            K_y^{\overline{\text{э}}_{\beta}}}
+        {\partial y} = 0,\ \beta \in \{x,y\}
+\end{equation}
+\begin{equation*}
+        K_{\alpha}^{\overline{\text{э}}_{\beta}} =
+        -\left( \lambda_{\alpha \beta} + 
+        \sum\limits_{\varphi \in \{x,y\}} \lambda_{\alpha \varphi} 
+        \frac{\partial \Psi^{\overline{\text{э}}_{\beta}}}
+        {\partial \xi_{\varphi}} \right),\
+        \alpha, \beta \in \{x,y\}
+    %\end{array} 
+\end{equation*}
+%
+\text{Дополнительное условие, накладываемое на решение}
+\begin{equation}
+        \left \langle \Psi^{\overline{\text{э}}_{\beta}} \right \rangle = 0
+\end{equation}
+
+\text{Оператор усреднения}
+\begin{equation}
+        \langle \_ \rangle = \int\limits_0^1\int\limits_0^1\_d\xi_xd\xi_y
+\end{equation}
+
+}
+
+\frame{ \frametitle{Вычисление коэффициентов теплопроводности макросреды}
+
+\begin{equation}
+    \begin{array}{c}
+        \widetilde{\lambda}_{\alpha \beta} = 
+        \left \langle 
+        K_{\alpha}^{\overline{\text{э}}_{\beta}}
+        \right \rangle = 
+        \langle 
+        \lambda_{\alpha \beta} 
+        \rangle +
+        \left\langle 
+        \sum\limits_{\varphi \in \{x,y\}} \lambda_{\alpha \varphi} 
+        \frac{\partial \Psi^{\overline{\text{э}}_{\beta}}}
+        {\partial \xi_{\psi}}
+        \right\rangle, \
+        \alpha, \beta \in \{x,y\} \\ \\ 
+            \widetilde{\lambda}_{zz} =
+            \Theta^I\lambda^I +
+            \Theta^B\lambda^B
+    \end{array} 
+\end{equation}
+
+}
+
+
+\frame{ \frametitle{Кольцо изготовленное из однородного макроматериала} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.4]{ring}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Поставновка задачи в однородном макроматериала} 
+
+\text{Стационарное уравнение теплового равновесия}
+\begin{equation}
+    \frac{\partial \widetilde{q}_x}{\partial x}\varepsilon +
+    \frac{\partial \widetilde{q}_y}{\partial y}\varepsilon + 
+    \frac{\partial \widetilde{q}_z}{\partial z}\varepsilon + Q = 0
+\end{equation}
+
+\text{Закон Фурье}
+\begin{equation}
+    \widetilde{q}_{\alpha} = \sum\limits_{\beta \in \{x,y\}} 
+    \widetilde{\lambda}_{\alpha \beta} 
+        \frac{\partial T}{\beta}\varepsilon, \alpha \in \{x,y,z\}
+\end{equation}
+
+\text{На внутренней поверхносте кольца задана температура $T_1$,} \text{ на внешней поверхности $T_2$.
+Торцы теплоизолированны.}
+}
+
+\frame{ \frametitle{Сборка итогового решения} 
+\begin{equation}
+T^{(n)} = T_0^{(n)} + 
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+\Psi^{\bar{k}}
+\frac{\partial^k T_0^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right)
+\end{equation}
+
+\begin{equation}
+q_{\alpha}^{(n)} = 
+\sum\limits_{k=1}^{n}\sum\limits_{k_x+k_y+k_z=k}\left( 
+K_{\alpha}^{\bar{k}}
+\frac{\partial^k T_0^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^k \right),\
+\alpha \in \{x,y,z\}
+\end{equation}
+
+}
+
+\end{document}
+
+
+
+
+\frame{ \frametitle{Параметры колец} 
+
+\begin{table}[H]
+    \begin{center}
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \multicolumn{4}{|c|}{Широкое кольцо} \\
+            \hline
+            Внутренний радиус & Ширина & Высота & Приложенная сила\\
+            \hline
+            20 & 5 & 1 & 1\\
+            \hline
+            \multicolumn{4}{|c|}{Узкое кольцо} \\
+            \hline
+            Внутренний радиус & Ширина & Высота & Приложенная сила\\
+            \hline
+            20 & 1 & 5 & 1\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table} 
+}
+
+\frame{ \frametitle{Свойства материалов} 
+
+\begin{table}[H]
+    \begin{center}
+        \begin{tabular}{|c|c|}
+            \hline
+            \multicolumn{2}{|c|}{Связующее. Эпоксидная смола.} \\
+            \hline
+            Модуль Юнга & Коэффициент Пуассона\\
+            \hline
+            5 & 0.22\\
+            \hline
+            \multicolumn{2}{|c|}{Включение. Карбоновое волокно.} \\
+            \hline
+            Модуль Юнга & Коэффициент Пуассона\\
+            \hline
+            100 & 0.38\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{table} 
+}
+
+\frame{ \frametitle{Напряжения $\sigma_{\theta\theta}$} 
+
+\begin{figure}[h]
+    \begin{center}
+        \begin{minipage}[h]{0.4\linewidth}
+            \includegraphics[width=1\linewidth]{stress_yy_W} \\ \center{Широкое кольцо}
+            % \caption{Кольцо.} %% подпись к рисунку
+        \end{minipage}
+        \hfill 
+        \begin{minipage}[h]{0.4\linewidth}
+        \includegraphics[width=1\linewidth]{stress_yy_H} \\ \center{Узкое кольцо}
+        %\\ \center{Поперечное сечение кольца}
+            % \caption{Сечение кольца.}
+        \end{minipage}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Напряжения $\sigma_{\theta\theta}$ в одной ячейке} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]{stress_yy_H_cell}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Напряжения $\sigma_{\theta\theta}$ и $\sigma_{zz}$ в одной ячейке} 
+
+\begin{figure}[h]
+    \begin{center}
+        \begin{minipage}[h]{0.4\linewidth}
+            \includegraphics[width=1\linewidth]{cell_yy} \\ \center{$\sigma_{\theta\theta}$}
+            % \caption{Кольцо.} %% подпись к рисунку
+        \end{minipage}
+        \hfill 
+        \begin{minipage}[h]{0.4\linewidth}
+            \includegraphics[width=1\linewidth]{cell_zz} \\ \center{$\sigma_{zz}$}
+        %\\ \center{Поперечное сечение кольца}
+            % \caption{Сечение кольца.}
+        \end{minipage}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Сравнение напряжений $\sigma_{\theta\theta}$ для широкого и узкого колец} 
+
+    \begin{figure}[h]
+        \begin{center}
+            \begin{minipage}[h]{0.4\linewidth}
+                \includegraphics[width=1\linewidth]{stress_line_yy_W} \\ \center{Широкое кольцо}
+                % \caption{Кольцо.} %% подпись к рисунку
+            \end{minipage}
+            \hfill 
+            \begin{minipage}[h]{0.4\linewidth}
+                \includegraphics[width=1\linewidth]{stress_line_yy_H} \\ \center{Узкое кольцо}
+                %\\ \center{Поперечное сечение кольца}
+                % \caption{Сечение кольца.}
+            \end{minipage}
+        \end{center}
+    \end{figure}
+}
+
+\frame{ \frametitle{Сравнение напряжений $\sigma_{zz}$ для широкого и узкого колец} 
+
+    \begin{figure}[h]
+        \begin{center}
+            \begin{minipage}[h]{0.4\linewidth}
+                \includegraphics[width=1\linewidth]{stress_line_zz_W} \\ \center{Широкое кольцо}
+                % \caption{Кольцо.} %% подпись к рисунку
+            \end{minipage}
+            \hfill 
+            \begin{minipage}[h]{0.4\linewidth}
+                \includegraphics[width=1\linewidth]{stress_line_zz_H} \\ \center{Узкое кольцо}
+                %\\ \center{Поперечное сечение кольца}
+                % \caption{Сечение кольца.}
+            \end{minipage}
+        \end{center}
+    \end{figure}
+}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\frame{ \frametitle{Сечение вдоль которого демонстрируются напряжения} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.4]{hole_line}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Деформации в макроматериале $\mathrm{\omega_{yy} = \frac{\partial v_y}{\partial y}}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{makro_stress_y_y}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Волокна} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.4]{layer}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Ячейковые напряжения} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{cell_stress_y_y}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Итоговое напряжение в неоднородном материале при $\varepsilon=0.1$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{stress_y_y_10}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Итоговое напряжение в неоднородном материале при $\varepsilon=0.01$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{stress_y_y}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Итоговое напряжение в неоднородном материале при $\varepsilon=0.01$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{stress_x_x}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Асимптотическое расщепление напряжения, ограниченное n=2} 
+
+\begin{equation}
+    \begin{array}{c}
+\mathrm{\sigma_{\alpha\beta}^{(n)} = \sum\limits_{\varphi \in \{x,y,z\}}
+\sum\limits_{k_x+k_y+k_z=1}\left( 
+\left(\tau_{\alpha\beta}^{v_{\varphi}}\right)^{\bar{k}}
+\frac{\partial v_{\varphi}^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon \right) +}\\
+\mathrm{\sum\limits_{\varphi \in \{x,y,z\}}
+\sum\limits_{k_x+k_y+k_z=2}\left( 
+\left(\tau_{\alpha\beta}^{v_{\varphi}}\right)^{\bar{k}}
+\frac{\partial^2 v_{\varphi}^{(n)}}{\partial \bar{r}^{\bar{k}}}\varepsilon^2 \right)}
+    \end{array} 
+\end{equation}
+}
+
+\frame{ \frametitle{Вторые производные от перемещений в макроматериале $\mathrm{\omega_{yyx} = \frac{\partial v_y}{\partial y \partial x}}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{makro_stress_y_y_x}
+    \end{center}
+\end{figure}
+}
+
+\frame{ \frametitle{Ячейковые напряжения, второе приближение} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.2]{cell_stress_y_y_2}
+    \end{center}
+\end{figure}
+}
+
+\end{document}
+% \begin{figure}[h]
+%     \begin{center}
+%         \begin{minipage}[h]{0.4\linewidth}
+%             \includegraphics[width=1\linewidth]{path6562-8-2-6}
+%             \caption{Исходное изображение.} %% подпись к рисунку
+%             \label{ris:experimoriginal} %% метка рисунка для ссылки на него
+%         \end{minipage}
+%         \hfill 
+%         \begin{minipage}[h]{0.4\linewidth}
+%             \includegraphics[width=1\linewidth]{stress}
+%             \caption{Закодированное изображение.}
+%             \label{ris:experimcoded}
+%         \end{minipage}
+%     \end{center}
+% \end{figure}
+
+}
+
+\frame{ \frametitle{Напряжение $\sigma_{yy}/\sigma_{p}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.5]{sigma_yy}
+    \end{center}
+\end{figure}
+}
+
+%\frame{ \frametitle{Одна ячейка} 
+
+%\begin{figure}
+%    \begin{center}
+%        \includegraphics[scale=0.3]{cell}
+%    \end{center}
+%\end{figure}
+
+%}
+
+% \frame{ \frametitle{Верхняя и нижняя оценки Рейсса-Фойгта} 
+%
+% \begin{figure}
+%     \begin{center}
+%         \includegraphics[scale=0.2]{cell}
+%     \end{center}
+% \end{figure}
+%
+% \begin{equation}
+%     \frac{1}{\frac{\Theta^I}{E_{\alpha\beta\varphi\psi}^I} +
+%     \frac{\Theta^B}{E_{\alpha\beta\varphi\psi}^B}} \le
+%     \widetilde{E}_{\alpha\beta\varphi\psi} \le
+%     \Theta^IE_{\alpha\beta\varphi\psi}^I +
+%     \Theta^BE_{\alpha\beta\varphi\psi}^B
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%         \Theta^I - \text{доля включения (коэффициент армирования)} \\ \\
+%         \Theta^B - \text{доля связующего}
+%     \end{array} 
+% \end{equation}
+%
+% }
+%
+% \frame{ \frametitle{Верхняя и нижняя оценки Хашина-Штрикмана} 
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     K^B + \frac{\Theta^I}{1/(K^I-K^B) + \Theta^B/(K^B+G^B)} \le 
+%     \widetilde{K}_{xy} \le \\
+%     K^I + \frac{\Theta^B}{1/(K^B-K^I) + \Theta^I/(K^I+G^I)}
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     G^B + \frac{\Theta^I}{1/(G^I-G^B) + \Theta_B(K^B+2G^B)/(2G^B(K^B+G^B))} \le 
+%     \widetilde{G}_{xy} \le \\
+%     G^I + \frac{\Theta^B}{1/(G^B-G^I) + \Theta_I(K^I+2G^I)/(2G^I(K^I+G^I))} \le 
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     G^B + \frac{\Theta^I}{1/(G^I-G^B) + \Theta^B/(2G^B))} \le 
+%     \widetilde{G}_{xz} \le \\ 
+%     G^I + \frac{\Theta^B}{1/(G^B-G^I) + \Theta^I/(2G^I)} 
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^B} \le 
+%     \frac{\widetilde{E}_{zz} - \Theta^IE^I - \Theta^BE^B}{4(\nu^I-\nu^B)^2} \le \\ 
+%     \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^I} 
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^B} \le 
+%     \frac{\widetilde{\nu}_{xz} - \Theta^I\nu^I - \Theta^B\nu^B}
+%     {(\nu^I-\nu^B)(1/K^B-1/K^I)} \le \\ 
+%     \frac{\Theta^I\Theta^B}{\Theta^I/K^B+\Theta^B/K^I+1/G^I} 
+%     \end{array} 
+% \end{equation}
+%
+% }
+%
+% \frame{ \frametitle{Выражения Хашина-Хилла для полидисперсной модели} 
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     \widetilde{K}_{xy} = k^B + \frac{G^B}{3} + \\
+%     +\frac{\Theta^I}{1/[k^I-k^B+1/3(G^I-G^B)]+(1-\Theta^I)/(k^B+4/3G^B)}
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     \widetilde{G}_{xz} = 
+%     \frac{G^I(1+\Theta^I)+G^B(1-\Theta^I)}
+%     {G^I(1-\Theta^I)+G^B(1+\Theta^I)} G^B
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%     \widetilde{E}_{zz} = \Theta^IE^I+\Theta^BE^B+ \\
+%     +\frac{4\Theta^I\Theta^B(\mu^I-\nu^B)^2G^B}
+%     {\Theta^BG^B/(k^I-G^I/3)+\Theta^IG^B/(k^B-G^B/3)+1}
+%     \end{array} 
+% \end{equation}
+%
+% \begin{equation}
+%     \begin{array}{c}
+%         \widetilde{\nu}_{xz} = \Theta^I\nu^I + \Theta^B\nu^B + \\
+%         +\frac
+%         {\Theta^I\Theta^B(\nu^I-nu^B)(G^B/(k^B-G^B/3)-G^B/(k^I-G^I/3))}
+%         {\Theta^BG^B/(k^I-G^I/3)+\Theta^IG^B/(k^B-G^B/3)+1}
+%     \end{array} 
+% \end{equation}
+%
+% }
+
+% \frame[t]{ \frametitle{Краевые задачи на ячейке} 
+%
+% \text{9 краевых задач $\eta, \lambda \in \{x,y,z\}$:}
+% \begin{equation}
+%     \begin{array}{c}
+%         \mathrm{\frac
+%         {\partial 
+%         \left(\tau_{\alpha x}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}}
+%         {\partial x} +
+%         \frac
+%         {\partial
+%         \left(\tau_{\alpha y}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}}
+%         {\partial y} = 0} \tag{\ref{eq:assimptotic}}
+%     \end{array} 
+% \end{equation}
+% \begin{equation*}
+%     \begin{array}{c}
+%         \mathrm{\left(\tau_{\alpha \beta}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}=
+%         E_{\alpha \beta \eta \lambda} + 
+%         \sum\limits_{\varphi,\psi \in \{x,y\}} E_{\alpha \beta \varphi \psi} 
+%         \frac{\partial \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}}
+%         {\partial \xi_{\psi}}} 
+%         \mathrm{+ \sum\limits_{\psi \in \{x,y\}} E_{\alpha \beta z \psi} 
+%         \frac{\partial \left(U_{z}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}}}
+%         {\partial \xi_{\psi}}} \\ 
+%         \mathrm{\alpha \in \{x,y\}}
+%     \end{array} 
+% \end{equation*}
+%
+% \text{Равенства, сокращающие число необходимых задач до шести}
+% \begin{equation}
+%     \mathrm{
+%         \left(\tau_{\alpha \beta}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} = 
+%         \left(\tau_{\alpha \beta}^{v_{\lambda}}\right)^{\overline{\text{э}}_{\eta}},
+%         \left(U_{\varphi}^{v_{\eta}}\right)^{\overline{\text{э}}_{\lambda}} =
+%         \left(U_{\varphi}^{v_{\lambda}}\right)^{\overline{\text{э}}_{\eta}}
+%     }
+% \end{equation}
+% }
+
+\frame{ \frametitle{}
+}
+
+
+\end{document}
+
+\frame{ \frametitle{Периодические ячейки с различными формами поперечных сечений арматурных волокон} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]{cells}
+    \end{center}
+\end{figure}
+
+\begin{equation}
+    \begin{array}{c}
+        \mathrm{w = b - \sqrt{b^2 - S^I}, b \approx 0.75} \\ \\
+        \mathrm{S^I - \text{Площадь включения}}
+    \end{array} 
+\end{equation}
+
+}
+
+\frame{ \frametitle{Модуль Юнга $E_x$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Ex}
+    \end{center}
+\end{figure}
+
+}
+
+
+\frame{ \frametitle{Модуль сдвига $G_{xy}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Mxy}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Модуль сдвига $G_{xz}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Mxz}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{xy}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nxy}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{xz}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nxz}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Коэффициент Пуасона $\nu_{zx}$} 
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[scale=0.3]
+        {../../elastic_test_on_cell/sources/i_10/article_nowosib/10_Nzx}
+    \end{center}
+\end{figure}
+
+}
+
+\frame{ \frametitle{Максимальное относительное отклонение значений, 
+вычисленных по формуле Хашина-Хилла от численных результатов} 
+
+% \begin{center}
+%     \begin{tabular}{cccccccc}
+%          & $E_x$ & $E_z$ & $G_{xy}$ & $G_{xz}$ & $\nu_{xy}$ & $\nu_{xz}$ & $\nu_{zx}$  \\
+%         Квадрат & 0.110334 & 6.04E-05 & 0.20481 & 0.022313 & 0.524838 & 0.112269 & 0.004455 \\
+%         Круг & 0.215916 & 0.00361 & 0.129223 & 0.176678 & 0.373822 & 0.22775 & 0.015489 \\
+%         Крестовина & 0.1385 & 0.000987 & 0.160598 & 0.125731 & 0.480372 & 0.163576 & 0.033257 \\
+%         Трубка & 0.224928 & 0.001328 & 0.160598 & 0.210531 & 0.481037 & 0.259006 & 0.050899 
+%     \end{tabular}
+% \end{center}
+
+% \begin{table}[H]
+\text{Отношение модулей Юнга $\frac{E^I}{E^B}=10$}
+\begin{center}
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+        \hline
+         & $E_x$ & $E_z$ & $G_{xy}$ & $G_{xz}$ & $\nu_{xy}$ & $\nu_{xz}$ & $\nu_{zx}$  \\
+        \hline
+    Квадрат & 0.110 & \textcolor{blue}{0.0} & \textcolor{red}{0.204} & \textcolor{blue}{0.022} & \textcolor{red}{0.525} & 0.112 & \textcolor{blue}{0.004} \\
+        \hline
+        Круг & \textcolor{red}{0.216} & \textcolor{blue}{0.0} &   0.129 & 0.176 & \textcolor{red}{0.374} & \textcolor{red}{0.228} & \textcolor{blue}{0.015} \\
+        \hline
+        Крестовина & 0.13 &\textcolor{blue}{0.001} & 0.160 & 0.126 & \textcolor{red}{0.480} & 0.163 & \textcolor{blue}{0.033} \\
+        \hline
+        Трубка &  \textcolor{red}{0.225} & \textcolor{blue}{0.001} & 0.160 & \textcolor{red}{0.210} & \textcolor{red}{0.481} & \textcolor{red}{0.259} & \textcolor{blue}{0.051} \\
+        \hline
+    \end{tabular}
+\end{center}
+\text{Отношение модулей Юнга $\frac{E^I}{E^B}=100$}
+\begin{center}
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
+        \hline
+         & $E_x$ & $E_z$ & $G_{xy}$ & $G_{xz}$ & $\nu_{xy}$ & $\nu_{xz}$ & $\nu_{zx}$  \\
+        \hline
+        Квадрат & \textcolor{red}{0.193} & \textcolor{blue}{0.0} & \textcolor{red}{0.49} & \textcolor{blue}{0.044} & \textcolor{red}{2.768} & \textcolor{red}{0.193} & \textcolor{blue}{0.004} \\
+        \hline
+        Круг & \textcolor{red}{0.435} & \textcolor{blue}{0.037} & \textcolor{red}{0.412} & \textcolor{red}{0.35} & \textcolor{red}{1.658} & \textcolor{red}{0.479} & \textcolor{blue}{0.013} \\
+        \hline
+        Крестовина & \textcolor{red}{0.261} & \textcolor{blue}{0.001} & \textcolor{red}{0.256} & \textcolor{red}{0.311} & \textcolor{red}{1.305} & \textcolor{red}{0.307} & \textcolor{blue}{0.069} \\
+        \hline
+        Трубка & \textcolor{red}{0.47} & \textcolor{blue}{0.001} & \textcolor{red}{0.256} & \textcolor{red}{0.55} & \textcolor{red}{1.326} & \textcolor{red}{0.517} & 0.112 \\
+        \hline
+    \end{tabular}
+\end{center}
+% \end{table} 
+}
+\end{document} 

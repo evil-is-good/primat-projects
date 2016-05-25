@@ -14488,40 +14488,40 @@ void calculate_real_stress_in_ring_arbitrary_grid_alternate(
         arr<arr<dealii::Vector<dbl>, 3>, 3> stress_real;
         arr<arr<dealii::Vector<dbl>, 3>, 3> deform_real;
         Domain<2> domain_real;
-        // get_real_move_and_stress<n_ref_real>(
-        //         move_macro,   move_micro,   move_real, 
-        //         deform_macro, deform_micro, deform_real, 
-        //         stress_micro, stress_real, 
-        //         domain_macro, domain_micro, domain_real,
-        //         fe, Ncx, Ncy, prmt::Point<2>(0.1, 0.1));
-        // for (st i = 0; i < 3; ++i)
-        // {
-        //     for (st j = 0; j < 3; ++j)
-        //     {
-        //         HCPTools::print_temperature<2>(stress_real[i][j], domain_micro.dof_handler, 
-        //                 str("ring/real/stress/") + ort[i] + ort[j] + ".gpd");
-        //         HCPTools::print_temperature<2>(deform_real[i][j], domain_micro.dof_handler, 
-        //                 str("ring/real/deform/") + ort[i] + ort[j] + ".gpd");
-        //     };
-        // };
         get_real_move_and_stress<n_ref_real>(
                 move_macro,   move_micro,   move_real, 
                 deform_macro, deform_micro, deform_real, 
                 stress_micro, stress_real, 
                 domain_macro, domain_micro, domain_real,
-                fe, Ncx, Ncy);
+                fe, Ncx, Ncy, prmt::Point<2>(0.1, 0.1));
         for (st i = 0; i < 3; ++i)
         {
             for (st j = 0; j < 3; ++j)
             {
-                HCPTools::print_temperature<2>(stress_real[i][j], domain_real.dof_handler, 
+                HCPTools::print_temperature<2>(stress_real[i][j], domain_micro.dof_handler, 
                         str("ring/real/stress/") + ort[i] + ort[j] + ".gpd");
-                HCPTools::print_temperature<2>(deform_real[i][j], domain_real.dof_handler, 
+                HCPTools::print_temperature<2>(deform_real[i][j], domain_micro.dof_handler, 
                         str("ring/real/deform/") + ort[i] + ort[j] + ".gpd");
-                // HCPTools::print_temperature<2>(deform_macro[i][j], domain_macro.dof_handler, 
-                //         str("ring/real_stress_") + ort[i] + ort[j] + ".gpd");
             };
         };
+        // get_real_move_and_stress<n_ref_real>(
+        //         move_macro,   move_micro,   move_real, 
+        //         deform_macro, deform_micro, deform_real, 
+        //         stress_micro, stress_real, 
+        //         domain_macro, domain_micro, domain_real,
+        //         fe, Ncx, Ncy);
+        // for (st i = 0; i < 3; ++i)
+        // {
+        //     for (st j = 0; j < 3; ++j)
+        //     {
+        //         HCPTools::print_temperature<2>(stress_real[i][j], domain_real.dof_handler, 
+        //                 str("ring/real/stress/") + ort[i] + ort[j] + ".gpd");
+        //         HCPTools::print_temperature<2>(deform_real[i][j], domain_real.dof_handler, 
+        //                 str("ring/real/deform/") + ort[i] + ort[j] + ".gpd");
+        //         // HCPTools::print_temperature<2>(deform_macro[i][j], domain_macro.dof_handler, 
+        //         //         str("ring/real_stress_") + ort[i] + ort[j] + ".gpd");
+        //     };
+        // };
         // HCPTools::print_temperature_slice (stress_real[z][z], 
         //         domain_real.dof_handler,
         //         "stress_line_zz.gpd",
@@ -15362,16 +15362,13 @@ int main()
         cst n_ref_real = 7;
 
         cdbl ratio = 8.0;
-        cdbl H = 1.0;
-        cdbl W = 5.0;
+        cdbl H = 1.0; cdbl W = 5.0; cdbl P = 5.0; cst Ncx = 5; cst Ncy = 25;
+        // cdbl H = 5.0; cdbl W = 1.0; cdbl P = 1.0; cst Ncx = 25; cst Ncy = 5;
         cdbl Ri = 20.0;
         cdbl Ro = Ri + W;
-        cdbl P = 5.0;//1.0 / 8.0;// / ratio;
         cdbl R_fiber = 0.25;
         cst n_p = 64;
 
-        cst Ncx = 5;
-        cst Ncy = 5; //Ncx * ratio;
         cdbl bx = W / Ncx;
         cdbl by = 1.0 / Ncy;
         cst Npx = 100;
@@ -15381,7 +15378,7 @@ int main()
         solve_approx_cell_elastic_problem (0, 10.0, 0.25, R_fiber, n_p);
         solve_ring_problem_3d<n_ref>(0, H, W, Ri, 1 << 4, P);
         calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(
-                0, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
+                1, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
     };
     
     // vec<vec<dbl>> A(3);
