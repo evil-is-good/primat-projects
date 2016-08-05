@@ -1335,6 +1335,75 @@ void give_rectangle_with_border_condition(
         };
     };
 
+    void set_cylinder_3D(dealii::Triangulation< 3 > &triangulation, 
+            const double radius, const size_t n_refine)
+    {
+        enum {x, y, z};
+
+        dealii::GridGenerator ::hyper_cube (triangulation, 0.0, 1.0);
+       // puts("1111111111111111111111111111111111111111111");
+        triangulation .refine_global (n_refine);
+        {
+            dealii::Point<2> centerXY (0.5, 0.5);
+            arr<dealii::Point<2>, 2> centerXZ = {
+                dealii::Point<2>(0.0, 0.5),
+                dealii::Point<2>(1.0, 0.5)
+            };
+            arr<dealii::Point<2>, 4> centerYZ = {
+                dealii::Point<2>(0.0, 0.0),
+                dealii::Point<2>(0.0, 1.0),
+                dealii::Point<2>(1.0, 0.0),
+                dealii::Point<2>(1.0, 1.0),
+            };
+            dealii::Triangulation<3>::active_cell_iterator
+                cell = triangulation .begin_active(),
+                     end_cell = triangulation .end();
+            for (; cell != end_cell; ++cell)
+            {
+                dealii::Point<2> midle_pXY(0.0, 0.0);
+                dealii::Point<2> midle_pXZ(0.0, 0.0);
+                dealii::Point<2> midle_pYZ(0.0, 0.0);
+
+                for (size_t i = 0; i < 8; ++i)
+                {
+                    midle_pXY(0) += cell->vertex(i)(x);
+                    midle_pXY(1) += cell->vertex(i)(y);
+
+                    midle_pXZ(0) += cell->vertex(i)(x);
+                    midle_pXZ(1) += cell->vertex(i)(z);
+
+                    midle_pYZ(0) += cell->vertex(i)(y);
+                    midle_pYZ(1) += cell->vertex(i)(z);
+                };
+                    // midle_p(0) += cell->vertex(i)(0);
+                    // midle_p(1) += cell->vertex(i)(1);
+                    // midle_p(0) += cell->vertex(i)(0);
+                    // midle_p(1) += cell->vertex(i)(2);
+                midle_pXY(0) /= 8.0; midle_pXY(1) /= 8.0;
+                midle_pXZ(0) /= 8.0; midle_pXZ(1) /= 8.0;
+                midle_pYZ(0) /= 8.0; midle_pYZ(1) /= 8.0;
+
+               // printf("%f %f\n", midle_p(0), midle_p(1));
+
+                if (
+                        (centerXY.distance(midle_pXY) < radius) or
+                        (centerXZ[0].distance(midle_pXZ) < radius) or
+                        (centerXZ[1].distance(midle_pXZ) < radius) or
+                        (centerYZ[0].distance(midle_pYZ) < radius) or
+                        (centerYZ[1].distance(midle_pYZ) < radius) or
+                        (centerYZ[2].distance(midle_pYZ) < radius) or
+                        (centerYZ[3].distance(midle_pYZ) < radius)
+                        )
+                {
+                    cell->set_material_id(1);
+    //                puts("adf");
+                }
+                else
+                    cell->set_material_id(0);
+            };
+        };
+    };
+
 void set_cylinder_true(dealii::Triangulation< 3 > &triangulation, 
             const double radius, cst ort, cst n_points_on_includ_border, cst n_slices)
 {
@@ -2634,7 +2703,11 @@ void approx_iteration (st number_of_approx, std::function<void(arr<i32, 3>, cst,
             Domain<2> domain;
             {
                 // dealii::GridGenerator::hyper_cube(domain.grid);
-                // dealii::GridGenerator::hyper_ball(domain.grid, dealii::Point<2>(0.0,0.0), 2.0);
+                // dealii::GridGenerator::hyper_rectangle(domain.grid, 
+                //         dealii::Point<2>(0.0,0.0),
+                //         dealii::Point<2>(1.0,1.0),
+                //         true);
+                // dealii::GridGenerator::hyper_ball(domain.grid, dealii::point<2>(0.0,0.0), 2.0);
                 // dealii::GridGenerator::hyper_shell(domain.grid, dealii::Point<2>(0.0,0.0), 0.0, 2.0);
                 // vec<prmt::Point<2>> boundary_of_segments;
                 // vec<st> types_boundary_segments;
@@ -2657,7 +2730,7 @@ void approx_iteration (st number_of_approx, std::function<void(arr<i32, 3>, cst,
                             border,
                             type_border,
                             arr<st, 4>{1,3,2,4},
-                            11,
+                            5,//11,
                             prmt::Point<2>(0.0, 0.0), prmt::Point<2>(10.0, 10.0));
                     vec<vec<prmt::Point<2>>> inclusion(2);
                     give_rectangle(inclusion[0], 1,
@@ -2666,6 +2739,7 @@ void approx_iteration (st number_of_approx, std::function<void(arr<i32, 3>, cst,
                             prmt::Point<2>(0.65, 0.65), prmt::Point<2>(0.75, 0.75));
 // 
                     ::set_grid(domain.grid, border, inclusion, type_border);
+                    // domain.grid.refine_global(2);
 
             };
             debputs();
@@ -2716,6 +2790,39 @@ void approx_iteration (st number_of_approx, std::function<void(arr<i32, 3>, cst,
                     slae.rhsv
                     ,dealii::PreconditionIdentity()
                     );
+            {
+                std::ofstream f("A.txt", std::ios::out);
+                for (st i = 0; i < slae.solution.size(); ++i)
+                {
+                    for (st j = 0; j < slae.solution.size(); ++j)
+                    {
+                        f << slae.matrix.el(i,j) << " ";
+                    };
+                    f << std::endl;
+                    if (std::abs(slae.matrix.el(i,i)) < 1.0)
+                    {
+                    std::cout << "A[" << i << "," << i << "]=" << slae.matrix.el(i,i) << std::endl;
+                        
+                    };
+                };
+                f.close ();
+            };
+            {
+                std::ofstream f("b.txt", std::ios::out);
+                for (st i = 0; i < slae.solution.size(); ++i)
+                {
+                    f << slae.rhsv(i) << "\r";
+                };
+                f.close ();
+            };
+            {
+                std::ofstream f("x.txt", std::ios::out);
+                for (st i = 0; i < slae.solution.size(); ++i)
+                {
+                    f << slae.solution(i) << std::endl;
+                };
+                f.close ();
+            };
 
             // dealii::Vector<dbl> indexes(slae.rhsv.size());
             vec<dealii::Point<2>> coor(slae.rhsv.size());
@@ -9391,6 +9498,890 @@ printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n");
     };
     };
 
+void solve_approx_cell_elastic_problem (cst flag, cdbl E1, cdbl E2, cdbl pua1, cdbl pua2, cdbl R, cst n_p)
+{
+    if (flag)
+    {
+        enum {x, y, z};
+        Domain<3> domain;
+        {
+            // set_cylinder(domain.grid, 0.25, y, 4);
+            set_cylinder_3D(domain.grid, R, 4);
+            // set_cylinder_true(domain.grid, R, z, n_p, 5);
+            // set_ball(domain.grid, 0.4, 3);
+            // set_rect_3d(domain.grid,
+            //         dealii::Point<2>((0.5 - 0.5 / 2.0), (0.5 - 1.5 / 2.0)),
+            //         dealii::Point<2>((0.5 + 0.5 / 2.0), (0.5 + 1.5 / 2.0)), 3);
+        };
+        dealii::FESystem<3,3> fe (dealii::FE_Q<3,3>(1), 3);
+        domain.dof_init (fe);
+
+        OnCell::SystemsLinearAlgebraicEquations<1> slae;
+        OnCell::BlackOnWhiteSubstituter bows;
+        OnCell::SystemsLinearAlgebraicEquations<1> slae_2;
+        OnCell::BlackOnWhiteSubstituter bows_2;
+
+        LaplacianVector<3> element_matrix (domain.dof_handler.get_fe());
+        element_matrix.C .resize (2);
+        // EPTools ::set_isotropic_elascity{yung : 1.0, puasson : 0.25}(element_matrix.C[0]);
+        // EPTools ::set_isotropic_elascity{yung : 10.0, puasson : 0.25}(element_matrix.C[1]);
+        EPTools ::set_isotropic_elascity{yung : E1, puasson : pua1}(element_matrix.C[0]);
+        // // {
+        // // auto C2d = t4_to_t2 (element_matrix.C[0]);
+        // //     printf("C2d\n");
+        // //     for (size_t i = 0; i < 6; ++i)
+        // //     {
+        // //         for (size_t j = 0; j < 6; ++j)
+        // //         {
+        // //             if (std::abs(C2d[i][j]) > 0.0000001)
+        // //                 printf("\x1B[31m%f\x1B[0m   ", 
+        // //                         C2d[i][j]);
+        // //             else
+        // //                 printf("%f   ", 
+        // //                         C2d[i][j]);
+        // //         };
+        // //         for (size_t i = 0; i < 2; ++i)
+        // //             printf("\n");
+        // //     };
+        // //     printf("\n");
+        // // };
+        EPTools ::set_isotropic_elascity{yung : E2, puasson : pua2}(element_matrix.C[1]);
+        
+        // {
+        //     arr<arr<dbl, 6>, 6> E2d_original;
+        //     // arr<arr<dbl, 6>, 6> E2d_final;
+        //     for (st i = 0; i < 6; ++i)
+        //     {
+        //         for (st j = 0; j < 6; ++j)
+        //         {
+        //             E2d_original[i][j] = 0.0;
+        //         };
+        //     };
+        //
+        //     arr<dbl, 3> E = {10.0, 10.0, 10.0};
+        //
+        //     E2d_original[0][0] = 1.0 / E[0];
+        //     E2d_original[1][1] = 1.0 / E[1];
+        //     E2d_original[2][2] = 1.0 / E[2];
+        //     E2d_original[0][1] = -0.25 / E[0];
+        //     E2d_original[0][2] = -0.25 / E[0];
+        //     E2d_original[1][0] = -0.25 / E[1];
+        //     E2d_original[1][2] = -0.25 / E[1];
+        //     E2d_original[2][0] = -0.25 / E[2];
+        //     E2d_original[2][1] = -0.25 / E[2];
+        //     E2d_original[3][3] = 1.0 / 0.4;
+        //     E2d_original[4][4] = 1.0 / 0.4;
+        //     E2d_original[5][5] = 1.0 / 0.4;
+        //
+        //     auto C2d_original = inverse (E2d_original);
+        //     auto C = t2_to_t4 (C2d_original);
+        //     for (st i = 0; i < 3; ++i)
+        //     {
+        //         for (st j = 0; j < 3; ++j)
+        //         {
+        //             for (st k = 0; k < 3; ++k)
+        //             {
+        //                 for (st l = 0; l < 3; ++l)
+        //                 {
+        //                     element_matrix.C[1][i][j][k][l] = C[i][j][k][l];
+        //                 };
+        //             };
+        //         };
+        //     };
+        // };
+
+        // OnCell::prepare_system_equations_with_cubic_grid<3, 3> (slae, bows, domain);
+        OnCell::prepare_system_equations_alternate<3, 3, 1> (slae, bows, domain);
+        // OnCell::prepare_system_equations_alternate<3, 3, 1> (slae_2, bows_2, domain);
+        // std::cout << bows.size << " " << bows_2.size << std::endl;
+        // {
+        //     std::ofstream f("/home/primat/tmp/bows1.txt", std::ios::out);
+        //     for (st i = 0; i < bows.size; ++i)
+        //     {
+        //         f << bows.white[i] << " " << bows.black[i] << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // {
+        //     std::ofstream f("/home/primat/tmp/bows2.txt", std::ios::out);
+        //     for (st i = 0; i < bows_2.size; ++i)
+        //     {
+        //         f << bows_2.white[i] << " " << bows_2.black[i] << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // puts("???????????????????");
+        // for (st i = 0; i < bows_2.size; ++i)
+        // {
+        //     std::cout << bows_2.white[i] << " " << bows_2.black[i] << std::endl;
+        // };
+        // for (st i = 0; i < 81; ++i)
+        // {
+        //     for (st j = 0; j < 81; ++j)
+        //     {
+        //         std::cout << slae.sparsity_pattern.exists(i,j) << "";
+        //     };
+        //     std::cout << std::endl;
+        // };
+        // std::cout << std::endl;
+        // for (st i = 0; i < 81; ++i)
+        // {
+        //     for (st j = 0; j < 81; ++j)
+        //     {
+        //         std::cout << slae_2.sparsity_pattern.exists(i,j) << "";
+        //     };
+        //     std::cout << std::endl;
+        // };
+        // std::cout << std::endl;
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp1.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // {
+        //     std::ofstream f("/home/primat/tmp/sp2.txt", std::ios::out);
+        //     for (st i = 0; i < domain.dof_handler.n_dofs(); ++i)
+        //     {
+        //         for (st j = 0; j < domain.dof_handler.n_dofs(); ++j)
+        //         {
+        //             f << slae_2.sparsity_pattern.exists(i,j) << "";
+        //         };
+        //         f << std::endl;
+        //     };
+        //     f.close ();
+        // };
+        // exit(1);
+
+        OnCell::Assembler::assemble_matrix<3> (slae.matrix, element_matrix, domain.dof_handler, bows);
+
+        cst number_of_approx = 2; // Начиная с нулевой
+        // arr<arr<i32, 3>, number_of_approx> approximations = {
+        //     arr<i32, 3>({1, 0, 0}),
+        //     arr<i32, 3>({0, 1, 0})};
+            // arr<i32, 3>{2, 0, 0}};
+        OnCell::ArrayWithAccessToVector<arr<arr<dbl, 3>, 3>> meta_coefficient(number_of_approx+1);
+        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> cell_func (number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<dealii::Vector<dbl>, 3>> N_func (number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> cell_stress (number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<arr<dealii::Vector<dbl>, 3>, 3>> cell_deform (number_of_approx);
+        OnCell::ArrayWithAccessToVector<arr<arr<arr<dbl, 3>, 3>, 3>> true_meta_coef (number_of_approx);
+        printf("dfdfvdfv %d\n", slae.solution[0].size());
+        for (auto &&a : meta_coefficient.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                            e = 0.0;
+        for (auto &&a : cell_func.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        d .reinit (slae.solution[0].size());
+        printf("dfdfvdfv %d\n", cell_func.content[0][0][0][0].size());
+        // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        for (st i = 0; i < slae.solution[0].size(); ++i)
+        {
+            if ((i % 3) == x) cell_func[arr<i32, 3>{0, 0, 0}][x][i] = 1.0;
+            if ((i % 3) == y) cell_func[arr<i32, 3>{0, 0, 0}][y][i] = 1.0;
+            if ((i % 3) == z) cell_func[arr<i32, 3>{0, 0, 0}][z][i] = 1.0;
+        };
+        // cell_func[arr<i32, 3>{0, 0, 0}][x][x] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        // cell_func[arr<i32, 3>{0, 0, 0}][y][y] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        // cell_func[arr<i32, 3>{0, 0, 0}][z][z] = 1.0; // Нулевое приближение ячейковой функции для которой nu==aplha равно 1.0
+        for (auto &&a : N_func.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        d .reinit (slae.solution[0].size());
+        for (auto &&a : cell_stress.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                        e .reinit (slae.solution[0].size());
+        for (auto &&a : cell_deform.content)
+            for (auto &&b : a)
+                for (auto &&c : b)
+                    for (auto &&d : c)
+                        for (auto &&e : d)
+                        e .reinit (slae.solution[0].size());
+
+        // auto mean_coefficient = 
+        //     OnCell::calculate_mean_coefficients<3> (domain.dof_handler, element_matrix.C);
+        // auto area_of_domain = 
+        //     OnCell::calculate_area_of_domain<3> (domain.dof_handler);
+
+        OnCell::MetaCoefficientElasticCalculator mc_calculator (
+                domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+
+        // for (auto &&approximation : approximations)
+        // {
+            // auto approximation = approximations[0];
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                slae.solution[0] = 0.0;
+                                slae.rhsv[0] = 0.0;
+                                // printf("scsdcdfvdf %d\n", approximation);
+
+                                OnCell::SourceVectorApprox<3> element_rhsv (approximation, nu,
+                                        element_matrix.C, 
+                                        meta_coefficient,
+                                        cell_func,
+                                        // &psi_func,
+                                        domain.dof_handler.get_fe());
+                                // printf("%d\n", slae.rhsv[0].size());
+                                OnCell::Assembler::assemble_rhsv<3> (slae.rhsv[0], element_rhsv, domain.dof_handler, bows);
+
+                                printf("problem %ld %ld %ld %ld\n", i, j, k, nu);
+                                printf("Integ %f\n", element_rhsv.tmp);
+                                dealii::SolverControl solver_control (500000, 1e-12);
+                                dealii::SolverCG<> solver (solver_control);
+                                solver.solve (
+                                        slae.matrix,
+                                        slae.solution[0],
+                                        slae.rhsv[0]
+                                        ,dealii::PreconditionIdentity()
+                                        );
+                                FOR(i, 0, slae.solution[0].size())
+                                    slae.solution[0][i] = slae.solution[0][bows.subst (i)];
+                                FOR(i, 0, slae.rhsv[0].size())
+                                    slae.rhsv[0][i] = slae.rhsv[0][bows.subst (i)];
+
+                                cell_func[approximation][nu] = slae.solution[0];
+                                // N_func[approximation][nu] = slae.rhsv[0];
+                            };
+                        };
+                    };
+                };
+            };
+            puts("!!!");
+            for (st i = 0; i < approx_number+2; ++i)
+            {
+                for (st j = 0; j < approx_number+2; ++j)
+                {
+                    for (st k = 0; k < approx_number+2; ++k)
+                    {
+                        if ((i+j+k) == approx_number+1)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                auto res = mc_calculator .calculate (
+                                        approximation, nu,
+                                        domain.dof_handler, cell_func);
+                                meta_coefficient[approximation][nu][x] = res[x]; //E_x_a[0]_nu_a[1]
+                                meta_coefficient[approximation][nu][y] = res[y]; 
+                                meta_coefficient[approximation][nu][z] = res[z]; 
+                                printf("meta k=(%ld, %ld, %ld) nu=%ld %f %f %f\n", i, j, k, nu, 
+                                meta_coefficient[approximation][nu][x],
+                                meta_coefficient[approximation][nu][y],
+                                meta_coefficient[approximation][nu][z]
+                                        );
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        puts("!!!!!");
+
+        // {
+        //     OnCell::StressCalculator stress_calculator (
+        //             domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+        //     dealii::Vector<dbl> stress(domain.dof_handler.n_dofs());
+        //     arr<i32, 3> approx = {1, 0, 0};
+        //     printf("11111\n");
+        //     stress_calculator .calculate (
+        //             approx, x, x, x,
+        //             domain.dof_handler, cell_func, stress);
+        //     stress_calculator .calculate (
+        //             approx, x, x, y,
+        //             domain.dof_handler, cell_func, stress);
+        //     // stress_calculator .calculate (
+        //     //         approx, x, x, z,
+        //     //         domain.dof_handler, cell_func, stress);
+        //     EPTools ::print_move_slice (stress, domain.dof_handler, 
+        //             "stress_slice_approx_1_0_0_x_x.gpd", z, 0.5);
+        // };
+
+        // {
+        //     OnCell::StressCalculator stress_calculator (
+        //             domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+        //     dealii::Vector<dbl> stress(domain.dof_handler.n_dofs());
+        //     arr<i32, 3> approx = {2, 0, 0};
+        //     printf("11111\n");
+        //     stress_calculator .calculate (
+        //             approx, x, x, x,
+        //             domain.dof_handler, cell_func, stress);
+        //     EPTools ::print_move_slice (stress, domain.dof_handler, 
+        //             "stress_slice_approx_2x_x_x_x.gpd", z, 0.5);
+        //     dbl Integrall = 0.0;
+        //     for (st i = 0; i < stress.size(); ++i)
+        //         Integrall += stress[i];
+        //     printf("Integrall %f\n", Integrall);
+        //     // {
+        //     //     dealii::Vector<dbl> stress_diff_move(domain.dof_handler.n_dofs());
+        //     //     for (st i = 0; i < stress.size(); ++i)
+        //     //     {
+        //     //         stress_diff_move[i] = (stress[i] + cell_func[arr<i32, 3>{1, 0, 0}][x][i]);
+        //     //     };
+        //     //     EPTools ::print_move_slice (stress_diff_move, domain.dof_handler, 
+        //     //             "stress_slice_approx_2x_x_x_x_diff_move_xx.gpd", z, 0.5);
+        //     // };
+        // };
+
+                printf("\n");
+        {
+        arr<str, 3> ort = {"x", "y", "z"};
+        arr<str, 3> aprx = {"0", "1", "2"};
+            OnCell::StressCalculatorBD stress_calculator (
+                    domain.dof_handler, element_matrix.C, domain.dof_handler.get_fe());
+            OnCell::DeformCalculatorBD deform_calculator (
+                    domain.dof_handler, domain.dof_handler.get_fe());
+            for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+            {
+                for (st i = 0; i < approx_number+1; ++i)
+                {
+                    for (st j = 0; j < approx_number+1; ++j)
+                    {
+                        for (st k = 0; k < approx_number+1; ++k)
+                        {
+                            if ((i+j+k) == approx_number)
+                            {
+                                arr<i32, 3> approximation = {i, j, k};
+                                for (st nu = 0; nu < 3; ++nu)
+                                {
+                                    for (st alpha = 0; alpha < 3; ++alpha)
+                                    {
+                                        dealii::Vector<dbl> stress(domain.dof_handler.n_dofs());
+                                        dealii::Vector<dbl> deform(domain.dof_handler.n_dofs());
+                                        for (st beta = 0; beta < 3; ++beta)
+                                        {
+                                            // stress_calculator .calculate (
+                                            //         approximation, nu, alpha, beta,
+                                            //         domain.dof_handler, cell_func, stress);
+                                            stress_calculator .calculate (
+                                                    approximation, nu, alpha, beta,
+                                                    cell_func, stress);
+                                            deform_calculator .calculate (
+                                                    approximation, nu, alpha, beta,
+                                                    cell_func, deform);
+                                            true_meta_coef[approximation][nu][alpha][beta] =
+                                                OnCell::calculate_meta_coefficients_3d_elastic_from_stress (
+                                                        domain.dof_handler, stress, beta);
+                                printf("meta k=(%ld, %ld, %ld) nu=%ld alpha=%ld beta=%ld %f\n", 
+                                        i, j, k, nu, alpha, beta, true_meta_coef[approximation][nu][alpha][beta]);
+                                        };
+                                        cell_stress[approximation][nu][alpha] = stress;
+                                        cell_deform[approximation][nu][alpha] = deform;
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+            EPTools ::print_move_slice (cell_stress[arr<i32,3>{1,0,0}][0][0], domain.dof_handler, 
+                    "stress_slice_approx_x_x_x.gpd", z, 0.5);
+            EPTools ::print_move_slice (cell_deform[arr<i32,3>{1,0,0}][0][0], domain.dof_handler, 
+                    "deform_slice_approx_x_x_x.gpd", z, 0.5);
+
+        // printf("Meta_xxxx %f\n", meta_coefficient[arr<i32, 3>{2, 0, 0}][x][x]);
+        // printf("Meta_yxxy %f\n", meta_coefficient[arr<i32, 3>{1, 1, 0}][x][y]);
+        // printf("Meta_yyxx %f\n", meta_coefficient[arr<i32, 3>{0, 2, 0}][x][x]);
+        // printf("Meta_xzxz %f\n", meta_coefficient[arr<i32, 3>{1, 0, 1}][x][z]);
+        // printf("Meta_zzzz %f\n", meta_coefficient[arr<i32, 3>{0, 0, 2}][z][z]);
+        // printf("Meta_zzyy %f\n", meta_coefficient[arr<i32, 3>{0, 1, 1}][y][z]);
+        // printf("Meta_zyzy %f\n", meta_coefficient[arr<i32, 3>{0, 2, 0}][z][z]);
+        ATools::FourthOrderTensor meta_coef;
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                meta_coef[j][x][i][x] = meta_coefficient[arr<i32, 3>{2, 0, 0}][i][j];
+                meta_coef[j][x][i][y] = meta_coefficient[arr<i32, 3>{1, 1, 0}][i][j];
+                meta_coef[j][x][i][z] = meta_coefficient[arr<i32, 3>{1, 0, 1}][i][j];
+                meta_coef[j][y][i][x] = meta_coefficient[arr<i32, 3>{1, 1, 0}][i][j];
+                meta_coef[j][y][i][y] = meta_coefficient[arr<i32, 3>{0, 2, 0}][i][j];
+                meta_coef[j][y][i][z] = meta_coefficient[arr<i32, 3>{0, 1, 1}][i][j];
+                meta_coef[j][z][i][x] = meta_coefficient[arr<i32, 3>{1, 0, 1}][i][j];
+                meta_coef[j][z][i][y] = meta_coefficient[arr<i32, 3>{0, 1, 1}][i][j];
+                meta_coef[j][z][i][z] = meta_coefficient[arr<i32, 3>{0, 0, 2}][i][j];
+            };
+        };
+        //
+        for (size_t i = 0; i < 9; ++i)
+        {
+            uint8_t im = i / (2 + 1);
+            uint8_t in = i % (2 + 1);
+
+            for (size_t j = 0; j < 9; ++j)
+            {
+                uint8_t jm = j / (2 + 1);
+                uint8_t jn = j % (2 + 1);
+
+                if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                    printf("\x1B[31m%f\x1B[0m   ", 
+                            meta_coef[im][in][jm][jn]);
+                else
+                    printf("%f   ", 
+                            meta_coef[im][in][jm][jn]);
+            };
+            for (size_t i = 0; i < 2; ++i)
+                printf("\n");
+        };
+        {
+        auto newcoef = unphysical_to_physicaly (meta_coef);
+        printf("%f %f %f %f %f %f %f %f %f %f %f\n\n", 
+                newcoef[0][0][0][0],
+                newcoef[0][0][1][1],
+                newcoef[0][0][2][2],
+                newcoef[1][1][0][0],
+                newcoef[1][1][1][1],
+                newcoef[1][1][2][2],
+                newcoef[2][2][0][0],
+                newcoef[2][2][1][1],
+                newcoef[2][2][2][2],
+                meta_coef[0][1][0][1],
+                meta_coef[0][2][0][2]
+                );
+        };
+        // printf("\n");
+        // auto C2d = t4_to_t2 (meta_coef);
+        // auto E2d = inverse (C2d);
+        // auto E = t2_to_t4 (E2d);
+        // printf("%f %f %f %f %f %f %f %f %f %f %f\n", 
+        //         1.0/E[0][0][0][0],
+        //         -E[0][0][1][1]/E[0][0][0][0],
+        //         -E[0][0][2][2]/E[0][0][0][0],
+        //         -E[1][1][0][0]/E[1][1][1][1],
+        //         1.0/E[1][1][1][1],
+        //         -E[1][1][2][2]/E[1][1][1][1],
+        //         -E[2][2][0][0]/E[2][2][2][2],
+        //         -E[2][2][1][1]/E[2][2][2][2],
+        //         1.0/E[2][2][2][2],
+        //         meta_coef[0][1][0][1],
+        //         meta_coef[0][2][0][2]
+        //         );
+        // printf("\n");
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                for (st k = 0; k < 3; ++k)
+                {
+                    meta_coef[j][k][i][x] = true_meta_coef[arr<i32, 3>{1, 0, 0}][i][j][k];
+                    meta_coef[j][k][i][y] = true_meta_coef[arr<i32, 3>{0, 1, 0}][i][j][k];
+                    meta_coef[j][k][i][z] = true_meta_coef[arr<i32, 3>{0, 0, 1}][i][j][k];
+                };
+            };
+        };
+        // cdbl lambda[2] = {1.28, 1.44};
+        // cdbl G[2] = {0.36, 2.16};
+        // meta_coef[0][0][0][0] /= (lambda[0] + 2.0 * G[0]);
+        // meta_coef[0][0][1][1] /= lambda[0];
+        // meta_coef[2][2][2][2] /= (lambda[0] + 2.0 * G[0]);
+        //
+        for (size_t i = 0; i < 9; ++i)
+        {
+            uint8_t im = i / (2 + 1);
+            uint8_t in = i % (2 + 1);
+
+            for (size_t j = 0; j < 9; ++j)
+            {
+                uint8_t jm = j / (2 + 1);
+                uint8_t jn = j % (2 + 1);
+
+                if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+                    printf("\x1B[31m%f\x1B[0m   ", 
+                            meta_coef[im][in][jm][jn]);
+                else
+                    printf("%f   ", 
+                            meta_coef[im][in][jm][jn]);
+            };
+            for (size_t i = 0; i < 2; ++i)
+                printf("\n");
+        };
+        {
+        auto newcoef = unphysical_to_physicaly (meta_coef);
+        printf("%f %f %f %f %f %f %f %f %f %f %f\n\n", 
+                newcoef[0][0][0][0],
+                newcoef[0][0][1][1],
+                newcoef[0][0][2][2],
+                newcoef[1][1][0][0],
+                newcoef[1][1][1][1],
+                newcoef[1][1][2][2],
+                newcoef[2][2][0][0],
+                newcoef[2][2][1][1],
+                newcoef[2][2][2][2],
+                meta_coef[0][1][0][1],
+                meta_coef[0][2][0][2]
+                );
+        };
+        // auto newcoef = unphysical_to_physicaly (meta_coef);
+        // printf("%f %f %f %f %f %f %f %f %f %f %f\n", 
+        //         newcoef[0][0][0][0],
+        //         newcoef[0][0][1][1],
+        //         newcoef[0][0][2][2],
+        //         newcoef[1][1][0][0],
+        //         newcoef[1][1][1][1],
+        //         newcoef[1][1][2][2],
+        //         newcoef[2][2][0][0],
+        //         newcoef[2][2][1][1],
+        //         newcoef[2][2][2][2],
+        //         meta_coef[0][1][0][1],
+        //         meta_coef[0][2][0][2]
+        //         );
+        // printf("\n");
+        // auto C2d = t4_to_t2 (meta_coef);
+        // auto E2d = inverse (C2d);
+        // auto Ef = t2_to_t4 (E2d);
+        // printf("%f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+        //         1.0/Ef[0][0][0][0],
+        //         -Ef[0][0][1][1]/Ef[0][0][0][0],
+        //         -Ef[0][0][2][2]/Ef[0][0][0][0],
+        //         -Ef[1][1][0][0]/Ef[1][1][1][1],
+        //         1.0/Ef[1][1][1][1],
+        //         -Ef[1][1][2][2]/Ef[1][1][1][1],
+        //         -Ef[2][2][0][0]/Ef[2][2][2][2],
+        //         -Ef[2][2][1][1]/Ef[2][2][2][2],
+        //         1.0/Ef[2][2][2][2],
+        //         1.0/E2d[3][3],
+        //         1.0/E2d[4][4],
+        //         1.0/E2d[5][5],
+        //         (C2d[0][0]-C2d[0][1])/2.0
+        //         );
+        // printf("\n");
+        // {
+        //     std::ofstream f("not_isotrop_125.gpd", std::ios::out | std::ios::app);
+        //     f << E << " " << (C2d[0][0]-C2d[0][1])/2.0 << " " << 1.0/E2d[5][5] << std::endl;
+        //     f.close();
+        // };
+        //
+        //     printf("E2d_final\n");
+        //     for (size_t i = 0; i < 6; ++i)
+        //     {
+        //         for (size_t j = 0; j < 6; ++j)
+        //         {
+        //             if (std::abs(E2d[i][j]) > 0.0000001)
+        //                 printf("\x1B[31m%f\x1B[0m   ", 
+        //                         E2d[i][j]);
+        //             else
+        //                 printf("%f   ", 
+        //                         E2d[i][j]);
+        //         };
+        //         for (size_t i = 0; i < 2; ++i)
+        //             printf("\n");
+        //     };
+        //     printf("\n");
+        //
+        //     printf("C2d_final\n");
+        //     for (size_t i = 0; i < 6; ++i)
+        //     {
+        //         for (size_t j = 0; j < 6; ++j)
+        //         {
+        //             if (std::abs(C2d[i][j]) > 0.0000001)
+        //                 printf("\x1B[31m%f\x1B[0m   ", 
+        //                         C2d[i][j]);
+        //             else
+        //                 printf("%f   ", 
+        //                         C2d[i][j]);
+        //         };
+        //         for (size_t i = 0; i < 2; ++i)
+        //             printf("\n");
+        //     };
+        //     printf("\n");
+
+        {
+        std::ofstream out ("cell/meta_coef.bin", std::ios::out | std::ios::binary);
+        out.write ((char *) &meta_coef, sizeof meta_coef);
+        out.close ();
+        };
+
+        arr<str, 3> ort = {"x", "y", "z"};
+        arr<str, 3> aprx = {"0", "1", "2"};
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                for (st alpha = 0; alpha < 3; ++alpha)
+                                {
+                                    str name = aprx[i]+str("_")+aprx[j]+str("_")+aprx[k]+str("_")+ort[nu]+str("_")+ort[alpha];
+                                    {
+                                        std::ofstream out ("cell/stress_"+name+".bin", std::ios::out | std::ios::binary);
+                                        for (st i = 0; i < slae.solution[0].size(); ++i)
+                                        {
+                                            out.write ((char *) &(cell_stress[approximation][nu][alpha][i]), sizeof(dbl));
+                                        };
+                                        out.close ();
+            EPTools ::print_move_slice (cell_stress[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+                    "cell/stress_"+name+".gpd", z, 0.5);
+                                    };
+                                    {
+                                        std::ofstream out ("cell/deform_"+name+".bin", std::ios::out | std::ios::binary);
+                                        for (st i = 0; i < slae.solution[0].size(); ++i)
+                                        {
+                                            out.write ((char *) &(cell_deform[approximation][nu][alpha][i]), sizeof(dbl));
+                                        };
+                                        out.close ();
+            EPTools ::print_move_slice (cell_deform[arr<i32,3>{i,j,k}][nu][alpha], domain.dof_handler, 
+                    "cell/deform_"+name+".gpd", z, 0.5);
+                                    };
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+        for (st approx_number = 1; approx_number < number_of_approx; ++approx_number)
+        {
+            for (st i = 0; i < approx_number+1; ++i)
+            {
+                for (st j = 0; j < approx_number+1; ++j)
+                {
+                    for (st k = 0; k < approx_number+1; ++k)
+                    {
+                        if ((i+j+k) == approx_number)
+                        {
+                            arr<i32, 3> approximation = {i, j, k};
+                            for (st nu = 0; nu < 3; ++nu)
+                            {
+                                str name = ort[i]+str("_")+ort[j]+str("_")+ort[k]+str("_")+ort[nu];
+                                {
+                                    std::ofstream out ("cell/solution_"+name+".bin", std::ios::out | std::ios::binary);
+                                    for (st i = 0; i < slae.solution[0].size(); ++i)
+                                    {
+                                        out.write ((char *) &(cell_func[approximation][nu][i]), sizeof(dbl));
+                                    };
+                                    out.close ();
+                                };
+                            };
+                        };
+                    };
+                };
+            };
+        };
+
+        {
+            std::ofstream out ("cell/solution_on_cell_size.bin", std::ios::out | std::ios::binary);
+            auto size = slae.solution[0].size();
+            out.write ((char *) &size, sizeof size);
+            out.close ();
+        };
+            
+
+
+        OnCell::ArrayWithAccessToVector<arr<str, 3>> file_name (number_of_approx);
+        file_name[arr<i32, 3>{1, 0, 0}][x] = "move_slice_approx_xx.gpd";
+        file_name[arr<i32, 3>{1, 0, 0}][y] = "move_slice_approx_xy.gpd";
+        file_name[arr<i32, 3>{1, 0, 0}][z] = "move_slice_approx_xz.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][x] = "move_slice_approx_yx.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][y] = "move_slice_approx_yy.gpd";
+        file_name[arr<i32, 3>{0, 1, 0}][z] = "move_slice_approx_yz.gpd";
+        EPTools ::print_coor_bin<3> (domain.dof_handler, "cell/coor_cell.bin");
+    // {
+    //     // puts("4444444444");
+    //     printf("dofs %d\n", domain.dof_handler.n_dofs());
+    //     vec<dealii::Point<dim>> coor(domain.dof_handler.n_dofs());
+    //     puts("555555555");
+    //     {
+    //         cu8 dofs_per_cell =  domain.dof_handler.get_fe().dofs_per_cell;
+    //         printf("dofs %d\n", dofs_per_cell);
+    //
+    //         std::vector<u32> local_dof_indices (dofs_per_cell);
+    //
+    //         auto cell = dof_handler.begin_active();
+    //         auto endc = dof_handler.end();
+    //         for (; cell != endc; ++cell)
+    //         {
+    //             cell ->get_dof_indices (local_dof_indices);
+    //
+    //             // FOR (i, 0, dofs_per_cell)
+    //             //     indexes(local_dof_indices[i]) = cell ->vertex_dof_index (i, 0);
+    //             FOR (i, 0, dofs_per_cell)
+    //             {
+    //                 coor[local_dof_indices[i]] = cell ->vertex (i);
+    //             };
+    //         };
+    //     };
+    //
+    //     {
+    //         std::ofstream out ("cell/coor_hole.bin", std::ios::out | std::ios::binary);
+    //         for (st i = 0; i < coor.size(); ++i)
+    //         {
+    //             for (st j = 0; j < dim; ++j)
+    //             {
+    //                 out.write ((char *) &(coor[i](j)), sizeof(dbl));
+    //             };
+    //         };
+    //         out.close ();
+    //     };
+    // };
+        puts("222222222222222222222222222222");
+        // for (auto &&approximation : approximations)
+        // {
+        //     for (st nu = 0; nu < 3; ++nu)
+        //     {
+        //         EPTools ::print_move_slice (cell_func[approximation][nu], domain.dof_handler, 
+        //                 file_name[approximation][nu], z, 0.5);
+        //     };
+        // };
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][x], domain.dof_handler, 
+                file_name[arr<i32, 3>{1, 0, 0}][x], z, 0.5);
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][y], domain.dof_handler, 
+                file_name[arr<i32, 3>{1, 0, 0}][y], z, 0.5);
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{1, 0, 0}][z], domain.dof_handler, 
+                file_name[arr<i32, 3>{1, 0, 0}][z], z, 0.5);
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{0, 1, 0}][x], domain.dof_handler, 
+                file_name[arr<i32, 3>{0, 1, 0}][x], z, 0.5);
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{0, 1, 0}][y], domain.dof_handler, 
+                file_name[arr<i32, 3>{0, 1, 0}][y], z, 0.5);
+        EPTools ::print_move_slice (cell_func[arr<i32, 3>{0, 1, 0}][z], domain.dof_handler, 
+                file_name[arr<i32, 3>{0, 1, 0}][z], z, 0.5);
+        // EPTools ::print_move_slice (cell_func[arr<i32, 3>{2, 0, 0}][x], domain.dof_handler, 
+        //         "move_slice_approx_2x_x.gpd", z, 0.5);
+        // EPTools ::print_move_slice (cell_func[arr<i32, 3>{0, 2, 0}][x], domain.dof_handler, 
+        //         "move_slice_approx_2y_x.gpd", z, 0.5);
+        puts("222222222222222222222222222222");
+
+        EPTools ::print_move_slice (cell_stress[arr<i32, 3>{1, 0, 0}][x][x], domain.dof_handler, 
+                "stress_slice_xxx.gpd", z, 0.5);
+        EPTools ::print_move_slice (cell_stress[arr<i32, 3>{0, 1, 0}][y][x], domain.dof_handler, 
+                "stress_slice_yyx.gpd", z, 0.5);
+
+            // EPTools ::print_move<2> (slae.solution[0], domain.dof_handler, "move_approx");
+        // EPTools ::print_move_slice (slae.solution[0], domain.dof_handler, "move_slice_approx.gpd", z, 0.5);
+        // EPTools ::print_move_slice (slae.rhsv[0], domain.dof_handler, "move_slice_approx.gpd", z, 0.5);
+
+//         arr<u8, 4> theta  = {x, y, z, x};
+//         arr<u8, 4> lambda = {x, y, z, y};
+//
+// #pragma omp parallel for
+//         for (st n = 0; n < 4; ++n)
+//         {
+//             vec<arr<arr<dbl, 2>, 2>> coef_for_rhs(2);
+//
+//             for (auto i : {x, y})
+//                 for (auto j : {x, y})
+//                     for(st k = 0; k < element_matrix.C.size(); ++k)
+//                     {
+//                         coef_for_rhs[k][i][j] = 
+//                             element_matrix.C[k][i][j][theta[n]][lambda[n]];
+//                     };
+//
+//             slae.solution[n] = 0;
+//             slae.rhsv[n] = 0;
+//
+//             OnCell::SourceVector<2> element_rhsv (
+//                     coef_for_rhs, domain.dof_handler.get_fe());
+//             OnCell::Assembler::assemble_rhsv<2> (
+//                     slae.rhsv[n], element_rhsv, domain.dof_handler, bows);
+//
+//             dealii::SolverControl solver_control (10000, 1e-12);
+//             dealii::SolverCG<> solver (solver_control);
+//             solver.solve (
+//                     slae.matrix,
+//                     slae.solution[n],
+//                     slae.rhsv[n]
+//                     ,dealii::PreconditionIdentity()
+//                     );
+//             FOR(i, 0, slae.solution[n].size())
+//                 slae.solution[n][i] = slae.solution[n][bows.subst (i)];
+//         };
+//
+//         OnCell::SystemsLinearAlgebraicEquations<2> problem_of_torsion_rod_slae;
+//         vec<ATools::SecondOrderTensor> coef_for_potr(2);
+//         for (st i = 0; i < 2; ++i)
+//         {
+//             coef_for_potr[i][x][x] = element_matrix.C[i][x][z][x][z];
+//             coef_for_potr[i][y][y] = element_matrix.C[i][y][z][y][z];
+//             coef_for_potr[i][x][y] = element_matrix.C[i][x][z][y][z];
+//             coef_for_potr[i][y][x] = element_matrix.C[i][x][z][y][z];
+//         };
+//         solve_heat_problem_on_cell_aka_torsion_rod<2> (
+//                 domain.grid, coef_for_potr, assigned_to problem_of_torsion_rod_slae);
+//
+//         arr<str, 4> vr = {"move_xx.gpd", "move_yy.gpd", "move_zz.gpd", "move_xy.gpd"};
+//         for (st i = 0; i < 4; ++i)
+//         {
+//             EPTools ::print_move<2> (slae.solution[i], domain.dof_handler, vr[i]);
+//         };
+//
+//         auto meta_coef = OnCell::calculate_meta_coefficients_2d_elastic<2> (
+//                 domain.dof_handler, slae, problem_of_torsion_rod_slae, element_matrix.C);
+//
+//         for (size_t i = 0; i < 9; ++i)
+//         {
+//             uint8_t im = i / (dim + 1);
+//             uint8_t in = i % (dim + 1);
+//
+//             for (size_t j = 0; j < 9; ++j)
+//             {
+//                 uint8_t jm = j / (dim + 1);
+//                 uint8_t jn = j % (dim + 1);
+//
+//                 if (std::abs(meta_coef[im][in][jm][jn]) > 0.0000001)
+//                     printf("\x1B[31m%f\x1B[0m   ", 
+//                             meta_coef[im][in][jm][jn]);
+//                 else
+//                     printf("%f   ", 
+//                             meta_coef[im][in][jm][jn]);
+//             };
+//             for (size_t i = 0; i < 2; ++i)
+//                 printf("\n");
+//         };
+//         // print_tensor<6*6>(meta_coef);
+//         // {
+//         //     auto newcoef = unphysical_to_physicaly (meta_coef);
+//         //     // fprintf(F, "%f %f %f %f %f %f %f %f %f %f %f %f\n", size*size, 
+//         //     printf("%f %f %f %f %f %f %f %f %f %f %f\n",
+//         //             newcoef[0][0][0][0],
+//         //             newcoef[0][0][1][1],
+//         //             newcoef[0][0][2][2],
+//         //             newcoef[1][1][0][0],
+//         //             newcoef[1][1][1][1],
+//         //             newcoef[1][1][2][2],
+//         //             newcoef[2][2][0][0],
+//         //             newcoef[2][2][1][1],
+//         //             newcoef[2][2][2][2],
+//         //             meta_coef[0][1][0][1],
+//         //             meta_coef[0][2][0][2]
+//         //           );
+//         // };
+printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa\n");
+    };
+    };
+
 void solve_approx_cell_elastic_problem (
         cst flag, cdbl E, cdbl pua, cdbl R, cst refine, cst number_of_approx, const str f_name)
 {
@@ -15316,7 +16307,7 @@ int main()
     solve_heat_conduction_problem_3d (0);
 
     //heat_conduction_problem_on_cell_3d
-    solve_heat_conduction_problem_on_cell_3d (1);
+    solve_heat_conduction_problem_on_cell_3d (0);
 
     // elasstic_problem_3d
     solve_elastic_problem_3d (0);
@@ -15334,6 +16325,52 @@ int main()
 
     solve_cell_elastic_problem_and_print_along_line(0);
 
+    {
+        cdbl c = 0.46;
+        cdbl R = std::sqrt(c/(3.0*3.1415926535));
+        std::cout << R << std::endl;
+        cdbl lambda[2] = {1.28, 1.44};
+        cdbl G[2] = {0.36, 2.16};
+        // cdbl E[2] = {
+        //     G[0]*(3*lambda[0]+2*G[0])/(lambda[0]+G[0]),
+        //     G[1]*(3*lambda[1]+2*G[1])/(lambda[1]+G[1])
+        // };
+        // cdbl p[2] = {
+        //     lambda[0]/(2*(lambda[0]+G[0])),
+        //     lambda[1]/(2*(lambda[1]+G[1]))
+        // };
+        // cdbl E[2] = {1.0, 10.0};
+        // cdbl p[2] = {0.25, 0.25};
+        cdbl E[2] = {2.1, 255.0};
+        cdbl p[2] = {0.35, 0.25};
+        std::cout << E[0] << " " << E[1] << " " << p[0] << " " << p[1] << std::endl;
+        ATools::FourthOrderTensor C[2];
+        EPTools ::set_isotropic_elascity{yung : E[0], puasson : p[0]}(C[0]);
+        EPTools ::set_isotropic_elascity{yung : E[1], puasson : p[1]}(C[1]);
+        std::cout << C[0][0][0][1][1] << std::endl;
+        ATools::FourthOrderTensor Cm;
+        for (st i = 0; i < 3; ++i)
+        {
+            for (st j = 0; j < 3; ++j)
+            {
+                for (st k = 0; k < 3; ++k)
+                {
+                    for (st l = 0; l < 3; ++l)
+                    {
+                        Cm[i][j][k][l] = 
+                            C[0][i][j][k][l] * (1.0 - c) +
+                            C[1][i][j][k][l] * c;
+                    };
+                };
+            };
+        };
+        solve_approx_cell_elastic_problem (1, E[0], E[1], p[0], p[1], R, 16);
+        std::cout << 
+            Cm[0][0][0][0] / (lambda[0] + 2.0 * G[0]) << " " <<
+            Cm[0][0][1][1] / lambda[0] << " " <<
+            Cm[2][2][2][2] / (lambda[0] + 2.0 * G[0])
+            << std::endl;
+    }
 
     // {
     //     cst n_cell_ref = 5;
@@ -15378,7 +16415,7 @@ int main()
         solve_approx_cell_elastic_problem (0, 10.0, 0.25, R_fiber, n_p);
         solve_ring_problem_3d<n_ref>(0, H, W, Ri, 1 << 4, P);
         calculate_real_stress_in_ring_arbitrary_grid_alternate<n_ref, n_ref_real>(
-                1, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
+                0, H, W, Ri, Ncx, Ncy, R_fiber, n_p);
     };
     
     // vec<vec<dbl>> A(3);

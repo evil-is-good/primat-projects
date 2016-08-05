@@ -1,0 +1,104 @@
+\documentclass[a4paper,openany]{scrbook}
+% прикручиваем необходимые пакеты
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\usepackage{microtype}
+\usepackage{pfnote}
+\usepackage{tocstyle}
+\usepackage{scrpage2}
+\usepackage[sf,sl,outermarks]{titlesec}
+% Настраиваем макет
+\parindent=2.5em
+% Оформление колонтитулов
+\pagestyle{scrplain}
+\pagestyle{scrheadings}
+\cofoot[\pagemark]{\pagemark}
+\cefoot[\pagemark]{\pagemark}
+\lefoot[]{}
+\rofoot[]{}
+\cohead[]{}
+\cehead[]{}
+%\rohead[]{О необходимости кормить кота три раза в день 123}
+\lehead[]{Глава \headmark}
+% Оформление главы
+% \renewcommand{\thechapter}{\Roman{chapter}}
+% \renewcommand{\thesection}{\arabic{chapter}.\arabic{section}}
+\titleformat{\chapter}[display]
+{\bfseries\Large}
+{\filcenter\Large{\chaptertitlename} \Large\thechapter}
+{3ex}
+{\titlerule
+\vspace{1ex}%
+\filcenter}
+% [\vspace{1ex}%
+% \titlerule]
+
+\begin{document}
+% титульный лист
+\thispagestyle{empty}
+\begin{center}
+\Large Маргарет Митчелл
+\end{center}
+\vspace{6cm}
+\begin{center}
+\Huge {\textbf{Унесённые ветром}}
+\end{center}
+\vspace{1cm}
+\begin{center}
+\huge {\textbf{Том 2}}
+\end{center}
+\vspace{0.25cm}
+\begin{center}
+\huge {\textbf{Часть V}}
+\end{center}
+\vspace*{\fill}
+\begin{center}
+{\large \textsf{Сургут, 2016}}
+\end{center}
+\clearpage
+% вторая страница
+\thispagestyle{plain}
+%\texttt{Авторская редакция. Версия 0.100} \LaTeX
+%\vfill
+% \begin{quotation}
+%     {\LARGE Столь дорогому мне человеку.} \\ \\ \\ \\
+%     От, ну ты знаешь кого ;)
+% \end{quotation}
+    {\LARGE Столь дорогому мне человеку.} 
+\vfill
+    От, ну ты знаешь кого ;)
+\clearpage
+% Оглавление
+\tableofcontents
+\sloppy
+% здесь главы
+\addtocounter{chapter}{47}
+\Large
+\input sec48.tex
+\input sec49.tex
+\input sec50.tex
+\input sec51.tex
+\input sec52.tex
+\input sec53.tex
+\input sec54.tex
+\input sec55.tex
+\input sec56.tex
+\input sec57.tex
+\input sec58.tex
+\input sec59.tex
+\input sec60.tex
+\input sec61.tex
+\input sec62.tex
+\input sec63.tex
+%\input sec02.tex
+%\input sec03.tex
+% \input sec04.tex 4-я глава.
+\bigskip
+
+\begin{flushright}
+\textit{Сургут 2016}
+\end{flushright}
+
+\end{document}
