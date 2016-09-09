@@ -6,7 +6,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_accessor.h>
 #include <deal.II/numerics/data_out.h>
-#include "../problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
+// #include "../problem_on_cell/calculate_meta_coefficients/calculate_meta_coefficients.h"
 
 // #include "../../general/4_points_function/4_points_function.h"
 

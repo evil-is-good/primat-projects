@@ -44,3 +44,4 @@ html-doc
 *.gz
 *.ui
 *.pyc
+tags
